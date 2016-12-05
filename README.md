@@ -54,7 +54,7 @@ The directives have the following options:
 
     from ipywidgets import Button
 
-.. pywidgets-display::
+.. ipywidgets-display::
     :hide-code:   # if set, then hide the code and only show the widget
     :code-below:  # if set, then code is below rather than above the widget
     :alt: text    # alternate text when widget cannot be rendered
