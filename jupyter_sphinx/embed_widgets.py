@@ -21,8 +21,8 @@ prior to running the display code. For example::
 		jsdlink((s1, 'value'), (s2, 'max'))
 		VBox([s1, s2, b])
 
-In the case of the ``ipywidgets-display`` code, the *last statement* of the
-code-block should contain the widget object you wish to be rendered.
+In the case of the ``ipywidgets-display`` code, if the *last statement* of the
+code-block contains a widget object, it will be rendered.
 
 Options
 -------
@@ -131,9 +131,13 @@ class IPywidgetsDisplayDirective(Directive):
         show_code = 'hide-code' not in self.options
         code_below = 'code-below' in self.options
 
-        setupcode = '\n'.join(item['code']
-                              for item in getattr(env, 'ipywidgets_setup', [])
-                              if item['docname'] == env.docname)
+        setupcode =  '\n'.join([
+            'from ipywidgets import Widget',
+            'Widget._ipython_display_ = custom_display'
+        ]) + '\n' + '\n'.join(item['code']
+            for item in getattr(env, 'ipywidgets_setup', [])
+            if item['docname'] == env.docname
+        )
 
         code = '\n'.join(self.content)
 
@@ -175,9 +179,15 @@ class IPywidgetsDisplayDirective(Directive):
 
         return result
 
+def make_custom_display(body):
+    def custom_display(self, **kwargs):
+        view_spec = json.dumps(self.get_view_spec())
+        body.append('<script type="application/vnd.jupyter.widget-view+json">' + view_spec + '</script>')
+    return custom_display
+
 def html_visit_widget(self, node):
     # Execute the setup code, saving the global & local state
-    namespace = {}
+    namespace = dict(custom_display=make_custom_display(self.body))
 
     if node['setupcode']:
         exec(node['setupcode'], namespace)
@@ -194,10 +204,6 @@ def html_visit_widget(self, node):
     if isinstance(w, Widget):
         view_spec = json.dumps(w.get_view_spec())
         self.body.append('<script type="application/vnd.jupyter.widget-view+json">' + view_spec + '</script>')
-    else:
-        warnings.warn('ipywidgets-display: {0}:{1} Malformed block. Last line of '
-                      'code block should define a valid Widget object.'
-                      ''.format(node['rst_source'], node['rst_lineno']))
     raise nodes.SkipNode
 
 def generic_visit_widget(self, node):
