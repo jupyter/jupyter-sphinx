@@ -41,8 +41,8 @@ prior to running the display code. For example:
 	VBox([s1, s2, b])
 ```
 
-In the case of the `ipywidgets-display` code, the *last statement* of the
-code-block should contain the widget object you wish to be rendered.
+In the case of the `ipywidgets-display` code, if the *last statement* of the
+code-block returns a widget object, it will be rendered.
 
 ### Options
 
