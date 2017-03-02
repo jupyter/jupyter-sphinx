@@ -4,8 +4,16 @@ Jupyter Sphinx extensions enable jupyter-specific features in sphinx.
 
 ## Installation
 
+With pip:
+
 ```bash
 pip install jupyter_sphinx
+```
+
+with conda:
+
+````bash
+conda install jupyter_sphinx -c conda-forge
 ```
 
 ## Render Jupyter Interactive Widgets `jupyter_sphinx.embed_widgets`
