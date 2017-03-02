@@ -215,7 +215,7 @@ def generic_visit_widget(self, node):
 
 def add_widget_state(app, pagename, templatename, context, doctree):
     if 'body' in context and Widget.widgets:
-        state_spec = json.dumps(Widget.get_manager_state(drop_defaults=True))
+        state_spec = json.dumps(Widget.get_manager_state(drop_defaults=False))
         Widget.widgets = {}
         context['body'] += '<script type="application/vnd.jupyter.widget-state+json">' + state_spec + '</script>'
 
