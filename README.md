@@ -12,7 +12,7 @@ pip install jupyter_sphinx
 
 with conda:
 
-````bash
+```bash
 conda install jupyter_sphinx -c conda-forge
 ```
 
