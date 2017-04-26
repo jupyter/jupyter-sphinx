@@ -225,7 +225,7 @@ def setup(app):
     setup.confdir = app.confdir
 
     app.add_stylesheet('https://unpkg.com/font-awesome@4.5.0/css/font-awesome.min.css')
-    app.add_javascript('https://unpkg.com/jupyter-js-widgets@^2.0.13/dist/embed.js')
+    app.add_javascript('https://unpkg.com/jupyter-js-widgets@^3.0.0/dist/embed.js')
 
     app.add_node(widget,
                  html=(html_visit_widget, None),
