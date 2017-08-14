@@ -219,35 +219,22 @@ def add_widget_state(app, pagename, templatename, context, doctree):
         Widget.widgets = {}
         context['body'] += '<script type="application/vnd.jupyter.widget-state+json">' + state_spec + '</script>'
 
-def add_embed_require_javascript(app, pagename, templatename, context, doctree):
-    snippet = """
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" crossorigin="anonymous"></script>
-    <script>
-    window.require(['https://unpkg.com/@jupyter-widgets/html-manager@*/dist/embed-requirejs'], function(embed) {
-        if (document.readyState === "complete") {
-            embed.renderWidgets();
-        } else {
-            window.addEventListener('load', function() {embed.renderWidgets();});
-        }
-    });
-    </script>"""
-    context['metatags'] = snippet
-
 def setup(app):
     setup.app = app
     setup.config = app.config
     setup.confdir = app.confdir
 
     app.add_stylesheet('https://unpkg.com/font-awesome@4.5.0/css/font-awesome.min.css')
-    app.add_javascript('https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js')
-    embed_url = 'https://unpkg.com/jupyter-js-widgets@^2.0.13/dist/embed.js'
     try:
         import ipywidgets.embed
-        embed_url = ipywidgets.embed.DEFAULT_EMBED_SCRIPT_URL
+        from ._version import __html_manager_version__
         app.connect('html-page-context', add_embed_require_javascript)
+        app.add_javascript('https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js')
+        app.add_javascript('https://unpkg.com/@jupyter-widgets/html-manager@%s/dist/libembed-amd.js' % __html_manager_version__)
+        app.add_javascript('https://unpkg.com/@jupyter-widgets/html-manager@%s/dist/embed-amd.js' % __html_manager_version__)
     except ImportError:
+        embed_url = 'https://unpkg.com/jupyter-js-widgets@^2.0.13/dist/embed.js'
         pass
-    #app.add_javascript(embed_url)
 
     app.add_node(widget,
                  html=(html_visit_widget, None),
