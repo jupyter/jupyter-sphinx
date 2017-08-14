@@ -219,6 +219,20 @@ def add_widget_state(app, pagename, templatename, context, doctree):
         Widget.widgets = {}
         context['body'] += '<script type="application/vnd.jupyter.widget-state+json">' + state_spec + '</script>'
 
+def add_embed_require_javascript(app, pagename, templatename, context, doctree):
+    snippet = """
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" crossorigin="anonymous"></script>
+    <script>
+    window.require(['https://unpkg.com/@jupyter-widgets/html-manager@*/dist/embed-requirejs'], function(embed) {
+        if (document.readyState === "complete") {
+            embed.renderWidgets();
+        } else {
+            window.addEventListener('load', function() {embed.renderWidgets();});
+        }
+    });
+    </script>"""
+    context['metatags'] = snippet
+
 def setup(app):
     setup.app = app
     setup.config = app.config
@@ -230,9 +244,10 @@ def setup(app):
     try:
         import ipywidgets.embed
         embed_url = ipywidgets.embed.DEFAULT_EMBED_SCRIPT_URL
+        app.connect('html-page-context', add_embed_require_javascript)
     except ImportError:
         pass
-    app.add_javascript(embed_url)
+    #app.add_javascript(embed_url)
 
     app.add_node(widget,
                  html=(html_visit_widget, None),
