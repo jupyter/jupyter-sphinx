@@ -227,14 +227,12 @@ def setup(app):
     app.add_stylesheet('https://unpkg.com/font-awesome@4.5.0/css/font-awesome.min.css')
     try:
         import ipywidgets.embed
-        from ._version import __html_manager_version__
-        app.connect('html-page-context', add_embed_require_javascript)
+        from ipywidgets._version import __html_manager_version__
         app.add_javascript('https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js')
         app.add_javascript('https://unpkg.com/@jupyter-widgets/html-manager@%s/dist/libembed-amd.js' % __html_manager_version__)
         app.add_javascript('https://unpkg.com/@jupyter-widgets/html-manager@%s/dist/embed-amd.js' % __html_manager_version__)
     except ImportError:
-        embed_url = 'https://unpkg.com/jupyter-js-widgets@^2.0.13/dist/embed.js'
-        pass
+        app.add_javascript('https://unpkg.com/jupyter-js-widgets@^2.0.13/dist/embed.js')
 
     app.add_node(widget,
                  html=(html_visit_widget, None),
