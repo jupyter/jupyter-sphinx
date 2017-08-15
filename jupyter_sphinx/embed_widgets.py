@@ -229,8 +229,12 @@ def setup(app):
         import ipywidgets.embed
         from ipywidgets._version import __html_manager_version__
         app.add_javascript('https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js')
-        app.add_javascript('https://unpkg.com/@jupyter-widgets/html-manager@%s/dist/libembed-amd.js' % __html_manager_version__)
-        app.add_javascript('https://unpkg.com/@jupyter-widgets/html-manager@%s/dist/embed-amd.js' % __html_manager_version__)
+        if os.environ.get('JUPYTER_SPHINX_LOCAL', False) == '1':
+            # for testing
+            # _static/ is added to the path, so go up one directory
+            app.add_javascript('../embed-amd.js') 
+        else:
+            app.add_javascript(ipywidgets.embed.DEFAULT_EMBED_REQUIREJS_URL)
     except ImportError:
         app.add_javascript('https://unpkg.com/jupyter-js-widgets@^2.0.13/dist/embed.js')
 
