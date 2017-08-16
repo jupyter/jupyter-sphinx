@@ -57,6 +57,10 @@ from sphinx import addnodes, directives
 from sphinx.util.nodes import set_source_info
 
 import ast
+import logging
+
+logger = logging.getLogger(__name__)
+
 
 def exec_then_eval(code, namespace=None):
     """Exec a code block & return evaluation of the last line"""
@@ -219,24 +223,56 @@ def add_widget_state(app, pagename, templatename, context, doctree):
         Widget.widgets = {}
         context['body'] += '<script type="application/vnd.jupyter.widget-state+json">' + state_spec + '</script>'
 
+has_embed = False
+try:
+    import ipywidgets.embed
+    has_embed = True
+except ImportError:
+    pass
+
+def builder_inited(app):
+    print(setup.config.jupyter_sphinx_require_url)
+    require_url = app.config.jupyter_sphinx_require_url
+    # 3 cases
+    # case 1: ipywidgets 6, only embed url
+    # case 2: ipywidgets 7, with require
+    # case 3: ipywidgets 7, no require 
+    # (ipywidgets6 with require is not supported, require_url is ignored)
+    if has_embed:
+        if require_url:
+            app.add_javascript(require_url)
+    else:
+        if require_url:
+            logger.warning('Assuming ipywidgets6, ignoring jupyter_sphinx_require_url parameter')
+
+    if has_embed:
+        if require_url:
+            embed_url = app.config.jupyter_sphinx_embed_url or ipywidgets.embed.DEFAULT_EMBED_REQUIREJS_URL
+        else:
+            embed_url = app.config.jupyter_sphinx_embed_url or ipywidgets.embed.DEFAULT_EMBED_SCRIPT_URL
+    else:
+        embed_url = app.config.jupyter_sphinx_embed_url or 'https://unpkg.com/jupyter-js-widgets@^2.0.13/dist/embed.js'
+    print(">>>", has_embed, require_url, embed_url)
+    if embed_url:
+        app.add_javascript(embed_url)
+
+
+
 def setup(app):
+    """
+    case 1: ipywidgets 6, only embed url
+    case 2: ipywidgets 7, with require
+    case 3: ipywidgets 7, no require 
+    """
     setup.app = app
     setup.config = app.config
     setup.confdir = app.confdir
 
     app.add_stylesheet('https://unpkg.com/font-awesome@4.5.0/css/font-awesome.min.css')
-    try:
-        import ipywidgets.embed
-        from ipywidgets._version import __html_manager_version__
-        app.add_javascript('https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js')
-        if os.environ.get('JUPYTER_SPHINX_LOCAL', False) == '1':
-            # for testing
-            # _static/ is added to the path, so go up one directory
-            app.add_javascript('../embed-amd.js') 
-        else:
-            app.add_javascript(ipywidgets.embed.DEFAULT_EMBED_REQUIREJS_URL)
-    except ImportError:
-        app.add_javascript('https://unpkg.com/jupyter-js-widgets@^2.0.13/dist/embed.js')
+    require_url_default = 'https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js'
+    app.add_config_value('jupyter_sphinx_require_url', require_url_default, 'html')
+    app.add_config_value('jupyter_sphinx_embed_url', None, 'html')
+
 
     app.add_node(widget,
                  html=(html_visit_widget, None),
@@ -249,6 +285,7 @@ def setup(app):
     app.add_directive('ipywidgets-display', IPywidgetsDisplayDirective)
     app.connect('html-page-context', add_widget_state)
     app.connect('env-purge-doc', purge_widget_setup)
+    app.connect('builder-inited', builder_inited)
 
     return {
         'version': '0.1'

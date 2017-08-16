@@ -70,6 +70,13 @@ The directives have the following options:
     Button()
 ```
 
+### Configuration
+
+You conf.py has two extra configuration options:
+
+ * jupyter_sphinx_require_url: url for `require.js` (if your theme already provides this, set it to False or '')
+ * jupyter_sphinx_embed_url: url for the embedding, if set to None (default) a proper default will be taken from the `ipywidgets.embed` module. 
+
 ### Misc.
 
 - For the widgets to be succesfuly rendered, this extension requires an
