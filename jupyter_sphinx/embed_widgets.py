@@ -231,7 +231,6 @@ except ImportError:
     pass
 
 def builder_inited(app):
-    print(setup.config.jupyter_sphinx_require_url)
     require_url = app.config.jupyter_sphinx_require_url
     # 3 cases
     # case 1: ipywidgets 6, only embed url
@@ -252,7 +251,6 @@ def builder_inited(app):
             embed_url = app.config.jupyter_sphinx_embed_url or ipywidgets.embed.DEFAULT_EMBED_SCRIPT_URL
     else:
         embed_url = app.config.jupyter_sphinx_embed_url or 'https://unpkg.com/jupyter-js-widgets@^2.0.13/dist/embed.js'
-    print(">>>", has_embed, require_url, embed_url)
     if embed_url:
         app.add_javascript(embed_url)
 
