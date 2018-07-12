@@ -45,6 +45,7 @@ The directives have the following options::
 import os
 import json
 import warnings
+import sys
 
 from docutils import nodes
 from docutils.parsers.rst import Directive
@@ -59,6 +60,7 @@ from sphinx.util.nodes import set_source_info
 import ast
 import logging
 
+_ipython_display_module = sys.modules["IPython.display"]
 logger = logging.getLogger(__name__)
 
 
@@ -135,10 +137,8 @@ class IPywidgetsDisplayDirective(Directive):
         show_code = 'hide-code' not in self.options
         code_below = 'code-below' in self.options
 
-        setupcode =  '\n'.join([
-            'from ipywidgets import Widget',
-            'Widget._ipython_display_ = custom_display'
-        ]) + '\n' + '\n'.join(item['code']
+        setupcode = '\n'.join(
+            item['code']
             for item in getattr(env, 'ipywidgets_setup', [])
             if item['docname'] == env.docname
         )
@@ -183,18 +183,44 @@ class IPywidgetsDisplayDirective(Directive):
 
         return result
 
-def make_custom_display(body):
-    def custom_display(self, **kwargs):
-        view_spec = json.dumps(self.get_view_spec())
-        body.append('<script type="application/vnd.jupyter.widget-view+json">' + view_spec + '</script>')
-    return custom_display
+
+def no_display(*objs, **kwargs):
+    pass
+
+_display_function = [no_display]
+
+
+def _current_display(*args, **kwargs):
+    return _display_function[0](*args, **kwargs)
+
+# Overwrite IPython display
+_ipython_display_module.display = _current_display
+sys.modules["IPython.display"] = _ipython_display_module
+
+
+def make_sphinx_display(body):
+    def sphinx_display(*objs, **kwargs):
+        for obj in objs:
+            if isinstance(obj, Widget):
+                view_spec = json.dumps(obj.get_view_spec())
+                body.append('<script type="application/vnd.jupyter.widget-view+json">' + view_spec + '</script>')
+
+    return sphinx_display
+
+
+def set_display(disp):
+    _display_function[0] = disp
+
 
 def html_visit_widget(self, node):
     # Execute the setup code, saving the global & local state
-    namespace = dict(custom_display=make_custom_display(self.body))
+    set_display(no_display)
 
+    namespace = dict()
     if node['setupcode']:
         exec(node['setupcode'], namespace)
+
+    set_display(make_sphinx_display(self.body))
 
     # Execute the widget code in this context, evaluating the last line
     try:
@@ -208,6 +234,7 @@ def html_visit_widget(self, node):
     if isinstance(w, Widget):
         view_spec = json.dumps(w.get_view_spec())
         self.body.append('<script type="application/vnd.jupyter.widget-view+json">' + view_spec + '</script>')
+
     raise nodes.SkipNode
 
 def generic_visit_widget(self, node):
@@ -253,7 +280,6 @@ def builder_inited(app):
         embed_url = app.config.jupyter_sphinx_embed_url or 'https://unpkg.com/jupyter-js-widgets@^2.0.13/dist/embed.js'
     if embed_url:
         app.add_javascript(embed_url)
-
 
 
 def setup(app):
