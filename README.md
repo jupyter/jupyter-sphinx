@@ -44,9 +44,9 @@ prior to running the display code. For example:
 .. ipywidgets-display::
 
     s1, s2 = IntSlider(max=200, value=100), IntSlider(value=40)
-	b = Button(icon='legal')
-	jsdlink((s1, 'value'), (s2, 'max'))
-	VBox([s1, s2, b])
+    b = Button(icon='legal')
+    jsdlink((s1, 'value'), (s2, 'max'))
+    VBox([s1, s2, b])
 ```
 
 In the case of the `ipywidgets-display` code, if the *last statement* of the
