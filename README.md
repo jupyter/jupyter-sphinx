@@ -1,6 +1,7 @@
 # Jupyter Sphinx Extensions
 
-Jupyter Sphinx extensions enable jupyter-specific features in sphinx.
+Jupyter-sphinx enables the rendering of Jupyter interactive widgets in sphinx
+documentation.
 
 ## Installation
 
@@ -18,8 +19,8 @@ conda install jupyter_sphinx -c conda-forge
 
 ## Render Jupyter Interactive Widgets `jupyter_sphinx.embed_widgets`
 
-This extension provides a means of inserting live-rendered Jupyter
-interactive widgets within sphinx documentation.
+This extension provides a means of rendering Jupyter interactive widgets within
+sphinx documentation.
 
 It is derived from the [`altair`](https://github.com/altair-viz/altair) sphinx
 extension, which is distributed under the terms of the BSD 3-Clause license.
@@ -72,21 +73,23 @@ The directives have the following options:
 
 ### Configuration
 
-You conf.py has two extra (optional) configuration options:
+File `conf.py` has two extra (optional) configuration options:
 
- * jupyter_sphinx_require_url: url for `require.js` (if your theme already provides this, set it to False or '')
- * jupyter_sphinx_embed_url: url for the embedding, if set to None (default) a proper default will be taken from the `ipywidgets.embed` module. 
+ * `jupyter_sphinx_require_url`: url for `require.js` (if your theme already provides this, set it to False or '')
+ * `jupyter_sphinx_embed_url`: url for the embedding, if set to None (default) a proper default will be taken from the `ipywidgets.embed` module.
 
 ### Misc.
 
 - For the widgets to be succesfuly rendered, this extension requires an
-  internet connection, since it depends on a cdn-distributed JavaScript.
+  internet connection, since it depends on a cdn-served JavaScript file to be
+  loaded.
 - Widgets rendered on the same page use the same widget manager. As a
   consequence, they can be linked with each other via JavaScript link widgets.
   However, no kernel is connect and therefore, interaction with the backend
   will not happen.
 
 ## License
+
 We use a shared copyright model that enables all contributors to maintain the
 copyright on their contributions.
 
