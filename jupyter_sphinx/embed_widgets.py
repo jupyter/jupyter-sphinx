@@ -46,19 +46,22 @@ import os
 import json
 import warnings
 import sys
+import ast
+import logging
 
 from docutils import nodes
 from docutils.parsers.rst import Directive
 from docutils.parsers.rst.directives import flag, unchanged
 
-from ipywidgets import Widget
-
 from sphinx.locale import _
-from sphinx import addnodes, directives
-from sphinx.util.nodes import set_source_info
 
-import ast
-import logging
+from ipywidgets import Widget
+has_embed = False
+try:
+    import ipywidgets.embed
+    has_embed = True
+except ImportError:
+    pass
 
 _ipython_display_module = sys.modules["IPython.display"]
 logger = logging.getLogger(__name__)
@@ -114,6 +117,7 @@ class IPywidgetsSetupDirective(Directive):
 
         return result
 
+
 def purge_widget_setup(app, env, docname):
     if not hasattr(env, 'ipywidgets_setup'):
         return
@@ -132,7 +136,6 @@ class IPywidgetsDisplayDirective(Directive):
 
     def run(self):
         env = self.state.document.settings.env
-        app = env.app
 
         show_code = 'hide-code' not in self.options
         code_below = 'code-below' in self.options
@@ -152,11 +155,9 @@ class IPywidgetsDisplayDirective(Directive):
         # get the name of the source file we are currently processing
         rst_source = self.state_machine.document['source']
         rst_dir = os.path.dirname(rst_source)
-        rst_filename = os.path.basename(rst_source)
 
         # use the source file name to construct a friendly target_id
         serialno = env.new_serialno('jupyter-widget')
-        rst_base = rst_filename.replace('.', '-')
         target_id = "jupyter-widget-%d" % serialno
         target_node = nodes.target('', '', ids=[target_id])
 
@@ -237,6 +238,7 @@ def html_visit_widget(self, node):
 
     raise nodes.SkipNode
 
+
 def generic_visit_widget(self, node):
     if 'alt' in node.attributes:
         self.body.append(_('[ widget: %s ]') % node['alt'])
@@ -244,25 +246,20 @@ def generic_visit_widget(self, node):
         self.body.append(_('[ widget ]'))
     raise nodes.SkipNode
 
+
 def add_widget_state(app, pagename, templatename, context, doctree):
     if 'body' in context and Widget.widgets:
         state_spec = json.dumps(Widget.get_manager_state(drop_defaults=True))
         Widget.widgets = {}
         context['body'] += '<script type="application/vnd.jupyter.widget-state+json">' + state_spec + '</script>'
 
-has_embed = False
-try:
-    import ipywidgets.embed
-    has_embed = True
-except ImportError:
-    pass
 
 def builder_inited(app):
     require_url = app.config.jupyter_sphinx_require_url
     # 3 cases
     # case 1: ipywidgets 6, only embed url
     # case 2: ipywidgets 7, with require
-    # case 3: ipywidgets 7, no require 
+    # case 3: ipywidgets 7, no require
     # (ipywidgets6 with require is not supported, require_url is ignored)
     if has_embed:
         if require_url:
@@ -286,7 +283,7 @@ def setup(app):
     """
     case 1: ipywidgets 6, only embed url
     case 2: ipywidgets 7, with require
-    case 3: ipywidgets 7, no require 
+    case 3: ipywidgets 7, no require
     """
     setup.app = app
     setup.config = app.config
@@ -296,7 +293,6 @@ def setup(app):
     require_url_default = 'https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js'
     app.add_config_value('jupyter_sphinx_require_url', require_url_default, 'html')
     app.add_config_value('jupyter_sphinx_embed_url', None, 'html')
-
 
     app.add_node(widget,
                  html=(html_visit_widget, None),
