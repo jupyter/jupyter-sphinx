@@ -57,25 +57,31 @@ from sphinx.locale import _
 
 from ipywidgets import Widget
 has_embed = False
+
 try:
     import ipywidgets.embed
     has_embed = True
 except ImportError:
     pass
 
-_ipython_display_module = sys.modules["IPython.display"]
 logger = logging.getLogger(__name__)
-
 
 def exec_then_eval(code, namespace=None):
     """Exec a code block & return evaluation of the last line"""
     namespace = namespace or {}
 
     block = ast.parse(code, mode='exec')
-    last = ast.Expression(block.body.pop().value)
+    if not block.body:
+        return
 
-    exec(compile(block, '<string>', mode='exec'), namespace)
-    return eval(compile(last, '<string>', mode='eval'), namespace)
+    last_stm = block.body[-1]
+    if isinstance(last_stm, ast.Expr):
+        block.body.pop()
+        last = ast.Expression(last_stm.value)
+        exec(compile(block, '<string>', mode='exec'), namespace)
+        return eval(compile(last, '<string>', mode='eval'), namespace)
+    else:
+        exec(compile(block, '<string>', mode='exec'), namespace)
 
 
 class widget(nodes.General, nodes.Element):
@@ -116,7 +122,6 @@ class IPywidgetsSetupDirective(Directive):
             result.append(source_literal)
 
         return result
-
 
 def purge_widget_setup(app, env, docname):
     if not hasattr(env, 'ipywidgets_setup'):
@@ -184,20 +189,25 @@ class IPywidgetsDisplayDirective(Directive):
 
         return result
 
+#------------------------------------#
+# Monkey-patching of IPython.display #
+#------------------------------------#
 
 def no_display(*objs, **kwargs):
     pass
 
 _display_function = [no_display]
 
-
 def _current_display(*args, **kwargs):
     return _display_function[0](*args, **kwargs)
 
+def set_display(disp):
+    _display_function[0] = disp
+
 # Overwrite IPython display
+_ipython_display_module = sys.modules["IPython.display"]
 _ipython_display_module.display = _current_display
 sys.modules["IPython.display"] = _ipython_display_module
-
 
 def make_sphinx_display(body):
     def sphinx_display(*objs, **kwargs):
@@ -208,10 +218,9 @@ def make_sphinx_display(body):
 
     return sphinx_display
 
-
-def set_display(disp):
-    _display_function[0] = disp
-
+#-------------------#
+# html visit widget #
+#-------------------#
 
 def html_visit_widget(self, node):
     # Execute the setup code, saving the global & local state
@@ -238,7 +247,6 @@ def html_visit_widget(self, node):
 
     raise nodes.SkipNode
 
-
 def generic_visit_widget(self, node):
     if 'alt' in node.attributes:
         self.body.append(_('[ widget: %s ]') % node['alt'])
@@ -246,13 +254,11 @@ def generic_visit_widget(self, node):
         self.body.append(_('[ widget ]'))
     raise nodes.SkipNode
 
-
 def add_widget_state(app, pagename, templatename, context, doctree):
     if 'body' in context and Widget.widgets:
         state_spec = json.dumps(Widget.get_manager_state(drop_defaults=True))
         Widget.widgets = {}
         context['body'] += '<script type="application/vnd.jupyter.widget-state+json">' + state_spec + '</script>'
-
 
 def builder_inited(app):
     require_url = app.config.jupyter_sphinx_require_url
@@ -277,7 +283,6 @@ def builder_inited(app):
         embed_url = app.config.jupyter_sphinx_embed_url or 'https://unpkg.com/jupyter-js-widgets@^2.0.13/dist/embed.js'
     if embed_url:
         app.add_javascript(embed_url)
-
 
 def setup(app):
     """
