@@ -1,7 +1,7 @@
 """Simple sphinx extension that executes code in jupyter and inserts output."""
 
 import os
-from types import SimpleNamespace
+from itertools import takewhile
 
 from sphinx.util import logging
 from sphinx.transforms import SphinxTransform
@@ -10,13 +10,15 @@ from sphinx.ext.mathbase import displaymath
 
 from docutils import nodes
 from IPython.lib.lexers import IPythonTracebackLexer, IPython3Lexer
-from docutils.parsers.rst.directives import flag
+from docutils.parsers.rst.directives import flag, unchanged
 from docutils.parsers.rst import Directive
 
 import nbconvert
 from nbconvert.preprocessors.execute import executenb
 from nbconvert.preprocessors import ExtractOutputPreprocessor
 from nbconvert.writers import FilesWriter
+
+from jupyter_client.kernelspec import get_kernel_spec, NoSuchKernel
 
 import nbformat
 
@@ -26,13 +28,16 @@ from ._version import __version__
 logger = logging.getLogger(__name__)
 
 
-
-def blank_nb():
+def blank_nb(kernel_name):
+    try:
+        spec = get_kernel_spec(kernel_name)
+    except NoSuchKernel as e:
+        raise ExtensionError('Unable to find kernel', orig_exc=e)
     return nbformat.v4.new_notebook(metadata={
         'kernelspec': {
-            'display_name': 'Python 3',
-            'language': 'Python',
-            'name': 'python3',
+            'display_name': spec.display_name,
+            'language': spec.language,
+            'name': kernel_name,
         }
     })
 
@@ -60,6 +65,7 @@ class JupyterCell(Directive):
         'hide-code': flag,
         'hide-output': flag,
         'code-below': flag,
+        'new-kernel': unchanged
     }
 
     def run(self):
@@ -75,6 +81,8 @@ class JupyterCell(Directive):
             hide_code=('hide-code' in self.options),
             hide_output=('hide-output' in self.options),
             code_below=('code-below' in self.options),
+            new_kernel=('new-kernel' in self.options),
+            kernel_name=self.options.get('new-kernel', '').strip()
         )]
 
 
@@ -153,8 +161,8 @@ class ExecuteJupyterCells(SphinxTransform):
     def apply(self):
         doctree = self.document
         docname = self.env.docname
+        default_kernel = self.config.jupyter_execute_default_kernel
         logger.info('executing {}'.format(docname))
-        notebook = blank_nb()
         # Put output images inside the sphinx build directory to avoid
         # polluting the current working directory. We don't use a
         # temporary directory, as sphinx may cache the doctree with
@@ -162,31 +170,56 @@ class ExecuteJupyterCells(SphinxTransform):
         output_dir = os.path.abspath(os.path.join(
             self.env.app.outdir, os.path.pardir, 'jupyter_execute'))
 
-        resources = dict(
-            unique_key=os.path.join(output_dir, docname),
-            outputs={}
-        )
+        cells = doctree.traverse(Cell)
 
-        # Populate notebook
-        notebook.cells = [
-            nbformat.v4.new_code_cell(node.children[0].children[0].astext())
-            for node in doctree.traverse(Cell)
-        ]
+        with_outputs = []
 
-        # Execute notebook and write some (i.e. image) outputs to files
-        # Modifies 'notebook' and 'resources' in-place.
-        try:
-            executenb(notebook, **self.config.jupyter_execute_kwargs)
-        except Exception as e:
-            raise ExtensionError('Notebook execution failed', orig_exc=e)
+        nb_number = 0
+        while cells:
+            kernel = cells[0]['kernel_name'] or default_kernel
+            notebook = blank_nb(kernel)
 
-        ExtractOutputPreprocessor().preprocess(notebook, resources)
-        FilesWriter().write(nbformat.writes(notebook), resources,
-                            os.path.join(output_dir, docname + '.ipynb'))
+            nb_name = docname
+            if nb_number:
+                nb_name += '_{}'.format(nb_number)
+            resources = dict(
+                unique_key=os.path.join(output_dir, nb_name),
+                outputs={}
+            )
+            # Select all cells to run in the same notebook.
+            to_execute = [cells[0]] + list(
+                takewhile((lambda cell: not cell['new_kernel']), cells[1:])
+            )
+            cells = cells[len(to_execute):]
+
+            # Populate notebook
+            notebook.cells = [
+                nbformat.v4.new_code_cell(
+                    node.children[0].children[0].astext()
+                )
+                for node in to_execute
+            ]
+
+            # Execute notebook and write some (i.e. image) outputs to files
+            # Modifies 'notebook' and 'resources' in-place.
+            try:
+                executenb(notebook, **self.config.jupyter_execute_kwargs)
+            except Exception as e:
+                raise ExtensionError('Notebook execution failed', orig_exc=e)
+
+            ExtractOutputPreprocessor().preprocess(notebook, resources)
+            FilesWriter(build_directory=output_dir).write(
+                nbformat.writes(notebook), resources,
+                os.path.join(output_dir, nb_name + '.ipynb')
+            )
+
+            with_outputs.extend(notebook.cells)
+
+            nb_number += 1
 
         # Add doctree nodes for the cell output; images use references to the
         # filenames we just wrote to; sphinx copies these when writing outputs
-        for node, cell in zip(doctree.traverse(Cell), notebook.cells):
+        for node, cell in zip(doctree.traverse(Cell), with_outputs):
             output_nodes = cell_output_to_nodes(
                 cell, self.config.jupyter_execute_data_priority
             )
@@ -198,6 +231,11 @@ def setup(app):
     app.add_config_value(
         'jupyter_execute_kwargs',
         dict(timeout=-1, allow_errors=True),
+        'env'
+    )
+    app.add_config_value(
+        'jupyter_execute_default_kernel',
+        'python3',
         'env'
     )
     app.add_config_value(
