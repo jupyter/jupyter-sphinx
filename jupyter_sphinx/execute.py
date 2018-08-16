@@ -1,7 +1,7 @@
 """Simple sphinx extension that executes code in jupyter and inserts output."""
 
 import os
-from itertools import takewhile, groupby
+from itertools import takewhile, groupby, count
 from operator import itemgetter
 
 from sphinx.util import logging
@@ -81,14 +81,19 @@ class JupyterCell(Directive):
         'hide-code': flag,
         'hide-output': flag,
         'code-below': flag,
-        'new-kernel': unchanged
+        'new-notebook': unchanged,
+        'kernel': unchanged,
     }
 
     def run(self):
         self.assert_has_content()
+        if 'kernel' in self.options and 'new-notebook' not in self.options:
+            raise ExtensionError(
+                "In code execution cells, the 'kernel' option may only be "
+                "specified with the 'new-notebook' option."
+            )
         # Cell only contains the input for now; we will execute the cell
         # and insert the output when the whole document has been parsed.
-
         return [Cell('',
             nodes.literal_block(
                 text='\n'.join(self.content),
@@ -97,8 +102,9 @@ class JupyterCell(Directive):
             hide_code=('hide-code' in self.options),
             hide_output=('hide-output' in self.options),
             code_below=('code-below' in self.options),
-            new_kernel=('new-kernel' in self.options),
-            kernel_name=self.options.get('new-kernel', '').strip()
+            kernel_name=self.options.get('kernel', '').strip(),
+            new_notebook=('new-notebook' in self.options),
+            notebook_name=self.options.get('new-notebook', '').strip(),
         )]
 
 
@@ -171,6 +177,13 @@ def attach_outputs(output_nodes, node):
             node.children = node.children + output_nodes
 
 
+def default_notebook_names(basename):
+    """Return an interator yielding notebook names based off 'basename'"""
+    yield basename
+    for i in count(1):
+        yield '_'.join((basename, str(i)))
+
+
 def execute_cells(kernel_name, cells, execute_kwargs):
     """Execute Jupyter cells in the specified kernel and return the notebook."""
     notebook = blank_nb(kernel_name)
@@ -209,6 +222,7 @@ class ExecuteJupyterCells(SphinxTransform):
         doctree = self.document
         docname = self.env.docname
         default_kernel = self.config.jupyter_execute_default_kernel
+        default_names = default_notebook_names(docname)
         logger.info('executing {}'.format(docname))
         # Put output images inside the sphinx build directory to avoid
         # polluting the current working directory. We don't use a
@@ -217,15 +231,15 @@ class ExecuteJupyterCells(SphinxTransform):
         output_dir = os.path.abspath(os.path.join(
             self.env.app.outdir, os.path.pardir, 'jupyter_execute'))
 
-        # Start new notebook whenever a cell has 'new_kernel' specified
+        # Start new notebook whenever a cell has 'new_notebook' specified
         nodes_by_notebook = split_on(
-            itemgetter('new_kernel'),
+            itemgetter('new_notebook'),
             doctree.traverse(Cell)
         )
 
-        for i, nodes in enumerate(nodes_by_notebook):
+        for nodes in nodes_by_notebook:
             kernel_name = nodes[0]['kernel_name'] or default_kernel
-            notebook_name = '{}_{}'.format(docname, i)
+            notebook_name = nodes[0]['notebook_name'] or next(default_names)
             notebook = execute_cells(
                 kernel_name,
                 [nbformat.v4.new_code_cell(node.astext()) for node in nodes],
