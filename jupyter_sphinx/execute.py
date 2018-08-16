@@ -1,7 +1,8 @@
 """Simple sphinx extension that executes code in jupyter and inserts output."""
 
 import os
-from itertools import takewhile
+from itertools import takewhile, groupby
+from operator import itemgetter
 
 from sphinx.util import logging
 from sphinx.transforms import SphinxTransform
@@ -40,6 +41,21 @@ def blank_nb(kernel_name):
             'name': kernel_name,
         }
     })
+
+
+def split_on(pred, it):
+    """Split an iterator wherever a predicate is True."""
+
+    counter = 0
+    def count(x):
+        nonlocal counter
+        if pred(x):
+            counter += 1
+        return counter
+
+    # Return iterable of lists to ensure that we don't lose our
+    # place in the iterator
+    return (list(x) for _, x in groupby(it, count))
 
 
 class Cell(nodes.container):
@@ -155,6 +171,37 @@ def attach_outputs(output_nodes, node):
             node.children = node.children + output_nodes
 
 
+def execute_cells(kernel_name, cells, execute_kwargs):
+    """Execute Jupyter cells in the specified kernel and return the notebook."""
+    notebook = blank_nb(kernel_name)
+    notebook.cells = cells
+    # Modifies 'notebook' in-place
+    try:
+        executenb(notebook, **execute_kwargs)
+    except Exception as e:
+        raise ExtensionError('Notebook execution failed', orig_exc=e)
+
+    return notebook
+
+
+def write_notebook_output(notebook, output_dir, notebook_name):
+    """Extract output from notebook cells and write to files in output_dir.
+
+    This also modifies 'notebook' in-place, adding metadata to each cell that
+    maps output mime-types to the filenames the output was saved under.
+    """
+    resources = dict(
+        unique_key=os.path.join(output_dir, notebook_name),
+        outputs={}
+    )
+    # Modifies 'resources' in-place
+    ExtractOutputPreprocessor().preprocess(notebook, resources)
+    FilesWriter(build_directory=output_dir).write(
+        nbformat.writes(notebook), resources,
+        os.path.join(output_dir, notebook_name + '.ipynb')
+    )
+
+
 class ExecuteJupyterCells(SphinxTransform):
     default_priority = 180  # An early transform, idk
 
@@ -170,60 +217,30 @@ class ExecuteJupyterCells(SphinxTransform):
         output_dir = os.path.abspath(os.path.join(
             self.env.app.outdir, os.path.pardir, 'jupyter_execute'))
 
-        cells = doctree.traverse(Cell)
+        # Start new notebook whenever a cell has 'new_kernel' specified
+        nodes_by_notebook = split_on(
+            itemgetter('new_kernel'),
+            doctree.traverse(Cell)
+        )
 
-        with_outputs = []
-
-        nb_number = 0
-        while cells:
-            kernel = cells[0]['kernel_name'] or default_kernel
-            notebook = blank_nb(kernel)
-
-            nb_name = docname
-            if nb_number:
-                nb_name += '_{}'.format(nb_number)
-            resources = dict(
-                unique_key=os.path.join(output_dir, nb_name),
-                outputs={}
+        for i, nodes in enumerate(nodes_by_notebook):
+            kernel_name = nodes[0]['kernel_name'] or default_kernel
+            notebook_name = '{}_{}'.format(docname, i)
+            notebook = execute_cells(
+                kernel_name,
+                [nbformat.v4.new_code_cell(node.astext()) for node in nodes],
+                self.config.jupyter_execute_kwargs,
             )
-            # Select all cells to run in the same notebook.
-            to_execute = [cells[0]] + list(
-                takewhile((lambda cell: not cell['new_kernel']), cells[1:])
-            )
-            cells = cells[len(to_execute):]
-
-            # Populate notebook
-            notebook.cells = [
-                nbformat.v4.new_code_cell(
-                    node.children[0].children[0].astext()
+            # Modifies 'notebook' in-place, adding metadata specifying the
+            # filenames of the saved outputs.
+            write_notebook_output(notebook, output_dir, notebook_name)
+            # Add doctree nodes for cell output; images reference the filenames
+            # we just wrote to; sphinx copies these when writing outputs.
+            for node, cell in zip(nodes, notebook.cells):
+                output_nodes = cell_output_to_nodes(
+                    cell, self.config.jupyter_execute_data_priority
                 )
-                for node in to_execute
-            ]
-
-            # Execute notebook and write some (i.e. image) outputs to files
-            # Modifies 'notebook' and 'resources' in-place.
-            try:
-                executenb(notebook, **self.config.jupyter_execute_kwargs)
-            except Exception as e:
-                raise ExtensionError('Notebook execution failed', orig_exc=e)
-
-            ExtractOutputPreprocessor().preprocess(notebook, resources)
-            FilesWriter(build_directory=output_dir).write(
-                nbformat.writes(notebook), resources,
-                os.path.join(output_dir, nb_name + '.ipynb')
-            )
-
-            with_outputs.extend(notebook.cells)
-
-            nb_number += 1
-
-        # Add doctree nodes for the cell output; images use references to the
-        # filenames we just wrote to; sphinx copies these when writing outputs
-        for node, cell in zip(doctree.traverse(Cell), with_outputs):
-            output_nodes = cell_output_to_nodes(
-                cell, self.config.jupyter_execute_data_priority
-            )
-            attach_outputs(output_nodes, node)
+                attach_outputs(output_nodes, node)
 
 
 def setup(app):
