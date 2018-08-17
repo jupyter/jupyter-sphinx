@@ -7,6 +7,7 @@ from operator import itemgetter
 from sphinx.util import logging
 from sphinx.transforms import SphinxTransform
 from sphinx.errors import ExtensionError
+from sphinx.addnodes import download_reference
 from sphinx.ext.mathbase import displaymath
 
 from docutils import nodes
@@ -106,6 +107,22 @@ class JupyterCell(Directive):
             new_notebook=('new-notebook' in self.options),
             notebook_name=self.options.get('new-notebook', '').strip(),
         )]
+
+
+def jupyter_download_role(name, rawtext, text, lineno, inliner):
+    _, filetype = name.split(':')
+    assert filetype in ('notebook', 'script')
+    ext = '.ipynb' if filetype == 'notebook' else '.py'
+    # Filepaths need to be relative to the current working directory
+    # so that Sphinx will copy them.
+    output_dir = os.path.relpath(
+        output_directory(inliner.document.settings.env),
+        os.path.curdir
+    )
+    download_file = text + ext
+    node = download_reference(download_file, download_file,
+                              reftarget=os.path.join(output_dir, download_file))
+    return [node], []
 
 
 def cell_output_to_nodes(cell, data_priority):
@@ -225,6 +242,16 @@ def write_notebook_output(notebook, output_dir, notebook_name):
         f.write(contents)
 
 
+def output_directory(env):
+    # Put output images inside the sphinx build directory to avoid
+    # polluting the current working directory. We don't use a
+    # temporary directory, as sphinx may cache the doctree with
+    # references to the images that we write
+    return os.path.abspath(os.path.join(
+        env.app.outdir, os.path.pardir, 'jupyter_execute'
+    ))
+
+
 class ExecuteJupyterCells(SphinxTransform):
     default_priority = 180  # An early transform, idk
 
@@ -234,12 +261,7 @@ class ExecuteJupyterCells(SphinxTransform):
         default_kernel = self.config.jupyter_execute_default_kernel
         default_names = default_notebook_names(docname)
         logger.info('executing {}'.format(docname))
-        # Put output images inside the sphinx build directory to avoid
-        # polluting the current working directory. We don't use a
-        # temporary directory, as sphinx may cache the doctree with
-        # references to the images that we write
-        output_dir = os.path.abspath(os.path.join(
-            self.env.app.outdir, os.path.pardir, 'jupyter_execute'))
+        output_dir = output_directory(self.env)
 
         # Start new notebook whenever a cell has 'new_notebook' specified
         nodes_by_notebook = split_on(
@@ -295,6 +317,8 @@ def setup(app):
     app.add_node(Cell, html=(visit_container, depart_container))
 
     app.add_directive('execute', JupyterCell)
+    app.add_role('jupyter-download:notebook', jupyter_download_role)
+    app.add_role('jupyter-download:script', jupyter_download_role)
     app.add_transform(ExecuteJupyterCells)
 
     # For syntax highlighting
