@@ -144,8 +144,12 @@ def cell_output_to_nodes(cell, data_priority):
 
             data = output['data'][mime_type]
             if mime_type.startswith('image'):
-                filename = output.metadata['filenames'][mime_type]
-                to_add.append(nodes.image(uri='file://' + filename))
+                # Sphinx treats absolute paths as being rooted at the source
+                # directory, so make a relative path, which Sphinx treats
+                # as being relative to the current working directory.
+                uri = os.path.relpath(output.metadata['filenames'][mime_type],
+                                      os.path.curdir)
+                to_add.append(nodes.image(uri=uri))
             elif mime_type == 'text/html':
                 to_add.append(nodes.raw(
                     text=data,
