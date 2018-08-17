@@ -213,10 +213,16 @@ def write_notebook_output(notebook, output_dir, notebook_name):
     )
     # Modifies 'resources' in-place
     ExtractOutputPreprocessor().preprocess(notebook, resources)
+    # Write the cell outputs to files where we can (images and PDFs),
+    # as well as the notebook file.
     FilesWriter(build_directory=output_dir).write(
         nbformat.writes(notebook), resources,
         os.path.join(output_dir, notebook_name + '.ipynb')
     )
+    # Write a Python script too.
+    contents = '\n\n'.join(cell.source for cell in notebook.cells)
+    with open(os.path.join(output_dir, notebook_name + '.py'), 'w') as f:
+        f.write(contents)
 
 
 class ExecuteJupyterCells(SphinxTransform):
