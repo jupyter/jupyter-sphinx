@@ -260,6 +260,11 @@ class ExecuteJupyterCells(SphinxTransform):
         docname = self.env.docname
         default_kernel = self.config.jupyter_execute_default_kernel
         default_names = default_notebook_names(docname)
+
+        # Check if we have anything to execute.
+        if not doctree.traverse(Cell):
+            return
+
         logger.info('executing {}'.format(docname))
         output_dir = output_directory(self.env)
 
