@@ -1,7 +1,7 @@
 """Simple sphinx extension that executes code in jupyter and inserts output."""
 
 import os
-from itertools import takewhile, groupby, count
+from itertools import groupby, count
 from operator import itemgetter
 
 from sphinx.util import logging
@@ -48,6 +48,7 @@ def split_on(pred, it):
     """Split an iterator wherever a predicate is True."""
 
     counter = 0
+
     def count(x):
         nonlocal counter
         if pred(x):
@@ -113,19 +114,27 @@ def jupyter_download_role(name, rawtext, text, lineno, inliner):
     _, filetype = name.split(':')
     assert filetype in ('notebook', 'script')
     ext = '.ipynb' if filetype == 'notebook' else '.py'
-    # Filepaths need to be relative to the current working directory
-    # so that Sphinx will copy them.
-    output_dir = os.path.relpath(
-        output_directory(inliner.document.settings.env),
-        os.path.curdir
-    )
+    output_dir = sphinx_abs_dir(inliner.document.settings.env)
     download_file = text + ext
-    node = download_reference(download_file, download_file,
-                              reftarget=os.path.join(output_dir, download_file))
+    node = download_reference(
+        download_file, download_file,
+        reftarget=os.path.join(output_dir, download_file)
+    )
     return [node], []
 
 
-def cell_output_to_nodes(cell, data_priority):
+def cell_output_to_nodes(cell, data_priority, dir):
+    """Convert a jupyter cell with outputs and filenames to doctree nodes.
+
+    Parameters
+    ==========
+    cell : jupyter cell
+    data_priority : list of mime types
+        Which media types to prioritize.
+    dir : string
+        Sphinx "absolute path" to the output folder, so it is a relative path
+        to the source folder prefixed with ``/``.
+    """
     to_add = []
     for index, output in enumerate(cell.get('outputs', [])):
         output_type = output['output_type']
@@ -164,8 +173,10 @@ def cell_output_to_nodes(cell, data_priority):
                 # Sphinx treats absolute paths as being rooted at the source
                 # directory, so make a relative path, which Sphinx treats
                 # as being relative to the current working directory.
-                uri = os.path.relpath(output.metadata['filenames'][mime_type],
-                                      os.path.curdir)
+                filename = os.path.basename(
+                    output.metadata['filenames'][mime_type]
+                )
+                uri = os.path.join(dir, filename)
                 to_add.append(nodes.image(uri=uri))
             elif mime_type == 'text/html':
                 to_add.append(nodes.raw(
@@ -228,6 +239,7 @@ def write_notebook_output(notebook, output_dir, notebook_name):
         unique_key=os.path.join(output_dir, notebook_name),
         outputs={}
     )
+
     # Modifies 'resources' in-place
     ExtractOutputPreprocessor().preprocess(notebook, resources)
     # Write the cell outputs to files where we can (images and PDFs),
@@ -247,9 +259,26 @@ def output_directory(env):
     # polluting the current working directory. We don't use a
     # temporary directory, as sphinx may cache the doctree with
     # references to the images that we write
+
+    # Note: we are using an implicit fact that sphinx output directories are
+    # direct subfolders of the build directory.
     return os.path.abspath(os.path.join(
         env.app.outdir, os.path.pardir, 'jupyter_execute'
     ))
+
+
+def sphinx_abs_dir(env):
+    # We write the output files into
+    # output_directory / jupyter_execute / path relative to source directory
+    # Sphinx expects download links relative to source file or relative to
+    # source dir and prepended with '/'. We use the latter option.
+    return '/' + os.path.relpath(
+        os.path.abspath(os.path.join(
+            output_directory(env),
+            os.path.dirname(env.docname),
+        )),
+        os.path.abspath(env.app.srcdir)
+    )
 
 
 class ExecuteJupyterCells(SphinxTransform):
@@ -276,7 +305,15 @@ class ExecuteJupyterCells(SphinxTransform):
 
         for nodes in nodes_by_notebook:
             kernel_name = nodes[0]['kernel_name'] or default_kernel
-            notebook_name = nodes[0]['notebook_name'] or next(default_names)
+            notebook_name = nodes[0]['notebook_name']
+
+            if notebook_name:
+                notebook_name = os.path.join(
+                    os.path.dirname(docname), notebook_name
+                )
+            else:
+                notebook_name = next(default_names)
+
             notebook = execute_cells(
                 kernel_name,
                 [nbformat.v4.new_code_cell(node.astext()) for node in nodes],
@@ -289,7 +326,9 @@ class ExecuteJupyterCells(SphinxTransform):
             # we just wrote to; sphinx copies these when writing outputs.
             for node, cell in zip(nodes, notebook.cells):
                 output_nodes = cell_output_to_nodes(
-                    cell, self.config.jupyter_execute_data_priority
+                    cell,
+                    self.config.jupyter_execute_data_priority,
+                    sphinx_abs_dir(self.env)
                 )
                 attach_outputs(output_nodes, node)
 
