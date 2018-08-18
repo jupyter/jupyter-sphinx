@@ -358,7 +358,14 @@ def setup(app):
         'env',
     )
 
-    app.add_node(Cell, html=(visit_container, depart_container))
+    app.add_node(
+        Cell,
+        html=(visit_container, depart_container),
+        latex=(visit_container, depart_container),
+        textinfo=(visit_container, depart_container),
+        text=(visit_container, depart_container),
+        man=(visit_container, depart_container),
+    )
 
     app.add_directive('execute', JupyterCell)
     app.add_role('jupyter-download:notebook', jupyter_download_role)
