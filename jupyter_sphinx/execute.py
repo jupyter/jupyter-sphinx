@@ -286,7 +286,8 @@ class ExecuteJupyterCells(SphinxTransform):
 
     def apply(self):
         doctree = self.document
-        docname = self.env.docname
+        doc_relpath = os.path.dirname(self.env.docname)  # relative to src dir
+        docname = os.path.basename(self.env.docname)
         default_kernel = self.config.jupyter_execute_default_kernel
         default_names = default_notebook_names(docname)
 
@@ -295,7 +296,7 @@ class ExecuteJupyterCells(SphinxTransform):
             return
 
         logger.info('executing {}'.format(docname))
-        output_dir = output_directory(self.env)
+        output_dir = os.path.join(output_directory(self.env), doc_relpath)
 
         # Start new notebook whenever a cell has 'new_notebook' specified
         nodes_by_notebook = split_on(
@@ -305,14 +306,7 @@ class ExecuteJupyterCells(SphinxTransform):
 
         for nodes in nodes_by_notebook:
             kernel_name = nodes[0]['kernel_name'] or default_kernel
-            notebook_name = nodes[0]['notebook_name']
-
-            if notebook_name:
-                notebook_name = os.path.join(
-                    os.path.dirname(docname), notebook_name
-                )
-            else:
-                notebook_name = next(default_names)
+            notebook_name = nodes[0]['notebook_name'] or next(default_names)
 
             notebook = execute_cells(
                 kernel_name,
