@@ -85,7 +85,7 @@ File `conf.py` has two extra (optional) configuration options:
   loaded.
 - Widgets rendered on the same page use the same widget manager. As a
   consequence, they can be linked with each other via JavaScript link widgets.
-  However, no kernel is connect and therefore, interaction with the backend
+  However, no kernel is connected and therefore, interaction with the backend
   will not happen.
 
 ## License
