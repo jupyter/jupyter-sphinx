@@ -10,7 +10,7 @@ from sphinx.errors import ExtensionError
 from sphinx.addnodes import download_reference
 from sphinx.ext.mathbase import displaymath
 
-from docutils import nodes
+import docutils
 from IPython.lib.lexers import IPythonTracebackLexer, IPython3Lexer
 from docutils.parsers.rst.directives import flag, unchanged
 from docutils.parsers.rst import Directive
@@ -60,7 +60,7 @@ def split_on(pred, it):
     return (list(x) for _, x in groupby(it, count))
 
 
-class Cell(nodes.container):
+class Cell(docutils.nodes.container):
     """Container for input/output from Jupyter kernel"""
     pass
 
@@ -97,7 +97,7 @@ class JupyterCell(Directive):
         # Cell only contains the input for now; we will execute the cell
         # and insert the output when the whole document has been parsed.
         return [Cell('',
-            nodes.literal_block(
+            docutils.nodes.literal_block(
                 text='\n'.join(self.content),
                 language='ipython'
             ),
@@ -142,7 +142,7 @@ def cell_output_to_nodes(cell, data_priority, dir):
             output_type == 'stream'
             and output['name'] == 'stdout'
         ):
-            to_add.append(nodes.literal_block(
+            to_add.append(docutils.nodes.literal_block(
                 text=output['text'],
                 rawsource=output['text'],
                 language='ipython',
@@ -152,7 +152,7 @@ def cell_output_to_nodes(cell, data_priority, dir):
         ):
             traceback = '\n'.join(output['traceback'])
             text = nbconvert.filters.strip_ansi(traceback)
-            to_add.append(nodes.literal_block(
+            to_add.append(docutils.nodes.literal_block(
                 text=text,
                 rawsource=text,
                 language='ipythontb',
@@ -177,9 +177,9 @@ def cell_output_to_nodes(cell, data_priority, dir):
                     output.metadata['filenames'][mime_type]
                 )
                 uri = os.path.join(dir, filename)
-                to_add.append(nodes.image(uri=uri))
+                to_add.append(docutils.nodes.image(uri=uri))
             elif mime_type == 'text/html':
-                to_add.append(nodes.raw(
+                to_add.append(docutils.nodes.raw(
                     text=data,
                     format='html'
                 ))
@@ -190,7 +190,7 @@ def cell_output_to_nodes(cell, data_priority, dir):
                     number=None,
                  ))
             elif mime_type == 'text/plain':
-                to_add.append(nodes.literal_block(
+                to_add.append(docutils.nodes.literal_block(
                     text=data,
                     rawsource=data,
                     language='ipython',
