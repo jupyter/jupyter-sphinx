@@ -3,6 +3,8 @@
 import os
 from itertools import groupby, count
 from operator import itemgetter
+import json
+from ast import literal_eval
 
 from sphinx.util import logging
 from sphinx.transforms import SphinxTransform
@@ -15,7 +17,7 @@ from IPython.lib.lexers import IPythonTracebackLexer, IPython3Lexer
 from docutils.parsers.rst import Directive, directives
 
 import nbconvert
-from nbconvert.preprocessors.execute import executenb
+from nbconvert.preprocessors.execute import ExecutePreprocessor
 from nbconvert.preprocessors import ExtractOutputPreprocessor
 from nbconvert.writers import FilesWriter
 
@@ -23,10 +25,21 @@ from jupyter_client.kernelspec import get_kernel_spec, NoSuchKernel
 
 import nbformat
 
+from ipywidgets import Widget
 
 from ._version import __version__
 
+
+try:
+    import ipywidgets.embed
+    has_embed = True
+except ImportError:
+    has_embed = False
+
 logger = logging.getLogger(__name__)
+
+WIDGET_VIEW_MIMETYPE = 'application/vnd.jupyter.widget-view+json'
+WIDGET_STATE_MIMETYPE = 'application/vnd.jupyter.widget-state+json'
 
 
 ### Directives and their associated doctree nodes
@@ -167,6 +180,49 @@ class JupyterCellNode(docutils.nodes.container):
     """
 
 
+class JupyterWidgetViewNode(docutils.nodes.Element):
+    """Inserted into doctree whenever a Jupyter cell produces a widget as output.
+
+    Contains a unique ID for this widget; enough information for the widget
+    embedding javascript to render it, given the widget state. For non-HTML
+    outputs this doctree node is rendered generically.
+    """
+
+    def __init__(self, view_spec):
+        super().__init__('', view_spec=view_spec)
+
+    def html(self):
+        return ('<script type={}>{}</script>'
+                .format(WIDGET_VIEW_MIMETYPE,
+                        json.dumps(self['view_spec'])))
+
+    def text(self):
+        return '[ widget ]'
+
+
+class JupyterWidgetStateNode(docutils.nodes.Element):
+    """Appended to doctree if any Jupyter cell produced a widget as output.
+
+    Contains the state needed to render a collection of Jupyter widgets.
+
+    Per doctree there is 1 JupyterWidgetStateNode per kernel that produced
+    Jupyter widgets when running. This is fine as (presently) the
+    'html-manager' Javascript library, which embeds widgets, loads the state
+    from all script tags on the page of the correct mimetype.
+    """
+
+    def __init__(self, state):
+        super().__init__('', state=state)
+
+    def html(self):
+        # TODO: render into a separate file if 'html-manager' starts fully
+        #       parsing script tags, and not just grabbing their innerHTML
+        # https://github.com/jupyter-widgets/ipywidgets/blob/master/packages/html-manager/src/libembed.ts#L36
+        return ('<script type={}>{}</script>'
+                .format(WIDGET_STATE_MIMETYPE,
+                        json.dumps(self['state'])))
+
+
 ### Doctree transformations
 
 class ExecuteJupyterCells(SphinxTransform):
@@ -245,6 +301,9 @@ class ExecuteJupyterCells(SphinxTransform):
                     sphinx_abs_dir(self.env)
                 )
                 attach_outputs(output_nodes, node)
+
+            if contains_widgets(notebook):
+                doctree.append(JupyterWidgetStateNode(get_widgets(notebook)))
 
 
 ### Roles
@@ -364,6 +423,8 @@ def cell_output_to_nodes(cell, data_priority, dir):
                     text=data,
                     rawsource=data,
                 ))
+            elif mime_type == WIDGET_VIEW_MIMETYPE:
+                to_add.append(JupyterWidgetViewNode(data))
 
     return to_add
 
@@ -396,6 +457,73 @@ def execute_cells(kernel_name, cells, execute_kwargs):
         raise ExtensionError('Notebook execution failed', orig_exc=e)
 
     return notebook
+
+
+def get_widgets(notebook):
+    try:
+        return notebook.metadata.widgets[WIDGET_STATE_MIMETYPE]
+    except AttributeError:
+        # Don't catch KeyError, as it's a bug if 'widgets' does
+        # not contain 'WIDGET_STATE_MIMETYPE'
+        return None
+
+
+def contains_widgets(notebook):
+    widgets = get_widgets(notebook)
+    return widgets and widgets['state']
+
+
+# TODO: Remove this once  https://github.com/jupyter/nbconvert/pull/900
+#       is merged and nbconvert 5.5 is released.
+def extract_widget_state(executor):
+    """Extract ipywidget state from a running ExecutePreprocessor"""
+    # Can only run this function inside 'setup_preprocessor'
+    assert hasattr(executor, 'kc')
+    # Only Python has kernel-side support for jupyter widgets currently
+    if language_info(executor)['name'] != 'python':
+        return None
+
+    get_widget = '''\
+        state = None
+        try:
+            import ipywidgets
+            state = ipywidgets.Widget.get_manager_state()
+        except Exception:  # Widgets are not installed in the kernel env
+            pass
+        state
+    '''
+    cell = nbformat.v4.new_code_cell(get_widget)
+    _, (output,) = executor.run_cell(cell)
+    return literal_eval(output['data']['text/plain'])
+
+
+def language_info(executor):
+    # Can only run this function inside 'setup_preprocessor'
+    assert hasattr(executor, 'kc')
+    info_msg = executor._wait_for_reply(executor.kc.kernel_info())
+    return info_msg['content']['language_info']
+
+
+# Vendored from 'nbconvert.preprocessors.executenb' with modifications
+# to extract widget state from the kernel after execution and store it
+# in the notebook metadata.
+# TODO: Remove this once  https://github.com/jupyter/nbconvert/pull/900
+#       is merged and nbconvert 5.5 is released.
+def executenb(nb, cwd=None, km=None, **kwargs):
+    """Execute a notebook and embed widget state."""
+    resources = {}
+    if cwd is not None:
+        resources['metadata'] = {'path': cwd}
+    ep = ExecutePreprocessor(**kwargs)
+    with ep.setup_preprocessor(nb, resources, km=km):
+        ep.log.info("Executing notebook with kernel: %s" % ep.kernel_name)
+        nb, resources = super(ExecutePreprocessor, ep).preprocess(nb, resources)
+        nb.metadata.language_info = language_info(ep)
+        widgets = extract_widget_state(ep)
+        if widgets:
+            nb.metadata.widgets = {WIDGET_STATE_MIMETYPE: widgets}
+
+
 
 
 def write_notebook_output(notebook, output_dir, notebook_name):
@@ -451,6 +579,31 @@ def sphinx_abs_dir(env):
     )
 
 
+def builder_inited(app):
+    require_url = app.config.jupyter_sphinx_require_url
+    # 3 cases
+    # case 1: ipywidgets 6, only embed url
+    # case 2: ipywidgets 7, with require
+    # case 3: ipywidgets 7, no require
+    # (ipywidgets6 with require is not supported, require_url is ignored)
+    if has_embed:
+        if require_url:
+            app.add_javascript(require_url)
+    else:
+        if require_url:
+            logger.warning('Assuming ipywidgets6, ignoring jupyter_sphinx_require_url parameter')
+
+    if has_embed:
+        if require_url:
+            embed_url = app.config.jupyter_sphinx_embed_url or ipywidgets.embed.DEFAULT_EMBED_REQUIREJS_URL
+        else:
+            embed_url = app.config.jupyter_sphinx_embed_url or ipywidgets.embed.DEFAULT_EMBED_SCRIPT_URL
+    else:
+        embed_url = app.config.jupyter_sphinx_embed_url or 'https://unpkg.com/jupyter-js-widgets@^2.0.13/dist/embed.js'
+    if embed_url:
+        app.add_javascript(embed_url)
+
+
 def setup(app):
     # Configuration
     app.add_config_value(
@@ -466,6 +619,7 @@ def setup(app):
     app.add_config_value(
         'jupyter_execute_data_priority',
         [
+            WIDGET_VIEW_MIMETYPE,
             'text/html',
             'image/svg+xml',
             'image/png',
@@ -475,6 +629,11 @@ def setup(app):
         ],
         'env',
     )
+
+    # ipywidgets config
+    require_url_default = 'https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js'
+    app.add_config_value('jupyter_sphinx_require_url', require_url_default, 'html')
+    app.add_config_value('jupyter_sphinx_embed_url', None, 'html')
 
     # JupyterKernelNode is just a doctree marker for the
     # ExecuteJupyterCells transform, so we don't actually render it.
@@ -507,6 +666,35 @@ def setup(app):
         man=render_container,
     )
 
+    # JupyterWidgetViewNode holds widget view JSON,
+    # but is only rendered properly in HTML documents.
+    def visit_widget_html(self, node):
+        self.body.append(node.html())
+        raise docutils.nodes.SkipNode
+
+    def visit_widget_text(self, node):
+        self.body.append(node.text())
+        raise docutils.nodes.SkipNode
+
+    app.add_node(
+        JupyterWidgetViewNode,
+        html=(visit_widget_html, None),
+        latex=(visit_widget_text, None),
+        textinfo=(visit_widget_text, None),
+        text=(visit_widget_text, None),
+        man=(visit_widget_text, None),
+    )
+    # JupyterWidgetStateNode holds the widget state JSON,
+    # but is only rendered in HTML documents.
+    app.add_node(
+        JupyterWidgetStateNode,
+        html=(visit_widget_html, None),
+        latex=(skip, None),
+        textinfo=(skip, None),
+        text=(skip, None),
+        man=(skip, None),
+    )
+
     app.add_directive('jupyter-execute', JupyterCell)
     app.add_directive('jupyter-kernel', JupyterKernel)
     app.add_role('jupyter-download:notebook', jupyter_download_role)
@@ -516,6 +704,8 @@ def setup(app):
     # For syntax highlighting
     app.add_lexer('ipythontb', IPythonTracebackLexer())
     app.add_lexer('ipython', IPython3Lexer())
+
+    app.connect('builder-inited', builder_inited)
 
     return {
         'version': __version__,
