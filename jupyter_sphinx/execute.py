@@ -432,6 +432,12 @@ def cell_output_to_nodes(cell, data_priority, dir):
                     text=data,
                     rawsource=data,
                 ))
+            elif mime_type == 'application/javascript':
+                to_add.append(docutils.nodes.raw(
+                    text='<script type="{mime_type}">{data}</script>'
+                         .format(mime_type=mime_type, data=data),
+                    format='html',
+                ))
             elif mime_type == WIDGET_VIEW_MIMETYPE:
                 to_add.append(JupyterWidgetViewNode(data))
 
@@ -558,6 +564,7 @@ def setup(app):
         'jupyter_execute_data_priority',
         [
             WIDGET_VIEW_MIMETYPE,
+            'application/javascript',
             'text/html',
             'image/svg+xml',
             'image/png',
