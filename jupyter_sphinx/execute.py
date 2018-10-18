@@ -63,6 +63,10 @@ class Cell(docutils.nodes.container):
     """Container for input/output from Jupyter kernel"""
     pass
 
+class KernelNode(docutils.nodes.Element):
+    """Dummy node for signaling a new kernel"""
+    pass
+
 
 def visit_container(self, node):
     self.visit_container(node)
@@ -70,6 +74,25 @@ def visit_container(self, node):
 
 def depart_container(self, node):
     self.depart_container(node)
+
+
+class JupyterKernel(Directive):
+
+    optional_arguments = 1
+    final_argument_whitespace = False
+    has_content = False
+
+    option_spec = {
+        'id': directives.unchanged,
+    }
+
+    def run(self):
+        kernel_name = self.arguments[0] if self.arguments else ''
+        return [KernelNode(
+            '',
+            kernel_name=kernel_name.strip(),
+            kernel_id=self.options.get('id', '').strip(),
+        )]
 
 
 class JupyterCell(Directive):
@@ -83,8 +106,6 @@ class JupyterCell(Directive):
         'hide-code': directives.flag,
         'hide-output': directives.flag,
         'code-below': directives.flag,
-        'new-notebook': directives.unchanged,
-        'kernel': directives.unchanged,
     }
 
     def run(self):
@@ -109,11 +130,6 @@ class JupyterCell(Directive):
             self.assert_has_content()
             content = self.content
 
-        if 'kernel' in self.options and 'new-notebook' not in self.options:
-            raise ExtensionError(
-                "In code execution cells, the 'kernel' option may only be "
-                "specified with the 'new-notebook' option."
-            )
         # Cell only contains the input for now; we will execute the cell
         # and insert the output when the whole document has been parsed.
         return [Cell('',
@@ -124,9 +140,6 @@ class JupyterCell(Directive):
             hide_code=('hide-code' in self.options),
             hide_output=('hide-output' in self.options),
             code_below=('code-below' in self.options),
-            kernel_name=self.options.get('kernel', '').strip(),
-            new_notebook=('new-notebook' in self.options),
-            notebook_name=self.options.get('new-notebook', '').strip(),
         )]
 
 
@@ -318,15 +331,20 @@ class ExecuteJupyterCells(SphinxTransform):
         logger.info('executing {}'.format(docname))
         output_dir = os.path.join(output_directory(self.env), doc_relpath)
 
-        # Start new notebook whenever a cell has 'new_notebook' specified
+        # Start new notebook whenever a KernelNode is encountered
         nodes_by_notebook = split_on(
-            itemgetter('new_notebook'),
-            doctree.traverse(Cell)
+            lambda n: isinstance(n, KernelNode),
+            doctree.traverse(lambda n: isinstance(n, (Cell, KernelNode)))
         )
 
-        for nodes in nodes_by_notebook:
-            kernel_name = nodes[0]['kernel_name'] or default_kernel
-            notebook_name = nodes[0]['notebook_name'] or next(default_names)
+        for first, *nodes in nodes_by_notebook:
+            if isinstance(first, KernelNode):
+                kernel_name = first['kernel_name'] or default_kernel
+                file_name = first['kernel_id'] or next(default_names)
+            else:
+                nodes = (first, *nodes)
+                kernel_name = default_kernel
+                file_name = next(default_names)
 
             notebook = execute_cells(
                 kernel_name,
@@ -335,7 +353,7 @@ class ExecuteJupyterCells(SphinxTransform):
             )
             # Modifies 'notebook' in-place, adding metadata specifying the
             # filenames of the saved outputs.
-            write_notebook_output(notebook, output_dir, notebook_name)
+            write_notebook_output(notebook, output_dir, file_name)
             # Add doctree nodes for cell output; images reference the filenames
             # we just wrote to; sphinx copies these when writing outputs.
             for node, cell in zip(nodes, notebook.cells):
@@ -372,6 +390,20 @@ def setup(app):
         'env',
     )
 
+    # KernelNode is just a doctree marker for the ExecuteJupyterCells
+    # transform, so we don't actually render it.
+    def skip(self, node):
+        raise docutils.nodes.SkipNode
+
+    app.add_node(
+        KernelNode,
+        html=(skip, None),
+        latex=(skip, None),
+        textinfo=(skip, None),
+        text=(skip, None),
+        man=(skip, None),
+    )
+
     app.add_node(
         Cell,
         html=(visit_container, depart_container),
@@ -382,6 +414,7 @@ def setup(app):
     )
 
     app.add_directive('jupyter-execute', JupyterCell)
+    app.add_directive('jupyter-kernel', JupyterKernel)
     app.add_role('jupyter-download:notebook', jupyter_download_role)
     app.add_role('jupyter-download:script', jupyter_download_role)
     app.add_transform(ExecuteJupyterCells)
