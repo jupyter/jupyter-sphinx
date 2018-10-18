@@ -75,6 +75,7 @@ def depart_container(self, node):
 class JupyterCell(Directive):
 
     required_arguments = 0
+    optional_arguments = 1
     final_argument_whitespace = True
     has_content = True
 
@@ -87,7 +88,27 @@ class JupyterCell(Directive):
     }
 
     def run(self):
-        self.assert_has_content()
+        if self.arguments:
+            # As per 'sphinx.directives.code.LiteralInclude'
+            env = self.state.document.settings.env
+            rel_filename, filename = env.relfn2path(self.arguments[0])
+            env.note_dependency(rel_filename)
+            if self.content:
+                logger.warning(
+                    'Ignoring inline code in Jupyter cell included from "{}"'
+                    .format(rel_filename)
+                )
+            try:
+                with open(filename) as f:
+                    content = f.readlines()
+            except (IOError, OSError):
+                raise IOError(
+                    'File {} not found or reading it failed'.format(filename)
+                )
+        else:
+            self.assert_has_content()
+            content = self.content
+
         if 'kernel' in self.options and 'new-notebook' not in self.options:
             raise ExtensionError(
                 "In code execution cells, the 'kernel' option may only be "
@@ -97,7 +118,7 @@ class JupyterCell(Directive):
         # and insert the output when the whole document has been parsed.
         return [Cell('',
             docutils.nodes.literal_block(
-                text='\n'.join(self.content),
+                text='\n'.join(content),
                 language='ipython'
             ),
             hide_code=('hide-code' in self.options),
