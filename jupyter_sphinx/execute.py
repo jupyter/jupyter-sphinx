@@ -12,8 +12,7 @@ from sphinx.ext.mathbase import displaymath
 
 import docutils
 from IPython.lib.lexers import IPythonTracebackLexer, IPython3Lexer
-from docutils.parsers.rst.directives import flag, unchanged
-from docutils.parsers.rst import Directive
+from docutils.parsers.rst import Directive, directives
 
 import nbconvert
 from nbconvert.preprocessors.execute import executenb
@@ -80,11 +79,11 @@ class JupyterCell(Directive):
     has_content = True
 
     option_spec = {
-        'hide-code': flag,
-        'hide-output': flag,
-        'code-below': flag,
-        'new-notebook': unchanged,
-        'kernel': unchanged,
+        'hide-code': directives.flag,
+        'hide-output': directives.flag,
+        'code-below': directives.flag,
+        'new-notebook': directives.unchanged,
+        'kernel': directives.unchanged,
     }
 
     def run(self):
