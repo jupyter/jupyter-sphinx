@@ -135,7 +135,6 @@ class JupyterCell(Directive):
         return [Cell('',
             docutils.nodes.literal_block(
                 text='\n'.join(content),
-                language='ipython'
             ),
             hide_code=('hide-code' in self.options),
             hide_output=('hide-output' in self.options),
@@ -178,7 +177,6 @@ def cell_output_to_nodes(cell, data_priority, dir):
             to_add.append(docutils.nodes.literal_block(
                 text=output['text'],
                 rawsource=output['text'],
-                language='ipython',
             ))
         elif (
             output_type == 'error'
@@ -226,7 +224,6 @@ def cell_output_to_nodes(cell, data_priority, dir):
                 to_add.append(docutils.nodes.literal_block(
                     text=data,
                     rawsource=data,
-                    language='ipython',
                 ))
 
     return to_add
@@ -281,9 +278,10 @@ def write_notebook_output(notebook, output_dir, notebook_name):
         nbformat.writes(notebook), resources,
         os.path.join(output_dir, notebook_name + '.ipynb')
     )
-    # Write a Python script too.
+    # Write a script too.
+    ext = notebook.metadata.language_info.file_extension
     contents = '\n\n'.join(cell.source for cell in notebook.cells)
-    with open(os.path.join(output_dir, notebook_name + '.py'), 'w') as f:
+    with open(os.path.join(output_dir, notebook_name + ext), 'w') as f:
         f.write(contents)
 
 
@@ -351,6 +349,12 @@ class ExecuteJupyterCells(SphinxTransform):
                 [nbformat.v4.new_code_cell(node.astext()) for node in nodes],
                 self.config.jupyter_execute_kwargs,
             )
+
+            for node in nodes:
+                source = node.children[0]
+                lexer = notebook.metadata.language_info.pygments_lexer
+                source.attributes['language'] = lexer
+
             # Modifies 'notebook' in-place, adding metadata specifying the
             # filenames of the saved outputs.
             write_notebook_output(notebook, output_dir, file_name)
