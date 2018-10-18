@@ -361,7 +361,7 @@ def setup(app):
         man=(visit_container, depart_container),
     )
 
-    app.add_directive('execute', JupyterCell)
+    app.add_directive('jupyter-execute', JupyterCell)
     app.add_role('jupyter-download:notebook', jupyter_download_role)
     app.add_role('jupyter-download:script', jupyter_download_role)
     app.add_transform(ExecuteJupyterCells)
