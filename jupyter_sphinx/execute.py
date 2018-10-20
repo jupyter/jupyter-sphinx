@@ -68,14 +68,6 @@ class KernelNode(docutils.nodes.Element):
     pass
 
 
-def visit_container(self, node):
-    self.visit_container(node)
-
-
-def depart_container(self, node):
-    self.depart_container(node)
-
-
 class JupyterKernel(Directive):
 
     optional_arguments = 1
@@ -408,13 +400,19 @@ def setup(app):
         man=(skip, None),
     )
 
+
+    render_container = (
+        lambda self, node: self.visit_container(node),
+        lambda self, node: self.depart_container(node),
+    )
+
     app.add_node(
         Cell,
-        html=(visit_container, depart_container),
-        latex=(visit_container, depart_container),
-        textinfo=(visit_container, depart_container),
-        text=(visit_container, depart_container),
-        man=(visit_container, depart_container),
+        html=render_container,
+        latex=render_container,
+        textinfo=render_container,
+        text=render_container,
+        man=render_container,
     )
 
     app.add_directive('jupyter-execute', JupyterCell)
