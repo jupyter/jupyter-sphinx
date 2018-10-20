@@ -29,46 +29,28 @@ from ._version import __version__
 logger = logging.getLogger(__name__)
 
 
-def blank_nb(kernel_name):
-    try:
-        spec = get_kernel_spec(kernel_name)
-    except NoSuchKernel as e:
-        raise ExtensionError('Unable to find kernel', orig_exc=e)
-    return nbformat.v4.new_notebook(metadata={
-        'kernelspec': {
-            'display_name': spec.display_name,
-            'language': spec.language,
-            'name': kernel_name,
-        }
-    })
-
-
-def split_on(pred, it):
-    """Split an iterator wherever a predicate is True."""
-
-    counter = 0
-
-    def count(x):
-        nonlocal counter
-        if pred(x):
-            counter += 1
-        return counter
-
-    # Return iterable of lists to ensure that we don't lose our
-    # place in the iterator
-    return (list(x) for _, x in groupby(it, count))
-
-
-class Cell(docutils.nodes.container):
-    """Container for input/output from Jupyter kernel"""
-    pass
-
-class KernelNode(docutils.nodes.Element):
-    """Dummy node for signaling a new kernel"""
-    pass
-
+### Directives and their associated doctree nodes
 
 class JupyterKernel(Directive):
+    """Specify a new Jupyter Kernel.
+
+    Arguments
+    ---------
+    kernel_name : str (optional)
+        The name of the kernel in which to execute future Jupyter cells, as
+        reported by executing 'jupyter kernelspec list' on the command line.
+
+    Options
+    -------
+    id : str
+        An identifier for *this kernel instance*. Used to name any output
+        files generated when executing the Jupyter cells (e.g. images
+        produced by cells, or a script containing the cell inputs).
+
+    Content
+    -------
+    None
+    """
 
     optional_arguments = 1
     final_argument_whitespace = False
@@ -79,15 +61,53 @@ class JupyterKernel(Directive):
     }
 
     def run(self):
-        kernel_name = self.arguments[0] if self.arguments else ''
-        return [KernelNode(
-            '',
-            kernel_name=kernel_name.strip(),
-            kernel_id=self.options.get('id', '').strip(),
+        return [JupyterKernelNode(
+            kernel_name=self.arguments[0] if self.arguments else '',
+            kernel_id=self.options.get('id', ''),
         )]
 
 
+class JupyterKernelNode(docutils.nodes.Element):
+    """Inserted into doctree whenever a JupyterKernel directive is encountered.
+
+    Used as a marker to signal that the following JupyterCellNodes (until the
+    next, if any, JupyterKernelNode) should be executed in a separate kernel.
+    """
+
+    def __init__(self, kernel_name, kernel_id):
+        super().__init__(
+            '',
+            kernel_name=kernel_name.strip(),
+            kernel_id=kernel_id.strip(),
+        )
+
+
 class JupyterCell(Directive):
+    """Define a code cell to be later executed in a Jupyter kernel.
+
+    The content of the directive is the code to execute. Code is not
+    executed when the directive is parsed, but later during a doctree
+    transformation.
+
+    Arguments
+    ---------
+    filename : str (optional)
+        If provided, a path to a file containing code.
+
+    Options
+    -------
+    hide-code : bool
+        If provided, the code will not be displayed in the output.
+    hide-output : bool
+        If provided, the cell output will not be displayed in the output.
+    code-below : bool
+        If provided, the code will be shown below the cell output.
+
+    Content
+    -------
+    code : str
+        A code cell.
+    """
 
     required_arguments = 0
     optional_arguments = 1
@@ -122,17 +142,98 @@ class JupyterCell(Directive):
             self.assert_has_content()
             content = self.content
 
-        # Cell only contains the input for now; we will execute the cell
-        # and insert the output when the whole document has been parsed.
-        return [Cell('',
-            docutils.nodes.literal_block(
-                text='\n'.join(content),
-            ),
-            hide_code=('hide-code' in self.options),
-            hide_output=('hide-output' in self.options),
-            code_below=('code-below' in self.options),
-        )]
+        return [JupyterCellNode(content, self.options)]
 
+
+class JupyterCellNode(docutils.nodes.container):
+    """Inserted into doctree whever a JupyterKernel directive is encountered.
+
+    Used as a marker to signal that the following JupyterCellNodes (until the
+    next, if any, JupyterKernelNode) should be executed in a separate kernel.
+    """
+
+    def __init__(self, source_lines, options):
+        return super().__init__(
+            '',
+            docutils.nodes.literal_block(
+                text='\n'.join(source_lines),
+            ),
+            hide_code=('hide-code' in options),
+            hide_output=('hide-output' in options),
+            code_below=('code-below' in options),
+        )
+
+
+### Doctree transformations
+
+class ExecuteJupyterCells(SphinxTransform):
+    """Execute code cells in Jupyter kernels.
+
+   Traverses the doctree to find JupyterKernel and JupyterCell nodes,
+   then executes the code in the JupyterCell nodes in sequence, starting
+   a new kernel every time a JupyterKernel node is encountered. The output
+   from each code cell is inserted into the doctree.
+   """
+    default_priority = 180  # An early transform, idk
+
+    def apply(self):
+        doctree = self.document
+        doc_relpath = os.path.dirname(self.env.docname)  # relative to src dir
+        docname = os.path.basename(self.env.docname)
+        default_kernel = self.config.jupyter_execute_default_kernel
+        default_names = default_notebook_names(docname)
+
+        # Check if we have anything to execute.
+        if not doctree.traverse(JupyterCellNode):
+            return
+
+        logger.info('executing {}'.format(docname))
+        output_dir = os.path.join(output_directory(self.env), doc_relpath)
+
+        # Start new notebook whenever a JupyterKernelNode is encountered
+        jupyter_nodes = (JupyterCellNode, JupyterKernelNode)
+        nodes_by_notebook = split_on(
+            lambda n: isinstance(n, JupyterKernelNode),
+            doctree.traverse(lambda n: isinstance(n, jupyter_nodes))
+        )
+
+        for first, *nodes in nodes_by_notebook:
+            if isinstance(first, JupyterKernelNode):
+                kernel_name = first['kernel_name'] or default_kernel
+                file_name = first['kernel_id'] or next(default_names)
+            else:
+                nodes = (first, *nodes)
+                kernel_name = default_kernel
+                file_name = next(default_names)
+
+            notebook = execute_cells(
+                kernel_name,
+                [nbformat.v4.new_code_cell(node.astext()) for node in nodes],
+                self.config.jupyter_execute_kwargs,
+            )
+
+            # Highlight the code cells now that we know what language they are
+            for node in nodes:
+                source = node.children[0]
+                lexer = notebook.metadata.language_info.pygments_lexer
+                source.attributes['language'] = lexer
+
+            # Write certain cell outputs (e.g. images) to separate files, and
+            # modify the metadata of the associated cells in 'notebook' to
+            # include the path to the output file.
+            write_notebook_output(notebook, output_dir, file_name)
+
+            # Add doctree nodes for cell outputs.
+            for node, cell in zip(nodes, notebook.cells):
+                output_nodes = cell_output_to_nodes(
+                    cell,
+                    self.config.jupyter_execute_data_priority,
+                    sphinx_abs_dir(self.env)
+                )
+                attach_outputs(output_nodes, node)
+
+
+### Roles
 
 def jupyter_download_role(name, rawtext, text, lineno, inliner):
     _, filetype = name.split(':')
@@ -147,11 +248,43 @@ def jupyter_download_role(name, rawtext, text, lineno, inliner):
     return [node], []
 
 
+### Utilities
+
+def blank_nb(kernel_name):
+    try:
+        spec = get_kernel_spec(kernel_name)
+    except NoSuchKernel as e:
+        raise ExtensionError('Unable to find kernel', orig_exc=e)
+    return nbformat.v4.new_notebook(metadata={
+        'kernelspec': {
+            'display_name': spec.display_name,
+            'language': spec.language,
+            'name': kernel_name,
+        }
+    })
+
+
+def split_on(pred, it):
+    """Split an iterator wherever a predicate is True."""
+
+    counter = 0
+
+    def count(x):
+        nonlocal counter
+        if pred(x):
+            counter += 1
+        return counter
+
+    # Return iterable of lists to ensure that we don't lose our
+    # place in the iterator
+    return (list(x) for _, x in groupby(it, count))
+
+
 def cell_output_to_nodes(cell, data_priority, dir):
     """Convert a jupyter cell with outputs and filenames to doctree nodes.
 
     Parameters
-    ==========
+    ----------
     cell : jupyter cell
     data_priority : list of mime types
         Which media types to prioritize.
@@ -304,63 +437,6 @@ def sphinx_abs_dir(env):
     )
 
 
-class ExecuteJupyterCells(SphinxTransform):
-    default_priority = 180  # An early transform, idk
-
-    def apply(self):
-        doctree = self.document
-        doc_relpath = os.path.dirname(self.env.docname)  # relative to src dir
-        docname = os.path.basename(self.env.docname)
-        default_kernel = self.config.jupyter_execute_default_kernel
-        default_names = default_notebook_names(docname)
-
-        # Check if we have anything to execute.
-        if not doctree.traverse(Cell):
-            return
-
-        logger.info('executing {}'.format(docname))
-        output_dir = os.path.join(output_directory(self.env), doc_relpath)
-
-        # Start new notebook whenever a KernelNode is encountered
-        nodes_by_notebook = split_on(
-            lambda n: isinstance(n, KernelNode),
-            doctree.traverse(lambda n: isinstance(n, (Cell, KernelNode)))
-        )
-
-        for first, *nodes in nodes_by_notebook:
-            if isinstance(first, KernelNode):
-                kernel_name = first['kernel_name'] or default_kernel
-                file_name = first['kernel_id'] or next(default_names)
-            else:
-                nodes = (first, *nodes)
-                kernel_name = default_kernel
-                file_name = next(default_names)
-
-            notebook = execute_cells(
-                kernel_name,
-                [nbformat.v4.new_code_cell(node.astext()) for node in nodes],
-                self.config.jupyter_execute_kwargs,
-            )
-
-            for node in nodes:
-                source = node.children[0]
-                lexer = notebook.metadata.language_info.pygments_lexer
-                source.attributes['language'] = lexer
-
-            # Modifies 'notebook' in-place, adding metadata specifying the
-            # filenames of the saved outputs.
-            write_notebook_output(notebook, output_dir, file_name)
-            # Add doctree nodes for cell output; images reference the filenames
-            # we just wrote to; sphinx copies these when writing outputs.
-            for node, cell in zip(nodes, notebook.cells):
-                output_nodes = cell_output_to_nodes(
-                    cell,
-                    self.config.jupyter_execute_data_priority,
-                    sphinx_abs_dir(self.env)
-                )
-                attach_outputs(output_nodes, node)
-
-
 def setup(app):
     # Configuration
     app.add_config_value(
@@ -386,13 +462,13 @@ def setup(app):
         'env',
     )
 
-    # KernelNode is just a doctree marker for the ExecuteJupyterCells
-    # transform, so we don't actually render it.
+    # JupyterKernelNode is just a doctree marker for the
+    # ExecuteJupyterCells transform, so we don't actually render it.
     def skip(self, node):
         raise docutils.nodes.SkipNode
 
     app.add_node(
-        KernelNode,
+        JupyterKernelNode,
         html=(skip, None),
         latex=(skip, None),
         textinfo=(skip, None),
@@ -401,13 +477,15 @@ def setup(app):
     )
 
 
+    # JupyterCellNode is a container that holds the input and
+    # any output, so we render it as a container.
     render_container = (
         lambda self, node: self.visit_container(node),
         lambda self, node: self.depart_container(node),
     )
 
     app.add_node(
-        Cell,
+        JupyterCellNode,
         html=render_container,
         latex=render_container,
         textinfo=render_container,
