@@ -146,10 +146,10 @@ class JupyterCell(Directive):
 
 
 class JupyterCellNode(docutils.nodes.container):
-    """Inserted into doctree whever a JupyterKernel directive is encountered.
+    """Inserted into doctree whever a JupyterCell directive is encountered.
 
-    Used as a marker to signal that the following JupyterCellNodes (until the
-    next, if any, JupyterKernelNode) should be executed in a separate kernel.
+    Contains code that will be executed in a Jupyter kernel at a later
+    doctree-transformation step.
     """
 
     def __init__(self, source_lines, options):
