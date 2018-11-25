@@ -16,5 +16,11 @@ setup(
     description = 'Jupyter Sphinx Extensions',
     license = 'BSD',
     packages = ['jupyter_sphinx'],
-    install_requires = ['Sphinx>=0.6', 'ipywidgets>=6.0.0'],
+    install_requires = [
+        'Sphinx>=0.6',
+        'ipywidgets>=6.0.0',
+        'IPython',
+        'nbconvert>=5.4',
+        'nbformat',
+    ],
 )
