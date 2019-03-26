@@ -77,6 +77,7 @@ File `conf.py` has two extra (optional) configuration options:
 
  * `jupyter_sphinx_require_url`: url for `require.js` (if your theme already provides this, set it to False or '')
  * `jupyter_sphinx_embed_url`: url for the embedding, if set to None (default) a proper default will be taken from the `ipywidgets.embed` module.
+ * `jupyter_sphinx_rel_repo_path`: relative path from `docs` to the repository that should be appended to `sys.path` when executing the docs.
 
 ### Misc.
 

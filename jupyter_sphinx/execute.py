@@ -209,7 +209,8 @@ class ExecuteJupyterCells(SphinxTransform):
             notebook = execute_cells(
                 kernel_name,
                 [nbformat.v4.new_code_cell(node.astext()) for node in nodes],
-                self.config.jupyter_execute_kwargs,
+                dict(self.config.jupyter_execute_kwargs,
+                     cwd=self.config.jupyter_sphinx_rel_repo_path),
             )
 
             # Highlight the code cells now that we know what language they are
@@ -460,6 +461,11 @@ def setup(app):
             'text/plain'
         ],
         'env',
+    )
+    app.add_config_value(
+        'jupyter_sphinx_rel_repo_path',
+        None,
+        'env'
     )
 
     # JupyterKernelNode is just a doctree marker for the
