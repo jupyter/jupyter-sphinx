@@ -18,7 +18,7 @@ setup(
     packages = ['jupyter_sphinx'],
     install_requires = [
         'Sphinx>=0.6',
-        'ipywidgets>=6.0.0',
+        'ipywidgets>=7.0.0',
         'IPython',
         'nbconvert>=5.4',
         'nbformat',
