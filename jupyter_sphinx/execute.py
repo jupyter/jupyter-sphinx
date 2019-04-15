@@ -224,6 +224,14 @@ class ExecuteJupyterCells(SphinxTransform):
                 self.config.jupyter_execute_kwargs,
             )
 
+            # Raise error if cells raised exceptions and were not marked as doing so
+            for node, cell in zip(nodes, notebook.cells):
+                errors = [output for output in cell.outputs if output['output_type'] == 'error']
+                allowed_errors = node.attributes.get('raises', [])
+                if errors and not any(e['ename'] in allowed_errors for e in errors):
+                    raise ExtensionError('Cell raised uncaught exception:\n{}'
+                                         .format('\n'.join(errors[0]['traceback'])))
+
             # Highlight the code cells now that we know what language they are
             for node in nodes:
                 source = node.children[0]
