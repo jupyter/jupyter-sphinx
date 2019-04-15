@@ -82,6 +82,10 @@ class JupyterKernelNode(docutils.nodes.Element):
         )
 
 
+def csv_option(s):
+    return [p.strip() for p in s.split(',')] if s else []
+
+
 class JupyterCell(Directive):
     """Define a code cell to be later executed in a Jupyter kernel.
 
@@ -102,6 +106,12 @@ class JupyterCell(Directive):
         If provided, the cell output will not be displayed in the output.
     code-below : bool
         If provided, the code will be shown below the cell output.
+    raises : comma separated list of exception types
+        If provided, a comma-separated list of exception type names that
+        the cell may raise. If one of the listed execption types is raised
+        then the traceback is printed in place of the cell output. If an
+        exception of another type is raised then we raise a RuntimeError
+        when executing.
 
     Content
     -------
@@ -118,6 +128,7 @@ class JupyterCell(Directive):
         'hide-code': directives.flag,
         'hide-output': directives.flag,
         'code-below': directives.flag,
+        'raises': csv_option,
     }
 
     def run(self):
@@ -161,6 +172,7 @@ class JupyterCellNode(docutils.nodes.container):
             hide_code=('hide-code' in options),
             hide_output=('hide-output' in options),
             code_below=('code-below' in options),
+            raises=options.get('raises'),
         )
 
 
