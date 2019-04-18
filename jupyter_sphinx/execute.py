@@ -227,8 +227,11 @@ class ExecuteJupyterCells(SphinxTransform):
             # Raise error if cells raised exceptions and were not marked as doing so
             for node, cell in zip(nodes, notebook.cells):
                 errors = [output for output in cell.outputs if output['output_type'] == 'error']
-                allowed_errors = node.attributes.get('raises', [])
-                if errors and not any(e['ename'] in allowed_errors for e in errors):
+                allowed_errors = node.attributes.get('raises') or []
+                raises_provided = node.attributes['raises'] is not None
+                if raises_provided and not allowed_errors: # empty 'raises': supress all errors
+                    pass
+                elif errors and not any(e['ename'] in allowed_errors for e in errors):
                     raise ExtensionError('Cell raised uncaught exception:\n{}'
                                          .format('\n'.join(errors[0]['traceback'])))
 
