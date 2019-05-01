@@ -17,7 +17,7 @@ from IPython.lib.lexers import IPythonTracebackLexer, IPython3Lexer
 from docutils.parsers.rst import Directive, directives
 
 import nbconvert
-from nbconvert.preprocessors.execute import ExecutePreprocessor
+from nbconvert.preprocessors.execute import executenb
 from nbconvert.preprocessors import ExtractOutputPreprocessor
 from nbconvert.writers import FilesWriter
 
@@ -483,57 +483,11 @@ def contains_widgets(notebook):
     return widgets and widgets['state']
 
 
-# TODO: Remove this once  https://github.com/jupyter/nbconvert/pull/900
-#       is merged and nbconvert 5.5 is released.
-def extract_widget_state(executor):
-    """Extract ipywidget state from a running ExecutePreprocessor"""
-    # Can only run this function inside 'setup_preprocessor'
-    assert hasattr(executor, 'kc')
-    # Only Python has kernel-side support for jupyter widgets currently
-    if language_info(executor)['name'] != 'python':
-        return None
-
-    get_widget = '''\
-        state = None
-        try:
-            import ipywidgets
-            state = ipywidgets.Widget.get_manager_state()
-        except Exception:  # Widgets are not installed in the kernel env
-            pass
-        state
-    '''
-    cell = nbformat.v4.new_code_cell(get_widget)
-    _, (output,) = executor.run_cell(cell)
-    return literal_eval(output['data']['text/plain'])
-
-
 def language_info(executor):
     # Can only run this function inside 'setup_preprocessor'
     assert hasattr(executor, 'kc')
     info_msg = executor._wait_for_reply(executor.kc.kernel_info())
     return info_msg['content']['language_info']
-
-
-# Vendored from 'nbconvert.preprocessors.executenb' with modifications
-# to extract widget state from the kernel after execution and store it
-# in the notebook metadata.
-# TODO: Remove this once  https://github.com/jupyter/nbconvert/pull/900
-#       is merged and nbconvert 5.5 is released.
-def executenb(nb, cwd=None, km=None, **kwargs):
-    """Execute a notebook and embed widget state."""
-    resources = {}
-    if cwd is not None:
-        resources['metadata'] = {'path': cwd}
-    ep = ExecutePreprocessor(**kwargs)
-    with ep.setup_preprocessor(nb, resources, km=km):
-        ep.log.info("Executing notebook with kernel: %s" % ep.kernel_name)
-        nb, resources = super(ExecutePreprocessor, ep).preprocess(nb, resources)
-        nb.metadata.language_info = language_info(ep)
-        widgets = extract_widget_state(ep)
-        if widgets:
-            nb.metadata.widgets = {WIDGET_STATE_MIMETYPE: widgets}
-
-
 
 
 def write_notebook_output(notebook, output_dir, notebook_name):
@@ -593,7 +547,7 @@ def setup(app):
     # Configuration
     app.add_config_value(
         'jupyter_execute_kwargs',
-        dict(timeout=-1, allow_errors=True),
+        dict(timeout=-1, allow_errors=True, store_widget_state=True),
         'env'
     )
     app.add_config_value(

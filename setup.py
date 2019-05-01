@@ -20,7 +20,7 @@ setup(
         'Sphinx>=0.6',
         'ipywidgets>=7.0.0',
         'IPython',
-        'nbconvert>=5.4',
+        'nbconvert>=5.5',
         'nbformat',
     ],
 )
