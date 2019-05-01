@@ -526,4 +526,7 @@ def setup(app):
     app.add_lexer('ipythontb', IPythonTracebackLexer())
     app.add_lexer('ipython', IPython3Lexer())
 
-    return {'version': __version__}
+    return {
+        'version': __version__,
+        'parallel_read_safe': True,
+    }
