@@ -144,7 +144,7 @@ class JupyterCell(Directive):
                 )
             try:
                 with open(filename) as f:
-                    content = f.readlines()
+                    content = [line.rstrip() for line in f.readlines()]
             except (IOError, OSError):
                 raise IOError(
                     'File {} not found or reading it failed'.format(filename)
