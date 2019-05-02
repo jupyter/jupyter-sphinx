@@ -1,0 +1,15 @@
+name: jupyter-sphinx
+
+channels:
+  - conda-forge
+
+dependencies:
+  - python=3.6
+  - sphinx>=0.6
+  - ipywidgets>=7.0.0
+  - IPython
+  - nbconvert>=5.4
+  - nbformat
+  # For documentation building and testing
+  - matplotlib
+  - pytest
