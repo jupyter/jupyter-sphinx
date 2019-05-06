@@ -62,8 +62,9 @@ class JupyterKernel(Directive):
 
     def run(self):
         return [JupyterKernelNode(
-            kernel_name=self.arguments[0] if self.arguments else '',
-            kernel_id=self.options.get('id', ''),
+            '',
+            kernel_name=self.arguments[0].strip() if self.arguments else '',
+            kernel_id=self.options.get('id', '').strip(),
         )]
 
 
@@ -73,13 +74,6 @@ class JupyterKernelNode(docutils.nodes.Element):
     Used as a marker to signal that the following JupyterCellNodes (until the
     next, if any, JupyterKernelNode) should be executed in a separate kernel.
     """
-
-    def __init__(self, kernel_name, kernel_id):
-        super().__init__(
-            '',
-            kernel_name=kernel_name.strip(),
-            kernel_id=kernel_id.strip(),
-        )
 
 
 def csv_option(s):
@@ -153,7 +147,16 @@ class JupyterCell(Directive):
             self.assert_has_content()
             content = self.content
 
-        return [JupyterCellNode(content, self.options)]
+        return [JupyterCellNode(
+            '',
+            docutils.nodes.literal_block(
+                text='\n'.join(content),
+            ),
+            hide_code=('hide-code' in self.options),
+            hide_output=('hide-output' in self.options),
+            code_below=('code-below' in self.options),
+            raises=self.options.get('raises'),
+        )]
 
 
 class JupyterCellNode(docutils.nodes.container):
@@ -162,18 +165,6 @@ class JupyterCellNode(docutils.nodes.container):
     Contains code that will be executed in a Jupyter kernel at a later
     doctree-transformation step.
     """
-
-    def __init__(self, source_lines, options):
-        return super().__init__(
-            '',
-            docutils.nodes.literal_block(
-                text='\n'.join(source_lines),
-            ),
-            hide_code=('hide-code' in options),
-            hide_output=('hide-output' in options),
-            code_below=('code-below' in options),
-            raises=options.get('raises'),
-        )
 
 
 ### Doctree transformations
