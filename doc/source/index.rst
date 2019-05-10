@@ -74,6 +74,11 @@ or even full-blown javascript widgets:
     display(a, b)
     w.jslink((a, 'value'), (b, 'value'))
 
+It is also possible to include code from a regular file by passing the filename as argument
+to ``jupyter-execute``::
+
+  .. jupyter-execute:: some_code.py
+
 
 Directive options
 -----------------
