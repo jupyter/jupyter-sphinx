@@ -4,7 +4,6 @@ import os
 from itertools import groupby, count
 from operator import itemgetter
 import json
-from ast import literal_eval
 
 from sphinx.util import logging
 from sphinx.transforms import SphinxTransform
