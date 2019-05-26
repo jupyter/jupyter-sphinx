@@ -45,12 +45,12 @@ def builder_inited(app):
     """
     require_url = app.config.jupyter_sphinx_require_url
     if require_url:
-        app.add_javascript(require_url)
+        app.add_js_file(require_url)
         embed_url = app.config.jupyter_sphinx_embed_url or ipywidgets.embed.DEFAULT_EMBED_REQUIREJS_URL
     else:
         embed_url = app.config.jupyter_sphinx_embed_url or ipywidgets.embed.DEFAULT_EMBED_SCRIPT_URL
     if embed_url:
-        app.add_javascript(embed_url)
+        app.add_js_file(embed_url)
 
 
 ### Directives and their associated doctree nodes
