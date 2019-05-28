@@ -9,7 +9,12 @@ from sphinx.errors import ExtensionError
 
 import pytest
 
-from jupyter_sphinx.execute import JupyterCellNode, JupyterKernelNode
+from jupyter_sphinx.execute import (
+    JupyterCellNode,
+    JupyterKernelNode,
+    JupyterWidgetViewNode,
+    JupyterWidgetStateNode,
+)
 
 @pytest.fixture()
 def doctree():
@@ -160,3 +165,15 @@ def test_raises(doctree):
     tree = doctree(source)
     cell, = tree.traverse(JupyterCellNode)
     'ValueError' in cell.children[1].rawsource
+
+
+def test_widgets(doctree):
+    source = '''
+    .. jupyter-execute::
+
+        import ipywidgets
+        ipywidgets.Button()
+    '''
+    tree = doctree(source)
+    assert len(list(tree.traverse(JupyterWidgetViewNode))) == 1
+    assert len(list(tree.traverse(JupyterWidgetStateNode))) == 1
