@@ -23,4 +23,5 @@ setup(
         'nbconvert>=5.5',
         'nbformat',
     ],
+    python_requires = '>= 3.5',
 )
