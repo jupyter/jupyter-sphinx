@@ -405,7 +405,6 @@ def cell_output_to_nodes(cell, data_priority, dir):
                 )
             except StopIteration:
                 continue
-
             data = output['data'][mime_type]
             if mime_type.startswith('image'):
                 # Sphinx treats absolute paths as being rooted at the source
