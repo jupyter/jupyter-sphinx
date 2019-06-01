@@ -405,7 +405,6 @@ def cell_output_to_nodes(cell, data_priority, dir):
                 )
             except StopIteration:
                 continue
-
             data = output['data'][mime_type]
             if mime_type.startswith('image'):
                 # Sphinx treats absolute paths as being rooted at the source
@@ -431,6 +430,12 @@ def cell_output_to_nodes(cell, data_priority, dir):
                 to_add.append(docutils.nodes.literal_block(
                     text=data,
                     rawsource=data,
+                ))
+            elif mime_type == 'application/javascript':
+                to_add.append(docutils.nodes.raw(
+                    text='<script type="{mime_type}">{data}</script>'
+                         .format(mime_type=mime_type, data=data),
+                    format='html',
                 ))
             elif mime_type == WIDGET_VIEW_MIMETYPE:
                 to_add.append(JupyterWidgetViewNode(data))
@@ -558,6 +563,7 @@ def setup(app):
         'jupyter_execute_data_priority',
         [
             WIDGET_VIEW_MIMETYPE,
+            'application/javascript',
             'text/html',
             'image/svg+xml',
             'image/png',

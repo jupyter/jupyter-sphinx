@@ -6,6 +6,7 @@ from io import StringIO
 
 from sphinx.testing.util import SphinxTestApp, path
 from sphinx.errors import ExtensionError
+from docutils.nodes import raw
 
 import pytest
 
@@ -177,3 +178,16 @@ def test_widgets(doctree):
     tree = doctree(source)
     assert len(list(tree.traverse(JupyterWidgetViewNode))) == 1
     assert len(list(tree.traverse(JupyterWidgetStateNode))) == 1
+
+
+def test_javascript(doctree):
+    source = '''
+    .. jupyter-execute::
+
+        from IPython.display import display_javascript, Javascript
+        Javascript('window.alert("Hello world!")')
+    '''
+    tree = doctree(source)
+    node, = list(tree.traverse(raw))
+    text, = node.children
+    assert 'world' in text
