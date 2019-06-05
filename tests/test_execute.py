@@ -155,7 +155,7 @@ def test_raises(doctree):
     '''
     tree = doctree(source)
     cell, = tree.traverse(JupyterCellNode)
-    'ValueError' in cell.children[1].rawsource
+    assert 'ValueError' in cell.children[1].rawsource
 
     source = '''
     .. jupyter-execute::
@@ -165,7 +165,7 @@ def test_raises(doctree):
     '''
     tree = doctree(source)
     cell, = tree.traverse(JupyterCellNode)
-    'ValueError' in cell.children[1].rawsource
+    assert 'ValueError' in cell.children[1].rawsource
 
 
 def test_widgets(doctree):
