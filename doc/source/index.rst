@@ -79,6 +79,9 @@ to ``jupyter-execute``::
 
   .. jupyter-execute:: some_code.py
 
+``jupyter-execute`` may also be used in docstrings within your Python code, and will be executed
+when they are included with Sphinx autodoc.
+
 
 Directive options
 -----------------
