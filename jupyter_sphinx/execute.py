@@ -147,6 +147,7 @@ class JupyterCell(Directive):
         'hide-output': directives.flag,
         'code-below': directives.flag,
         'raises': csv_option,
+        'stderr': directives.flag,
     }
 
     def run(self):
@@ -180,6 +181,7 @@ class JupyterCell(Directive):
             hide_output=('hide-output' in self.options),
             code_below=('code-below' in self.options),
             raises=self.options.get('raises'),
+            stderr=('stderr' in self.options),
         )]
 
 
@@ -291,6 +293,15 @@ class ExecuteJupyterCells(SphinxTransform):
                     raise ExtensionError('Cell raised uncaught exception:\n{}'
                                          .format('\n'.join(errors[0]['traceback'])))
 
+            # Raise error if cells print to stderr
+            for node, cell in zip(nodes, notebook.cells):
+                stderr = [output for output in cell.outputs
+                          if output['output_type'] == 'stream'
+                             and output['name'] == 'stderr']
+                if stderr and not node.attributes['stderr']:
+                    raise ExtensionError('Cell printed to stderr:\n{}'
+                                         .format(stderr[0]['text']))
+
             # Highlight the code cells now that we know what language they are
             for node in nodes:
                 source = node.children[0]
@@ -379,7 +390,6 @@ def cell_output_to_nodes(cell, data_priority, dir):
         output_type = output['output_type']
         if (
             output_type == 'stream'
-            and output['name'] == 'stdout'
         ):
             to_add.append(docutils.nodes.literal_block(
                 text=output['text'],

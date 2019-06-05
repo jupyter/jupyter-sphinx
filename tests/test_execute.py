@@ -191,3 +191,38 @@ def test_javascript(doctree):
     node, = list(tree.traverse(raw))
     text, = node.children
     assert 'world' in text
+
+
+def test_stdout(doctree):
+    source = """
+    .. jupyter-execute::
+
+        print('hello world')
+    """
+    tree = doctree(source)
+    cell, = tree.traverse(JupyterCellNode)
+    assert len(cell.children) == 2
+    assert cell.children[1].rawsource.strip() == "hello world"
+
+
+def test_stderr(doctree):
+    source = """
+    .. jupyter-execute::
+
+        import sys
+        print('hello world', file=sys.stderr)
+    """
+    with pytest.raises(ExtensionError):
+        tree = doctree(source)
+
+    source = """
+    .. jupyter-execute::
+        :stderr:
+
+        import sys
+        print('hello world', file=sys.stderr)
+    """
+    tree = doctree(source)
+    cell, = tree.traverse(JupyterCellNode)
+    assert len(cell.children) == 2
+    assert cell.children[1].rawsource.strip() == "hello world"
