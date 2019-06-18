@@ -37,6 +37,7 @@ logger = logging.getLogger(__name__)
 WIDGET_VIEW_MIMETYPE = 'application/vnd.jupyter.widget-view+json'
 WIDGET_STATE_MIMETYPE = 'application/vnd.jupyter.widget-state+json'
 REQUIRE_URL_DEFAULT = 'https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js'
+THEBELAB_URL_DEFAULT = 'https://unpkg.com/thebelab@^0.4.0'
 
 
 def builder_inited(app):
@@ -57,7 +58,7 @@ def builder_inited(app):
     # Check if a thebelab config was specified
     if app.config.jupyter_sphinx_thebelab_config:
         app.add_js_file('thebeconfig.js', type='text/x-thebe-config')
-        app.add_js_file('thebelab-latest.js')
+        app.add_js_file(app.config.jupyter_sphinx_thebelab_url)
         app.add_js_file('thebelab-helper.js')
 
         app.add_css_file('thebelab.css')
@@ -672,6 +673,8 @@ def setup(app):
 
     # thebelab config, can be either a path, file or a dict
     app.add_config_value('jupyter_sphinx_thebelab_config', None, 'html')
+    
+    app.add_config_value('jupyter_sphinx_thebelab_url', THEBELAB_URL_DEFAULT, 'html')
 
     # JupyterKernelNode is just a doctree marker for the
     # ExecuteJupyterCells transform, so we don't actually render it.
