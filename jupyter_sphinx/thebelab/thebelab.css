@@ -1,0 +1,37 @@
+.thebelab-cell .thebelab-input pre {
+    z-index: 0;
+}
+
+.thebelab-hidden {
+    display: none;
+}
+
+.thebelab-button {
+    position: relative;
+    display: inline-block;
+    box-sizing: border-box;
+    border: none;
+    border-radius: .1rem;
+    padding: 0 2rem;
+    margin: .5rem .1rem;
+    min-width: 64px;
+    height: 1.6rem;
+    vertical-align: middle;
+    text-align: center;
+    font-size: 0.8rem;
+    color: rgba(0, 0, 0, 0.8);
+    background-color: rgba(0, 0, 0, 0.07);
+    overflow: hidden;
+    outline: none;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.thebelab-button:hover {
+    background-color: rgba(0, 0, 0, 0.12);
+}
+
+.thebelab-button:active {
+    background-color: rgba(0, 0, 0, 0.15);
+    color: rgba(0, 0, 0, 1)
+}
