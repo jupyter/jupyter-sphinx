@@ -192,6 +192,28 @@ class JupyterCell(Directive):
         )]
 
 
+class ThebeButton(Directive):
+    """Specify a button to activate thebelab on the page
+
+    Arguments
+    ---------
+    text : str (optional)
+        If provided, the button text to display
+
+    Content
+    -------
+    None
+    """
+
+    optional_arguments = 1
+    final_argument_whitespace = True
+    has_content = False
+
+    def run(self):
+        text = self.arguments[0] if self.arguments else ''
+        return [ThebeButtonNode(text)]
+
+
 class JupyterCellNode(docutils.nodes.container):
     """Inserted into doctree whever a JupyterCell directive is encountered.
 
@@ -238,6 +260,22 @@ class JupyterWidgetStateNode(docutils.nodes.Element):
             load='', widget_views='', json_data=json.dumps(self['state']))
 
 
+class ThebeButtonNode(docutils.nodes.Element):
+    """Appended to the doctree by the ThebeButton directive
+
+    Renders as a button to enable thebelab on the page.
+
+    If no ThebeButton directive is found in the document but thebelab
+    is enabled, the node is added at the bottom of the document.
+    """
+    def __init__(self, text):
+        super().__init__('', text=text or 'Make live')
+
+    def html(self):
+        text = self['text']
+        return ('<button title="Make live" class="thebelab-button" id="thebelab-activate-button" ' +
+                f'onclick="initThebelab()">{text}</button>')
+
 ### Doctree transformations
 
 class ExecuteJupyterCells(SphinxTransform):
@@ -263,7 +301,10 @@ class ExecuteJupyterCells(SphinxTransform):
             return
 
         if thebe_config:
-            add_thebelab_button(doctree)
+            # Add the button at the bottom if it is not present
+            if not doctree.traverse(ThebeButtonNode):
+                doctree.append(ThebeButtonNode())
+
             add_thebelab_library(doctree, self.env)
 
         logger.info('executing {}'.format(docname))
@@ -597,14 +638,6 @@ def sphinx_abs_dir(env):
         os.path.abspath(env.app.srcdir)
     )
 
-def add_thebelab_button(doctree):
-    # TODO a better place for this button
-    doctree.append(docutils.nodes.raw(
-        text='<button title="Make live" class="thebelab-button" id="thebelab-activate-button" '
-             'onclick="initThebelab()">Make live</button>',
-        format='html'
-    ))
-
 def add_thebelab_library(doctree, env):
     """Adds the thebelab configuration and library to the doctree"""
     thebe_config = env.config.jupyter_sphinx_thebelab_config
@@ -753,8 +786,18 @@ def setup(app):
         man=(skip, None),
     )
 
+    app.add_node(
+        ThebeButtonNode,
+        html=(visit_widget_html, None),
+        latex=(skip, None),
+        textinfo=(skip, None),
+        text=(skip, None),
+        man=(skip, None),
+    )
+
     app.add_directive('jupyter-execute', JupyterCell)
     app.add_directive('jupyter-kernel', JupyterKernel)
+    app.add_directive('thebe-button', ThebeButton)
     app.add_role('jupyter-download:notebook', jupyter_download_role)
     app.add_role('jupyter-download:script', jupyter_download_role)
     app.add_transform(ExecuteJupyterCells)
