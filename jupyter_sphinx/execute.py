@@ -57,10 +57,7 @@ def builder_inited(app):
 
     # Check if a thebelab config was specified
     if app.config.jupyter_sphinx_thebelab_config:
-        app.add_js_file('thebeconfig.js', type='text/x-thebe-config')
-        app.add_js_file(app.config.jupyter_sphinx_thebelab_url)
         app.add_js_file('thebelab-helper.js')
-
         app.add_css_file('thebelab.css')
 
 ### Directives and their associated doctree nodes
@@ -267,6 +264,7 @@ class ExecuteJupyterCells(SphinxTransform):
 
         if thebe_config:
             add_thebelab_button(doctree)
+            add_thebelab_library(doctree, self.env)
 
         logger.info('executing {}'.format(docname))
         output_dir = os.path.join(output_directory(self.env), doc_relpath)
@@ -481,7 +479,7 @@ def attach_outputs(output_nodes, node, thebe_config):
                 '</pre>'.format(data=code, code_class=code_class),
             format='html',
         )]
-        
+
         if not node.attributes['hide_output']:
             # We ignore the code_below attribute since this is not supported with thebelab
             node.children.append(docutils.nodes.raw(
@@ -498,7 +496,7 @@ def attach_outputs(output_nodes, node, thebe_config):
     else:
         if node.attributes['hide_code']:
             node.children = []
-        
+
         if not node.attributes['hide_output']:
             if node.attributes['code_below']:
                 node.children = output_nodes + node.children
@@ -607,6 +605,48 @@ def add_thebelab_button(doctree):
         format='html'
     ))
 
+def add_thebelab_library(doctree, env):
+    """Adds the thebelab configuration and library to the doctree"""
+    thebe_config = env.config.jupyter_sphinx_thebelab_config
+    if isinstance(thebe_config, dict):
+        pass
+    elif isinstance(thebe_config, str):
+        if os.path.isabs(thebe_config):
+            filename = thebe_config
+        else:
+            filename = os.path.join(os.path.abspath(env.app.srcdir), thebe_config)
+
+        if not os.path.exists(filename):
+            logger.warning('The supplied thebelab configuration file does not exist')
+            return
+
+        with open(filename, 'r') as config_file:
+            try:
+                thebe_config = json.load(config_file)
+            except ValueError:
+                logger.warning('The supplied thebelab configuration file is not in JSON format.')
+                return
+    else:
+        logger.warning('The supplied thebelab configuration should be either a filename or a dictionary.')
+        return
+
+    # Force config values to make thebelab work correctly
+    thebe_config['predefinedOutput'] = True
+    thebe_config['requestKernel'] = True
+
+    # Specify the thebelab config inline, a separate file is not supported
+    doctree.append(docutils.nodes.raw(
+        text=f'\n<script type="text/x-thebe-config">\n{json.dumps(thebe_config)}\n</script>',
+        format='html'
+    ))
+
+    # Add thebelab library after the config is specified
+    doctree.append(docutils.nodes.raw(
+        text=f'\n<script type="text/javascript" src="{env.config.jupyter_sphinx_thebelab_url}"></script>',
+        format='html'
+    ))
+    
+
 def build_finished(app, env):
     if app.builder.format != 'html':
         return
@@ -619,25 +659,6 @@ def build_finished(app, env):
     src = os.path.join(os.path.dirname(__file__), 'thebelab')
     dst = os.path.join(app.outdir, '_static')
     copy_asset(src, dst)
-
-    thebe_config_dst = os.path.join(dst, 'thebeconfig.js')
-
-    # Create the thebelab confiuration file
-    if isinstance(thebe_config, dict):
-        with open(thebe_config_dst, 'w') as file:
-            thebe_config = app.config.jupyter_sphinx_thebelab_config
-            thebe_config['predefinedOutput'] = True
-            thebe_config['requestKernel'] = True
-            file.write(json.dumps(thebe_config))
-    elif isinstance(thebe_config, file):
-        copy_asset(thebe_config, thebe_config_dst)
-    elif isinstance(thebe_config, str):
-        if os.path.isabs(thebe_config):
-            copy_asset(thebe_config, thebe_config_dst)
-        else:
-            filename = os.path.join(os.path.abspath(env.app.srcdir), thebe_config)
-            copy_asset(filename, thebe_config_dst)
-
 
 
 def setup(app):
@@ -671,9 +692,9 @@ def setup(app):
     app.add_config_value('jupyter_sphinx_require_url', REQUIRE_URL_DEFAULT, 'html')
     app.add_config_value('jupyter_sphinx_embed_url', None, 'html')
 
-    # thebelab config, can be either a path, file or a dict
+    # thebelab config, can be either a filename or a dict
     app.add_config_value('jupyter_sphinx_thebelab_config', None, 'html')
-    
+
     app.add_config_value('jupyter_sphinx_thebelab_url', THEBELAB_URL_DEFAULT, 'html')
 
     # JupyterKernelNode is just a doctree marker for the
