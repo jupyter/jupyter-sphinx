@@ -682,7 +682,7 @@ def add_thebelab_library(doctree, env):
         text=f'\n<script type="text/javascript" src="{env.config.jupyter_sphinx_thebelab_url}"></script>',
         format='html'
     ))
-    
+
 
 def build_finished(app, env):
     if app.builder.format != 'html':
