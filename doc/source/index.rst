@@ -56,7 +56,7 @@ much richer output than mere text; plots, for example:
     from matplotlib import pyplot
     %matplotlib inline
 
-    x = np.linspace(0, 2 * np.pi)
+    x = np.linspace(1E-3, 2 * np.pi)
 
     pyplot.plot(x, np.sin(x) / x)
     pyplot.plot(x, np.cos(x))
@@ -155,7 +155,7 @@ a list of error types; if an error is raised that is not in the list then execut
       :raises: KeyError, ValueError
 
       a = {'hello': 'world!'}
-      a['jello']
+      a['hello']
 
 produces:
 
@@ -163,8 +163,32 @@ produces:
   :raises: KeyError, ValueError
 
   a = {'hello': 'world!'}
-  a['jello']
+  a['hello']
 
+Additionally, any output sent to the ``stderr`` stream of a cell will result in jupyter-sphinx
+raising an exception. This behaviour can be suppressed (and the ``stderr`` stream printed as regular
+output) by providing the ``stderr`` option::
+
+  .. jupyter-execute::
+      :stderr:
+
+      import sys
+
+      print("hello, world!", file=sys.stderr)
+
+produces:
+
+.. jupyter-execute::
+    :stderr:
+
+    import sys
+
+    print("hello, world!", file=sys.stderr)
+
+.. warning::
+
+    Note that output written to ``stderr`` is not displayed any differently than output written
+    to ``stdout``.
 
 Controlling the execution environment
 -------------------------------------
