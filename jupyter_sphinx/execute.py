@@ -214,8 +214,8 @@ class ThebeButton(Directive):
     has_content = False
 
     def run(self):
-        text = self.arguments[0] if self.arguments else ''
-        return [ThebeButtonNode(text)]
+        kwargs = {'text': self.arguments[0]} if self.arguments else {}
+        return [ThebeButtonNode(**kwargs)]
 
 
 class JupyterCellNode(docutils.nodes.container):
@@ -272,8 +272,8 @@ class ThebeButtonNode(docutils.nodes.Element):
     If no ThebeButton directive is found in the document but thebelab
     is enabled, the node is added at the bottom of the document.
     """
-    def __init__(self, text):
-        super().__init__('', text=text or 'Make live')
+    def __init__(self, text='Make live'):
+        super().__init__('', text=text)
 
     def html(self):
         text = self['text']
