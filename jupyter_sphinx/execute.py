@@ -643,6 +643,7 @@ def sphinx_abs_dir(env):
         os.path.abspath(env.app.srcdir)
     )
 
+
 def add_thebelab_library(doctree, env):
     """Adds the thebelab configuration and library to the doctree"""
     thebe_config = env.config.jupyter_sphinx_thebelab_config
