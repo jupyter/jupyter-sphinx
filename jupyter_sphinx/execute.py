@@ -304,7 +304,8 @@ class ExecuteJupyterCells(SphinxTransform):
         if not doctree.traverse(JupyterCellNode):
             return
 
-        if thebe_config:
+        any_thebelab = any(not cell['no_thebelab'] for cell in doctree.traverse(JupyterCellNode))
+        if thebe_config and any_thebelab:
             # Add the button at the bottom if it is not present
             if not doctree.traverse(ThebeButtonNode):
                 doctree.append(ThebeButtonNode())
