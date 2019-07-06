@@ -264,6 +264,30 @@ class JupyterWidgetStateNode(docutils.nodes.Element):
             load='', widget_views='', json_data=json.dumps(self['state']))
 
 
+class ThebeSourceNode(docutils.nodes.container):
+    """Container that holds the cell source when thebelab is enabled"""
+
+    def __init__(self, hide_code):
+        super().__init__('', hide_code=hide_code)
+
+    def html(self):
+        code_class = 'thebelab-code'
+        if self['hide_code']:
+            code_class += ' thebelab-hidden'
+        code = self.astext()
+        return f'<pre class="{code_class}" data-executable="true" data-language="python">{code}</pre>'
+
+
+class ThebeOutputNode(docutils.nodes.container):
+    """Container that holds all the output nodes when thebelab is enabled"""
+
+    def visit_html(self):
+        return '<div class="thebelab-output" data-output="true">'
+
+    def depart_html(self):
+        return '</div>'
+
+
 class ThebeButtonNode(docutils.nodes.Element):
     """Appended to the doctree by the ThebeButton directive
 
@@ -513,32 +537,18 @@ def cell_output_to_nodes(cell, data_priority, dir, thebe_config):
 
 def attach_outputs(output_nodes, node, thebe_config):
     if thebe_config and not node.attributes['no_thebelab']:
-        code_class = 'thebelab-code'
-        if node.attributes['hide_code']:
-            code_class += ' thebelab-hidden'
+        source = node.children[0]
 
-        code = node.astext()
+        thebe_source = ThebeSourceNode(hide_code=node.attributes['hide_code'])
+        thebe_source.children = [source]
 
-        node.children = [docutils.nodes.raw(
-            text='<pre class="{code_class}" data-executable="true" data-language="python">' \
-                '{data}' \
-                '</pre>'.format(data=code, code_class=code_class),
-            format='html',
-        )]
+        node.children = [thebe_source]
 
         if not node.attributes['hide_output']:
             # We ignore the code_below attribute since this is not supported with thebelab
-            node.children.append(docutils.nodes.raw(
-                text='<div class="thebelab-output" data-output="true">',
-                format='html',
-            ))
-
-            node.children += output_nodes
-
-            node.children.append(docutils.nodes.raw(
-                text='</div>',
-                format='html'
-            ))
+            thebe_output = ThebeOutputNode()
+            thebe_output.children = output_nodes
+            node.children.append(thebe_output)
     else:
         if node.attributes['hide_code']:
             node.children = []
@@ -773,6 +783,14 @@ def setup(app):
         self.body.append(node.html())
         raise docutils.nodes.SkipNode
 
+    def visit_container_html(self, node):
+        self.body.append(node.visit_html())
+        self.visit_container(node)
+
+    def depart_container_html(self, node):
+        self.depart_container(node)
+        self.body.append(node.depart_html())
+
     app.add_node(
         JupyterWidgetViewNode,
         html=(visit_widget_html, None),
@@ -790,6 +808,24 @@ def setup(app):
         textinfo=(skip, None),
         text=(skip, None),
         man=(skip, None),
+    )
+
+    app.add_node(
+        ThebeSourceNode,
+        html=(visit_widget_html, None),
+        latex=render_container,
+        textinfo=render_container,
+        text=render_container,
+        man=render_container,
+    )
+
+    app.add_node(
+        ThebeOutputNode,
+        html=(visit_container_html, depart_container_html),
+        latex=render_container,
+        textinfo=render_container,
+        text=render_container,
+        man=render_container,
     )
 
     app.add_node(
