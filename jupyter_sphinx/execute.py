@@ -267,7 +267,7 @@ class JupyterWidgetStateNode(docutils.nodes.Element):
 class ThebeSourceNode(docutils.nodes.container):
     """Container that holds the cell source when thebelab is enabled"""
 
-    def __init__(self, hide_code):
+    def __init__(self, rawsource='', *children, hide_code, **attributes):
         super().__init__('', hide_code=hide_code)
 
     def html(self):
@@ -296,7 +296,7 @@ class ThebeButtonNode(docutils.nodes.Element):
     If no ThebeButton directive is found in the document but thebelab
     is enabled, the node is added at the bottom of the document.
     """
-    def __init__(self, text='Make live'):
+    def __init__(self, rawsource='', *children, text='Make live', **attributes):
         super().__init__('', text=text)
 
     def html(self):
