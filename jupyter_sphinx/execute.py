@@ -201,8 +201,8 @@ class JupyterWidgetViewNode(docutils.nodes.Element):
     outputs this doctree node is rendered generically.
     """
 
-    def __init__(self, view_spec):
-        super().__init__('', view_spec=view_spec)
+    def __init__(self, rawsource='', *children, **attributes):
+        super().__init__('', view_spec=attributes['view_spec'])
 
     def html(self):
         return ipywidgets.embed.widget_view_template.format(
@@ -223,8 +223,8 @@ class JupyterWidgetStateNode(docutils.nodes.Element):
     from all script tags on the page of the correct mimetype.
     """
 
-    def __init__(self, state):
-        super().__init__('', state=state)
+    def __init__(self, rawsource='', *children, **attributes):
+        super().__init__('', state=attributes['state'])
 
     def html(self):
         # TODO: render into a separate file if 'html-manager' starts fully
@@ -323,7 +323,7 @@ class ExecuteJupyterCells(SphinxTransform):
                 attach_outputs(output_nodes, node)
 
             if contains_widgets(notebook):
-                doctree.append(JupyterWidgetStateNode(get_widgets(notebook)))
+                doctree.append(JupyterWidgetStateNode(state=get_widgets(notebook)))
 
 
 ### Roles
@@ -448,7 +448,7 @@ def cell_output_to_nodes(cell, data_priority, dir):
                     format='html',
                 ))
             elif mime_type == WIDGET_VIEW_MIMETYPE:
-                to_add.append(JupyterWidgetViewNode(data))
+                to_add.append(JupyterWidgetViewNode(view_spec=data))
 
     return to_add
 
