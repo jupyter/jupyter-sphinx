@@ -155,7 +155,7 @@ a list of error types; if an error is raised that is not in the list then execut
       :raises: KeyError, ValueError
 
       a = {'hello': 'world!'}
-      a['hello']
+      a['jello']
 
 produces:
 
@@ -163,7 +163,7 @@ produces:
   :raises: KeyError, ValueError
 
   a = {'hello': 'world!'}
-  a['hello']
+  a['jello']
 
 Additionally, any output sent to the ``stderr`` stream of a cell will result in jupyter-sphinx
 raising an exception. This behaviour can be suppressed (and the ``stderr`` stream printed as regular
