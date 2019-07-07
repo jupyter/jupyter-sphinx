@@ -83,6 +83,31 @@ to ``jupyter-execute``::
 when they are included with Sphinx autodoc.
 
 
+Thebelab support
+----------------
+
+To turn on `thebelab <https://thebelab.readthedocs.io/>`_, specify its configuration directly
+in ``conf.py``:
+
+.. code-block:: python
+
+  jupyter_sphinx_thebelab_config = {
+      'requestKernel': True,
+      'binderOptions': {
+          'repo': "binder-examples/requirements",
+      },
+  }
+
+With this configuration, thebelab is activated with a button click:
+
+.. thebe-button:: Activate Thebelab
+
+By default the button is added at the end of the document, but it may also be inserted anywhere using
+
+.. code-block:: ReST
+
+  .. thebe-button:: Optional title
+
 Directive options
 -----------------
 You may choose to hide the code of a cell, but keep its output visible using ``:hide-code:``::

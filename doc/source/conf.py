@@ -28,3 +28,10 @@ extensions = [
 ]
 
 html_theme = 'alabaster'
+
+jupyter_sphinx_thebelab_config = {
+    "requestKernel": True,
+    "binderOptions": {
+        "repo": "jupyter-widgets/jupyter-sphinx",
+    },
+}
