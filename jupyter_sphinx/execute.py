@@ -277,8 +277,9 @@ class ThebeSourceNode(docutils.nodes.container):
         if self['code_below']:
             code_class += ' thebelab-below'
         code = self.astext()
-        return '<pre class="{}" data-executable="true" data-language="python">{}</pre>'\
-               .format(code_class, code)
+        language = self['language']
+        return '<pre class="{}" data-executable="true" data-language="{}">{}</pre>'\
+               .format(code_class, language, code)
 
 
 class ThebeOutputNode(docutils.nodes.container):
@@ -395,6 +396,11 @@ class ExecuteJupyterCells(SphinxTransform):
             # include the path to the output file.
             write_notebook_output(notebook, output_dir, file_name)
 
+            try:
+                cm_language = notebook.metadata.language_info.codemirror_mode.name
+            except AttributeError:
+                cm_language = notebook.metadata.kernelspec.language
+
             # Add doctree nodes for cell outputs.
             for node, cell in zip(nodes, notebook.cells):
                 output_nodes = cell_output_to_nodes(
@@ -403,7 +409,7 @@ class ExecuteJupyterCells(SphinxTransform):
                     sphinx_abs_dir(self.env),
                     thebe_config
                 )
-                attach_outputs(output_nodes, node, thebe_config)
+                attach_outputs(output_nodes, node, thebe_config, cm_language)
 
             if contains_widgets(notebook):
                 doctree.append(JupyterWidgetStateNode(state=get_widgets(notebook)))
@@ -538,12 +544,13 @@ def cell_output_to_nodes(cell, data_priority, dir, thebe_config):
     return to_add
 
 
-def attach_outputs(output_nodes, node, thebe_config):
+def attach_outputs(output_nodes, node, thebe_config, cm_language):
     if thebe_config and not node.attributes['no_thebelab']:
         source = node.children[0]
 
         thebe_source = ThebeSourceNode(hide_code=node.attributes['hide_code'],
-                                       code_below=node.attributes['code_below'])
+                                       code_below=node.attributes['code_below'],
+                                       language=cm_language)
         thebe_source.children = [source]
 
         node.children = [thebe_source]
