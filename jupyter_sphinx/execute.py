@@ -5,7 +5,9 @@ from itertools import groupby, count
 from operator import itemgetter
 import json
 
+import sphinx
 from sphinx.util import logging
+from sphinx.util.fileutil import copy_asset
 from sphinx.transforms import SphinxTransform
 from sphinx.errors import ExtensionError
 from sphinx.addnodes import download_reference
@@ -35,6 +37,7 @@ logger = logging.getLogger(__name__)
 WIDGET_VIEW_MIMETYPE = 'application/vnd.jupyter.widget-view+json'
 WIDGET_STATE_MIMETYPE = 'application/vnd.jupyter.widget-state+json'
 REQUIRE_URL_DEFAULT = 'https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js'
+THEBELAB_URL_DEFAULT = 'https://unpkg.com/thebelab@^0.4.0'
 
 
 def builder_inited(app):
@@ -52,6 +55,10 @@ def builder_inited(app):
     if embed_url:
         app.add_js_file(embed_url)
 
+    # Check if a thebelab config was specified
+    if app.config.jupyter_sphinx_thebelab_config:
+        app.add_js_file('thebelab-helper.js')
+        app.add_css_file('thebelab.css')
 
 ### Directives and their associated doctree nodes
 
@@ -185,6 +192,28 @@ class JupyterCell(Directive):
         )]
 
 
+class ThebeButton(Directive):
+    """Specify a button to activate thebelab on the page
+
+    Arguments
+    ---------
+    text : str (optional)
+        If provided, the button text to display
+
+    Content
+    -------
+    None
+    """
+
+    optional_arguments = 1
+    final_argument_whitespace = True
+    has_content = False
+
+    def run(self):
+        kwargs = {'text': self.arguments[0]} if self.arguments else {}
+        return [ThebeButtonNode(**kwargs)]
+
+
 class JupyterCellNode(docutils.nodes.container):
     """Inserted into doctree whever a JupyterCell directive is encountered.
 
@@ -231,6 +260,50 @@ class JupyterWidgetStateNode(docutils.nodes.Element):
             load='', widget_views='', json_data=json.dumps(self['state']))
 
 
+class ThebeSourceNode(docutils.nodes.container):
+    """Container that holds the cell source when thebelab is enabled"""
+
+    def __init__(self, rawsource='', *children, **attributes):
+        super().__init__('', **attributes)
+
+    def html(self):
+        code_class = 'thebelab-code'
+        if self['hide_code']:
+            code_class += ' thebelab-hidden'
+        if self['code_below']:
+            code_class += ' thebelab-below'
+        code = self.astext()
+        language = self['language']
+        return '<pre class="{}" data-executable="true" data-language="{}">{}</pre>'\
+               .format(code_class, language, code)
+
+
+class ThebeOutputNode(docutils.nodes.container):
+    """Container that holds all the output nodes when thebelab is enabled"""
+
+    def visit_html(self):
+        return '<div class="thebelab-output" data-output="true">'
+
+    def depart_html(self):
+        return '</div>'
+
+
+class ThebeButtonNode(docutils.nodes.Element):
+    """Appended to the doctree by the ThebeButton directive
+
+    Renders as a button to enable thebelab on the page.
+
+    If no ThebeButton directive is found in the document but thebelab
+    is enabled, the node is added at the bottom of the document.
+    """
+    def __init__(self, rawsource='', *children, text='Make live', **attributes):
+        super().__init__('', text=text)
+
+    def html(self):
+        text = self['text']
+        return ('<button title="Make live" class="thebelab-button" id="thebelab-activate-button" ' +
+                'onclick="initThebelab()">{}</button>'.format(text))
+
 ### Doctree transformations
 
 class ExecuteJupyterCells(SphinxTransform):
@@ -249,10 +322,18 @@ class ExecuteJupyterCells(SphinxTransform):
         docname = os.path.basename(self.env.docname)
         default_kernel = self.config.jupyter_execute_default_kernel
         default_names = default_notebook_names(docname)
+        thebe_config = self.config.jupyter_sphinx_thebelab_config
 
         # Check if we have anything to execute.
         if not doctree.traverse(JupyterCellNode):
             return
+
+        if thebe_config:
+            # Add the button at the bottom if it is not present
+            if not doctree.traverse(ThebeButtonNode):
+                doctree.append(ThebeButtonNode())
+
+            add_thebelab_library(doctree, self.env)
 
         logger.info('executing {}'.format(docname))
         output_dir = os.path.join(output_directory(self.env), doc_relpath)
@@ -310,14 +391,20 @@ class ExecuteJupyterCells(SphinxTransform):
             # include the path to the output file.
             write_notebook_output(notebook, output_dir, file_name)
 
+            try:
+                cm_language = notebook.metadata.language_info.codemirror_mode.name
+            except AttributeError:
+                cm_language = notebook.metadata.kernelspec.language
+
             # Add doctree nodes for cell outputs.
             for node, cell in zip(nodes, notebook.cells):
                 output_nodes = cell_output_to_nodes(
                     cell,
                     self.config.jupyter_execute_data_priority,
-                    sphinx_abs_dir(self.env)
+                    sphinx_abs_dir(self.env),
+                    thebe_config
                 )
-                attach_outputs(output_nodes, node)
+                attach_outputs(output_nodes, node, thebe_config, cm_language)
 
             if contains_widgets(notebook):
                 doctree.append(JupyterWidgetStateNode(state=get_widgets(notebook)))
@@ -370,7 +457,7 @@ def split_on(pred, it):
     return (list(x) for _, x in groupby(it, count))
 
 
-def cell_output_to_nodes(cell, data_priority, dir):
+def cell_output_to_nodes(cell, data_priority, dir, thebe_config):
     """Convert a jupyter cell with outputs and filenames to doctree nodes.
 
     Parameters
@@ -381,6 +468,8 @@ def cell_output_to_nodes(cell, data_priority, dir):
     dir : string
         Sphinx "absolute path" to the output folder, so it is a relative path
         to the source folder prefixed with ``/``.
+    thebe_config: dict
+        Thebelab configuration object or None
     """
     to_add = []
     for index, output in enumerate(cell.get('outputs', [])):
@@ -450,14 +539,33 @@ def cell_output_to_nodes(cell, data_priority, dir):
     return to_add
 
 
-def attach_outputs(output_nodes, node):
-    if node.attributes['hide_code']:
-        node.children = []
-    if not node.attributes['hide_output']:
-        if node.attributes['code_below']:
-            node.children = output_nodes + node.children
-        else:
-            node.children = node.children + output_nodes
+def attach_outputs(output_nodes, node, thebe_config, cm_language):
+    if thebe_config:
+        source = node.children[0]
+
+        thebe_source = ThebeSourceNode(hide_code=node.attributes['hide_code'],
+                                       code_below=node.attributes['code_below'],
+                                       language=cm_language)
+        thebe_source.children = [source]
+
+        node.children = [thebe_source]
+
+        if not node.attributes['hide_output']:
+            thebe_output = ThebeOutputNode()
+            thebe_output.children = output_nodes
+            if node.attributes['code_below']:
+                node.children = [thebe_output] + node.children
+            else:
+                node.children = node.children + [thebe_output]
+    else:
+        if node.attributes['hide_code']:
+            node.children = []
+
+        if not node.attributes['hide_output']:
+            if node.attributes['code_below']:
+                node.children = output_nodes + node.children
+            else:
+                node.children = node.children + output_nodes
 
 
 def default_notebook_names(basename):
@@ -554,6 +662,64 @@ def sphinx_abs_dir(env):
     )
 
 
+def add_thebelab_library(doctree, env):
+    """Adds the thebelab configuration and library to the doctree"""
+    thebe_config = env.config.jupyter_sphinx_thebelab_config
+    if isinstance(thebe_config, dict):
+        pass
+    elif isinstance(thebe_config, str):
+        if os.path.isabs(thebe_config):
+            filename = thebe_config
+        else:
+            filename = os.path.join(os.path.abspath(env.app.srcdir), thebe_config)
+
+        if not os.path.exists(filename):
+            logger.warning('The supplied thebelab configuration file does not exist')
+            return
+
+        with open(filename, 'r') as config_file:
+            try:
+                thebe_config = json.load(config_file)
+            except ValueError:
+                logger.warning('The supplied thebelab configuration file is not in JSON format.')
+                return
+    else:
+        logger.warning('The supplied thebelab configuration should be either a filename or a dictionary.')
+        return
+
+    # Force config values to make thebelab work correctly
+    thebe_config['predefinedOutput'] = True
+    thebe_config['requestKernel'] = True
+
+    # Specify the thebelab config inline, a separate file is not supported
+    doctree.append(docutils.nodes.raw(
+        text='\n<script type="text/x-thebe-config">\n{}\n</script>'
+             .format(json.dumps(thebe_config)),
+        format='html'
+    ))
+
+    # Add thebelab library after the config is specified
+    doctree.append(docutils.nodes.raw(
+        text='\n<script type="text/javascript" src="{}"></script>'
+             .format(env.config.jupyter_sphinx_thebelab_url),
+        format='html'
+    ))
+
+
+def build_finished(app, env):
+    if app.builder.format != 'html':
+        return
+
+    thebe_config = app.config.jupyter_sphinx_thebelab_config
+    if not thebe_config:
+        return
+
+    # Copy all thebelab related assets
+    src = os.path.join(os.path.dirname(__file__), 'thebelab')
+    dst = os.path.join(app.outdir, '_static')
+    copy_asset(src, dst)
+
+
 def setup(app):
     # Configuration
     app.add_config_value(
@@ -585,11 +751,50 @@ def setup(app):
     app.add_config_value('jupyter_sphinx_require_url', REQUIRE_URL_DEFAULT, 'html')
     app.add_config_value('jupyter_sphinx_embed_url', None, 'html')
 
-    # JupyterKernelNode is just a doctree marker for the
-    # ExecuteJupyterCells transform, so we don't actually render it.
+    # thebelab config, can be either a filename or a dict
+    app.add_config_value('jupyter_sphinx_thebelab_config', None, 'html')
+
+    app.add_config_value('jupyter_sphinx_thebelab_url', THEBELAB_URL_DEFAULT, 'html')
+
+    # Used for nodes that do not need to be rendered
     def skip(self, node):
         raise docutils.nodes.SkipNode
 
+    # Renders the children of a container
+    render_container = (
+        lambda self, node: self.visit_container(node),
+        lambda self, node: self.depart_container(node),
+    )
+
+    # Used to render the container and its children as HTML
+    def visit_container_html(self, node):
+        self.body.append(node.visit_html())
+        self.visit_container(node)
+
+    def depart_container_html(self, node):
+        self.depart_container(node)
+        self.body.append(node.depart_html())
+
+    # Used to render an element node as HTML
+    def visit_element_html(self, node):
+        self.body.append(node.html())
+        raise docutils.nodes.SkipNode
+
+    # Used to render the ThebeSourceNode conditionally for non-HTML builders
+    def visit_thebe_source(self, node):
+        if node['hide_code']:
+            raise docutils.nodes.SkipNode
+        else:
+            self.visit_container(node)
+
+    render_thebe_source = (
+        visit_thebe_source,
+        lambda self, node: self.depart_container(node)
+    )
+
+
+    # JupyterKernelNode is just a doctree marker for the
+    # ExecuteJupyterCells transform, so we don't actually render it.
     app.add_node(
         JupyterKernelNode,
         html=(skip, None),
@@ -599,14 +804,8 @@ def setup(app):
         man=(skip, None),
     )
 
-
     # JupyterCellNode is a container that holds the input and
     # any output, so we render it as a container.
-    render_container = (
-        lambda self, node: self.visit_container(node),
-        lambda self, node: self.depart_container(node),
-    )
-
     app.add_node(
         JupyterCellNode,
         html=render_container,
@@ -618,13 +817,9 @@ def setup(app):
 
     # JupyterWidgetViewNode holds widget view JSON,
     # but is only rendered properly in HTML documents.
-    def visit_widget_html(self, node):
-        self.body.append(node.html())
-        raise docutils.nodes.SkipNode
-
     app.add_node(
         JupyterWidgetViewNode,
-        html=(visit_widget_html, None),
+        html=(visit_element_html, None),
         latex=(skip, None),
         textinfo=(skip, None),
         text=(skip, None),
@@ -634,7 +829,41 @@ def setup(app):
     # but is only rendered in HTML documents.
     app.add_node(
         JupyterWidgetStateNode,
-        html=(visit_widget_html, None),
+        html=(visit_element_html, None),
+        latex=(skip, None),
+        textinfo=(skip, None),
+        text=(skip, None),
+        man=(skip, None),
+    )
+
+    # ThebeSourceNode holds the source code and is rendered if
+    # hide-code is not specified. For HTML it is always rendered,
+    # but hidden using the stylesheet
+    app.add_node(
+        ThebeSourceNode,
+        html=(visit_element_html, None),
+        latex=render_thebe_source,
+        textinfo=render_thebe_source,
+        text=render_thebe_source,
+        man=render_thebe_source,
+    )
+
+    # ThebeOutputNode holds the output of the Jupyter cells
+    # and is rendered if hide-output is not specified.
+    app.add_node(
+        ThebeOutputNode,
+        html=(visit_container_html, depart_container_html),
+        latex=render_container,
+        textinfo=render_container,
+        text=render_container,
+        man=render_container,
+    )
+
+    # ThebeButtonNode is the button that activates thebelab
+    # and is only rendered for the HTML builder
+    app.add_node(
+        ThebeButtonNode,
+        html=(visit_element_html, None),
         latex=(skip, None),
         textinfo=(skip, None),
         text=(skip, None),
@@ -643,6 +872,7 @@ def setup(app):
 
     app.add_directive('jupyter-execute', JupyterCell)
     app.add_directive('jupyter-kernel', JupyterKernel)
+    app.add_directive('thebe-button', ThebeButton)
     app.add_role('jupyter-download:notebook', jupyter_download_role)
     app.add_role('jupyter-download:script', jupyter_download_role)
     app.add_transform(ExecuteJupyterCells)
@@ -652,6 +882,7 @@ def setup(app):
     app.add_lexer('ipython', IPython3Lexer())
 
     app.connect('builder-inited', builder_inited)
+    app.connect('build-finished', build_finished)
 
     return {
         'version': __version__,

@@ -28,3 +28,9 @@ extensions = [
 ]
 
 html_theme = 'alabaster'
+
+jupyter_sphinx_thebelab_config = {
+    "binderOptions": {
+        "repo": "jupyter-widgets/jupyter-sphinx",
+    },
+}

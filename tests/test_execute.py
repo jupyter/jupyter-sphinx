@@ -15,6 +15,9 @@ from jupyter_sphinx.execute import (
     JupyterKernelNode,
     JupyterWidgetViewNode,
     JupyterWidgetStateNode,
+    ThebeSourceNode,
+    ThebeOutputNode,
+    ThebeButtonNode,
 )
 
 @pytest.fixture()
@@ -23,11 +26,13 @@ def doctree():
     apps = []
     syspath = sys.path[:]
 
-    def doctree(source):
+    def doctree(source, config=None):
         src_dir = tempfile.mkdtemp()
         source_trees.append(src_dir)
         with open(os.path.join(src_dir, 'conf.py'), 'w') as f:
             f.write("extensions = ['jupyter_sphinx.execute']")
+            if config is not None:
+                f.write('\n' + config)
         with open(os.path.join(src_dir, 'index.rst'), 'w') as f:
             f.write(source)
         app = SphinxTestApp(srcdir=path(src_dir), status=StringIO(),
@@ -226,3 +231,102 @@ def test_stderr(doctree):
     cell, = tree.traverse(JupyterCellNode)
     assert len(cell.children) == 2
     assert cell.children[1].rawsource.strip() == "hello world"
+
+
+thebe_config = "jupyter_sphinx_thebelab_config = {\"dummy\": True}"
+
+
+def test_thebe_hide_output(doctree):
+    source = '''
+    .. jupyter-execute::
+        :hide-output:
+
+        2 + 2
+    '''
+    tree = doctree(source, thebe_config)
+    cell, = tree.traverse(JupyterCellNode)
+    assert cell.attributes['hide_output'] is True
+    assert len(cell.children) == 1
+
+    source = cell.children[0]
+    assert type(source) == ThebeSourceNode
+    assert len(source.children) == 1
+    assert source.children[0].rawsource.strip() == "2 + 2"
+
+
+def test_thebe_hide_code(doctree):
+    source = '''
+    .. jupyter-execute::
+        :hide-code:
+
+        2 + 2
+    '''
+    tree = doctree(source, thebe_config)
+    cell, = tree.traverse(JupyterCellNode)
+    assert cell.attributes['hide_code'] is True
+    assert len(cell.children) == 2
+
+    source = cell.children[0]
+    assert type(source) == ThebeSourceNode
+    assert source.attributes['hide_code'] is True
+    assert len(source.children) == 1
+    assert source.children[0].rawsource.strip() == "2 + 2"
+
+    output = cell.children[1]
+    assert type(output) == ThebeOutputNode
+    assert len(output.children) == 1
+    assert output.children[0].rawsource.strip() == "4"
+
+
+def test_thebe_code_below(doctree):
+    source = '''
+    .. jupyter-execute::
+        :code-below:
+
+        2 + 2
+    '''
+    tree = doctree(source, thebe_config)
+    cell, = tree.traverse(JupyterCellNode)
+    assert cell.attributes['code_below'] is True
+
+    output = cell.children[0]
+    assert type(output) is ThebeOutputNode
+    assert len(output.children) == 1
+    assert output.children[0].rawsource.strip() == "4"
+
+    source = cell.children[1]
+    assert type(source) is ThebeSourceNode
+    assert len(source.children) == 1
+    assert source.children[0].rawsource.strip() == "2 + 2"
+    assert source.attributes['code_below'] is True
+
+
+def test_thebe_button_auto(doctree):
+    config = "jupyter_sphinx_thebelab_config = {\"dummy\": True}"
+    source = """
+    .. jupyter-execute::
+
+        1 + 1
+    """
+    tree = doctree(source, config=config)
+    assert len(tree.traverse(ThebeButtonNode)) == 1
+
+
+def test_thebe_button_manual(doctree):
+    config = "jupyter_sphinx_thebelab_config = {\"dummy\": True}"
+    source = """
+    .. jupyter-execute::
+
+        1 + 1
+
+    .. thebe-button::
+    """
+    tree = doctree(source, config)
+    assert len(tree.traverse(ThebeButtonNode)) == 1
+
+
+def test_thebe_button_none(doctree):
+    config = "jupyter_sphinx_thebelab_config = {\"dummy\": True}"
+    source = "No Jupyter cells"
+    tree = doctree(source, config)
+    assert len(tree.traverse(ThebeButtonNode)) == 0
