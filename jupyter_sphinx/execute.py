@@ -131,8 +131,6 @@ class JupyterCell(Directive):
         If provided, the cell output will not be displayed in the output.
     code-below : bool
         If provided, the code will be shown below the cell output.
-    no-thebelab : bool
-        If provided, thebelab will be disabled for this cell
     raises : comma separated list of exception types
         If provided, a comma-separated list of exception type names that
         the cell may raise. If one of the listed execption types is raised
@@ -155,7 +153,6 @@ class JupyterCell(Directive):
         'hide-code': directives.flag,
         'hide-output': directives.flag,
         'code-below': directives.flag,
-        'no-thebelab': directives.flag,
         'raises': csv_option,
         'stderr': directives.flag,
     }
@@ -190,7 +187,6 @@ class JupyterCell(Directive):
             hide_code=('hide-code' in self.options),
             hide_output=('hide-output' in self.options),
             code_below=('code-below' in self.options),
-            no_thebelab=('no-thebelab' in self.options),
             raises=self.options.get('raises'),
             stderr=('stderr' in self.options),
         )]
@@ -332,8 +328,7 @@ class ExecuteJupyterCells(SphinxTransform):
         if not doctree.traverse(JupyterCellNode):
             return
 
-        any_thebelab = any(not cell['no_thebelab'] for cell in doctree.traverse(JupyterCellNode))
-        if thebe_config and any_thebelab:
+        if thebe_config:
             # Add the button at the bottom if it is not present
             if not doctree.traverse(ThebeButtonNode):
                 doctree.append(ThebeButtonNode())
@@ -545,7 +540,7 @@ def cell_output_to_nodes(cell, data_priority, dir, thebe_config):
 
 
 def attach_outputs(output_nodes, node, thebe_config, cm_language):
-    if thebe_config and not node.attributes['no_thebelab']:
+    if thebe_config:
         source = node.children[0]
 
         thebe_source = ThebeSourceNode(hide_code=node.attributes['hide_code'],

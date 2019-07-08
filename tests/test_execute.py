@@ -61,7 +61,6 @@ def test_basic(doctree):
     assert cell.attributes['code_below'] is False
     assert cell.attributes['hide_code'] is False
     assert cell.attributes['hide_output'] is False
-    assert cell.attributes['no_thebelab'] is False
     assert cell.children[0].rawsource.strip() == "2 + 2"
     assert cell.children[1].rawsource.strip() == "4"
 
@@ -328,11 +327,6 @@ def test_thebe_button_manual(doctree):
 
 def test_thebe_button_none(doctree):
     config = "jupyter_sphinx_thebelab_config = {\"dummy\": True}"
-    source = """
-    .. jupyter-execute::
-        :no-thebelab:
-
-        1 + 1
-    """
+    source = "No Jupyter cells"
     tree = doctree(source, config)
     assert len(tree.traverse(ThebeButtonNode)) == 0
