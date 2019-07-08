@@ -380,10 +380,14 @@ class ExecuteJupyterCells(SphinxTransform):
                     raise ExtensionError('Cell printed to stderr:\n{}'
                                          .format(stderr[0]['text']))
 
+            try:
+                lexer = notebook.metadata.language_info.pygments_lexer
+            except AttributeError:
+                lexer = notebook.metadata.kernelspec.language
+
             # Highlight the code cells now that we know what language they are
             for node in nodes:
                 source = node.children[0]
-                lexer = notebook.metadata.language_info.pygments_lexer
                 source.attributes['language'] = lexer
 
             # Write certain cell outputs (e.g. images) to separate files, and
