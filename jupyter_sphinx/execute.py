@@ -267,8 +267,8 @@ class JupyterWidgetStateNode(docutils.nodes.Element):
 class ThebeSourceNode(docutils.nodes.container):
     """Container that holds the cell source when thebelab is enabled"""
 
-    def __init__(self, rawsource='', *children, hide_code, code_below, **attributes):
-        super().__init__('', hide_code=hide_code, code_below=code_below)
+    def __init__(self, rawsource='', *children, **attributes):
+        super().__init__('', **attributes)
 
     def html(self):
         code_class = 'thebelab-code'
