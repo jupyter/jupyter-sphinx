@@ -208,9 +208,6 @@ class JupyterWidgetViewNode(docutils.nodes.Element):
         return ipywidgets.embed.widget_view_template.format(
             view_spec=json.dumps(self['view_spec']))
 
-    def text(self):
-        return '[ widget ]'
-
 
 class JupyterWidgetStateNode(docutils.nodes.Element):
     """Appended to doctree if any Jupyter cell produced a widget as output.
@@ -625,17 +622,13 @@ def setup(app):
         self.body.append(node.html())
         raise docutils.nodes.SkipNode
 
-    def visit_widget_text(self, node):
-        self.body.append(node.text())
-        raise docutils.nodes.SkipNode
-
     app.add_node(
         JupyterWidgetViewNode,
         html=(visit_widget_html, None),
-        latex=(visit_widget_text, None),
-        textinfo=(visit_widget_text, None),
-        text=(visit_widget_text, None),
-        man=(visit_widget_text, None),
+        latex=(skip, None),
+        textinfo=(skip, None),
+        text=(skip, None),
+        man=(skip, None),
     )
     # JupyterWidgetStateNode holds the widget state JSON,
     # but is only rendered in HTML documents.
