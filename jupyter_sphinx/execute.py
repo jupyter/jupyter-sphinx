@@ -791,6 +791,17 @@ def setup(app):
         self.depart_container(node)
         self.body.append(node.depart_html())
 
+    def visit_thebe_source(self, node):
+        if node['hide_code']:
+            raise docutils.nodes.SkipNode
+        else:
+            self.visit_container(node)
+
+    render_thebe_source = (
+        visit_thebe_source,
+        lambda self, node: self.depart_container(node)
+    )
+
     app.add_node(
         JupyterWidgetViewNode,
         html=(visit_widget_html, None),
@@ -813,10 +824,10 @@ def setup(app):
     app.add_node(
         ThebeSourceNode,
         html=(visit_widget_html, None),
-        latex=render_container,
-        textinfo=render_container,
-        text=render_container,
-        man=render_container,
+        latex=render_thebe_source,
+        textinfo=render_thebe_source,
+        text=render_thebe_source,
+        man=render_thebe_source,
     )
 
     app.add_node(
