@@ -71,8 +71,8 @@ or even full-blown javascript widgets:
 
     a = w.IntSlider()
     b = w.IntText()
-    display(a, b)
     w.jslink((a, 'value'), (b, 'value'))
+    display(a, b)
 
 It is also possible to include code from a regular file by passing the filename as argument
 to ``jupyter-execute``::
