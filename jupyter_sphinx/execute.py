@@ -267,13 +267,15 @@ class JupyterWidgetStateNode(docutils.nodes.Element):
 class ThebeSourceNode(docutils.nodes.container):
     """Container that holds the cell source when thebelab is enabled"""
 
-    def __init__(self, rawsource='', *children, hide_code, **attributes):
-        super().__init__('', hide_code=hide_code)
+    def __init__(self, rawsource='', *children, hide_code, code_below, **attributes):
+        super().__init__('', hide_code=hide_code, code_below=code_below)
 
     def html(self):
         code_class = 'thebelab-code'
         if self['hide_code']:
             code_class += ' thebelab-hidden'
+        if self['code_below']:
+            code_class += ' thebelab-below'
         code = self.astext()
         return '<pre class="{}" data-executable="true" data-language="python">{}</pre>'\
                .format(code_class, code)
@@ -540,16 +542,19 @@ def attach_outputs(output_nodes, node, thebe_config):
     if thebe_config and not node.attributes['no_thebelab']:
         source = node.children[0]
 
-        thebe_source = ThebeSourceNode(hide_code=node.attributes['hide_code'])
+        thebe_source = ThebeSourceNode(hide_code=node.attributes['hide_code'],
+                                       code_below=node.attributes['code_below'])
         thebe_source.children = [source]
 
         node.children = [thebe_source]
 
         if not node.attributes['hide_output']:
-            # We ignore the code_below attribute since this is not supported with thebelab
             thebe_output = ThebeOutputNode()
             thebe_output.children = output_nodes
-            node.children.append(thebe_output)
+            if node.attributes['code_below']:
+                node.children = [thebe_output] + node.children
+            else:
+                node.children = node.children + [thebe_output]
     else:
         if node.attributes['hide_code']:
             node.children = []
