@@ -201,15 +201,12 @@ class JupyterWidgetViewNode(docutils.nodes.Element):
     outputs this doctree node is rendered generically.
     """
 
-    def __init__(self, view_spec):
-        super().__init__('', view_spec=view_spec)
+    def __init__(self, rawsource='', *children, **attributes):
+        super().__init__('', view_spec=attributes['view_spec'])
 
     def html(self):
         return ipywidgets.embed.widget_view_template.format(
             view_spec=json.dumps(self['view_spec']))
-
-    def text(self):
-        return '[ widget ]'
 
 
 class JupyterWidgetStateNode(docutils.nodes.Element):
@@ -223,8 +220,8 @@ class JupyterWidgetStateNode(docutils.nodes.Element):
     from all script tags on the page of the correct mimetype.
     """
 
-    def __init__(self, state):
-        super().__init__('', state=state)
+    def __init__(self, rawsource='', *children, **attributes):
+        super().__init__('', state=attributes['state'])
 
     def html(self):
         # TODO: render into a separate file if 'html-manager' starts fully
@@ -323,7 +320,7 @@ class ExecuteJupyterCells(SphinxTransform):
                 attach_outputs(output_nodes, node)
 
             if contains_widgets(notebook):
-                doctree.append(JupyterWidgetStateNode(get_widgets(notebook)))
+                doctree.append(JupyterWidgetStateNode(state=get_widgets(notebook)))
 
 
 ### Roles
@@ -448,7 +445,7 @@ def cell_output_to_nodes(cell, data_priority, dir):
                     format='html',
                 ))
             elif mime_type == WIDGET_VIEW_MIMETYPE:
-                to_add.append(JupyterWidgetViewNode(data))
+                to_add.append(JupyterWidgetViewNode(view_spec=data))
 
     return to_add
 
@@ -625,17 +622,13 @@ def setup(app):
         self.body.append(node.html())
         raise docutils.nodes.SkipNode
 
-    def visit_widget_text(self, node):
-        self.body.append(node.text())
-        raise docutils.nodes.SkipNode
-
     app.add_node(
         JupyterWidgetViewNode,
         html=(visit_widget_html, None),
-        latex=(visit_widget_text, None),
-        textinfo=(visit_widget_text, None),
-        text=(visit_widget_text, None),
-        man=(visit_widget_text, None),
+        latex=(skip, None),
+        textinfo=(skip, None),
+        text=(skip, None),
+        man=(skip, None),
     )
     # JupyterWidgetStateNode holds the widget state JSON,
     # but is only rendered in HTML documents.
