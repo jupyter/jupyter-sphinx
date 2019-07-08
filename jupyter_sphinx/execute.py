@@ -746,43 +746,17 @@ def setup(app):
 
     app.add_config_value('jupyter_sphinx_thebelab_url', THEBELAB_URL_DEFAULT, 'html')
 
-    # JupyterKernelNode is just a doctree marker for the
-    # ExecuteJupyterCells transform, so we don't actually render it.
+    # Used for nodes that do not need to be rendered
     def skip(self, node):
         raise docutils.nodes.SkipNode
 
-    app.add_node(
-        JupyterKernelNode,
-        html=(skip, None),
-        latex=(skip, None),
-        textinfo=(skip, None),
-        text=(skip, None),
-        man=(skip, None),
-    )
-
-
-    # JupyterCellNode is a container that holds the input and
-    # any output, so we render it as a container.
+    # Renders the children of a container
     render_container = (
         lambda self, node: self.visit_container(node),
         lambda self, node: self.depart_container(node),
     )
 
-    app.add_node(
-        JupyterCellNode,
-        html=render_container,
-        latex=render_container,
-        textinfo=render_container,
-        text=render_container,
-        man=render_container,
-    )
-
-    # JupyterWidgetViewNode holds widget view JSON,
-    # but is only rendered properly in HTML documents.
-    def visit_widget_html(self, node):
-        self.body.append(node.html())
-        raise docutils.nodes.SkipNode
-
+    # Used to render the container and its children as HTML
     def visit_container_html(self, node):
         self.body.append(node.visit_html())
         self.visit_container(node)
@@ -791,6 +765,12 @@ def setup(app):
         self.depart_container(node)
         self.body.append(node.depart_html())
 
+    # Used to render an element node as HTML
+    def visit_element_html(self, node):
+        self.body.append(node.html())
+        raise docutils.nodes.SkipNode
+
+    # Used to render the ThebeSourceNode conditionally for non-HTML builders
     def visit_thebe_source(self, node):
         if node['hide_code']:
             raise docutils.nodes.SkipNode
@@ -802,9 +782,34 @@ def setup(app):
         lambda self, node: self.depart_container(node)
     )
 
+
+    # JupyterKernelNode is just a doctree marker for the
+    # ExecuteJupyterCells transform, so we don't actually render it.
+    app.add_node(
+        JupyterKernelNode,
+        html=(skip, None),
+        latex=(skip, None),
+        textinfo=(skip, None),
+        text=(skip, None),
+        man=(skip, None),
+    )
+
+    # JupyterCellNode is a container that holds the input and
+    # any output, so we render it as a container.
+    app.add_node(
+        JupyterCellNode,
+        html=render_container,
+        latex=render_container,
+        textinfo=render_container,
+        text=render_container,
+        man=render_container,
+    )
+
+    # JupyterWidgetViewNode holds widget view JSON,
+    # but is only rendered properly in HTML documents.
     app.add_node(
         JupyterWidgetViewNode,
-        html=(visit_widget_html, None),
+        html=(visit_element_html, None),
         latex=(skip, None),
         textinfo=(skip, None),
         text=(skip, None),
@@ -814,22 +819,27 @@ def setup(app):
     # but is only rendered in HTML documents.
     app.add_node(
         JupyterWidgetStateNode,
-        html=(visit_widget_html, None),
+        html=(visit_element_html, None),
         latex=(skip, None),
         textinfo=(skip, None),
         text=(skip, None),
         man=(skip, None),
     )
 
+    # ThebeSourceNode holds the source code and is rendered if
+    # hide-code is not specified. For HTML it is always rendered,
+    # but hidden using the stylesheet
     app.add_node(
         ThebeSourceNode,
-        html=(visit_widget_html, None),
+        html=(visit_element_html, None),
         latex=render_thebe_source,
         textinfo=render_thebe_source,
         text=render_thebe_source,
         man=render_thebe_source,
     )
 
+    # ThebeOutputNode holds the output of the Jupyter cells
+    # and is rendered if hide-output is not specified.
     app.add_node(
         ThebeOutputNode,
         html=(visit_container_html, depart_container_html),
@@ -839,9 +849,11 @@ def setup(app):
         man=render_container,
     )
 
+    # ThebeButtonNode is the button that activates thebelab
+    # and is only rendered for the HTML builder
     app.add_node(
         ThebeButtonNode,
-        html=(visit_widget_html, None),
+        html=(visit_element_html, None),
         latex=(skip, None),
         textinfo=(skip, None),
         text=(skip, None),
