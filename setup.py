@@ -14,6 +14,11 @@ setup(
     author = 'Jupyter Development Team',
     author_email = 'jupyter@googlegroups.com',
     description = 'Jupyter Sphinx Extensions',
+    project_urls={
+        'Bug Tracker': 'https://github.com/jupyter/jupyter-sphinx/issues/',
+        'Documentation': 'https://jupyter-sphinx.readthedocs.io',
+        'Source Code': 'https://github.com/jupyter/jupyter-sphinx/',
+    },
     license = 'BSD',
     packages = ['jupyter_sphinx'],
     install_requires = [
