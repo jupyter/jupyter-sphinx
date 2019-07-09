@@ -5,9 +5,25 @@ Jupyter Sphinx Extension
    :maxdepth: 2
    :caption: Contents:
 
-Jupyter Sphinx is a Sphinx extension that executes embedded code in a Jupyter
-kernel, and embeds outputs of that code in the output document. It has support
-for rich output such as images, Latex math and even javascript widgets.
+Jupyter-sphinx is a Sphinx extension that executes embedded code in a Jupyter
+kernel, and embeds outputs of that code in the document. It has support
+for rich output such as images, Latex math and even javascript widgets, and
+it allows to enable `thebelab <https://thebelab.readthedocs.io/>`_ for live
+code execution with minimal effort.
+
+Installation
+------------
+Get jupyter-sphinx from pip:
+
+.. code-block:: bash
+
+  pip install jupyter-sphinx
+
+or conda:
+
+.. code-block:: bash
+
+  conda install jupyter-sphinx
 
 Enabling the extension
 ----------------------
