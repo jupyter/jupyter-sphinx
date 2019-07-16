@@ -30,4 +30,5 @@ setup(
         'nbformat',
     ],
     python_requires = '>= 3.5',
+    package_data={'jupyter_sphinx': ['thebelab/*']},
 )
