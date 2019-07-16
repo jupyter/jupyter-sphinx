@@ -5,7 +5,7 @@ channels:
 
 dependencies:
   - python=3.6
-  - sphinx>=0.6
+  - sphinx==1.8.5
   - ipywidgets>=7.0.0
   - IPython
   - nbconvert>=5.4
