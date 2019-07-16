@@ -266,16 +266,18 @@ class ThebeSourceNode(docutils.nodes.container):
     def __init__(self, rawsource='', *children, **attributes):
         super().__init__('', **attributes)
 
-    def html(self):
+    def visit_html(self):
         code_class = 'thebelab-code'
         if self['hide_code']:
             code_class += ' thebelab-hidden'
         if self['code_below']:
             code_class += ' thebelab-below'
-        code = self.astext()
         language = self['language']
-        return '<pre class="{}" data-executable="true" data-language="{}">{}</pre>'\
-               .format(code_class, language, code)
+        return '<div class="{}" data-executable="true" data-language="{}">'\
+               .format(code_class, language)
+
+    def depart_html(self):
+        return '</div>'
 
 
 class ThebeOutputNode(docutils.nodes.container):
@@ -845,7 +847,7 @@ def setup(app):
     # but hidden using the stylesheet
     app.add_node(
         ThebeSourceNode,
-        html=(visit_element_html, None),
+        html=(visit_container_html, depart_container_html),
         latex=render_thebe_source,
         textinfo=render_thebe_source,
         text=render_thebe_source,
