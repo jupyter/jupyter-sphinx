@@ -33,7 +33,7 @@ def doctree():
             f.write("extensions = ['jupyter_sphinx.execute']")
             if config is not None:
                 f.write('\n' + config)
-        with open(os.path.join(src_dir, 'index.rst'), 'w') as f:
+        with open(os.path.join(src_dir, 'contents.rst'), 'w') as f:
             f.write(source)
         warnings = StringIO()
         app = SphinxTestApp(srcdir=path(src_dir), status=StringIO(),
@@ -41,7 +41,7 @@ def doctree():
         apps.append(app)
         app.build()
 
-        doctree = app.env.get_doctree("index")
+        doctree = app.env.get_doctree("contents")
 
         if return_warnings:
             return doctree, warnings.getvalue()
