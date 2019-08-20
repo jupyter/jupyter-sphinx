@@ -26,7 +26,7 @@ def doctree():
     apps = []
     syspath = sys.path[:]
 
-    def doctree(source, config=None):
+    def doctree(source, config=None, return_warnings=False):
         src_dir = tempfile.mkdtemp()
         source_trees.append(src_dir)
         with open(os.path.join(src_dir, 'conf.py'), 'w') as f:
@@ -35,11 +35,18 @@ def doctree():
                 f.write('\n' + config)
         with open(os.path.join(src_dir, 'index.rst'), 'w') as f:
             f.write(source)
+        warnings = StringIO()
         app = SphinxTestApp(srcdir=path(src_dir), status=StringIO(),
-                            warning=StringIO())
+                            warning=warnings)
         apps.append(app)
         app.build()
-        return app.env.get_doctree('index')
+
+        doctree = app.env.get_doctree("index")
+
+        if return_warnings:
+            return doctree, warnings.getvalue()
+        else:
+            return doctree
 
     yield doctree
 
@@ -217,8 +224,11 @@ def test_stderr(doctree):
         import sys
         print('hello world', file=sys.stderr)
     """
-    with pytest.raises(ExtensionError):
-        tree = doctree(source)
+
+    tree, warnings = doctree(source, return_warnings=True)
+    assert "hello world" in warnings
+    cell, = tree.traverse(JupyterCellNode)
+    assert len(cell.children) == 1  # no output
 
     source = """
     .. jupyter-execute::
