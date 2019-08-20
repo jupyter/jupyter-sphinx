@@ -379,8 +379,8 @@ class ExecuteJupyterCells(SphinxTransform):
                           if output['output_type'] == 'stream'
                              and output['name'] == 'stderr']
                 if stderr and not node.attributes['stderr']:
-                    raise ExtensionError('Cell printed to stderr:\n{}'
-                                         .format(stderr[0]['text']))
+                    logger.warning('Cell printed to stderr:\n{}'
+                                   .format(stderr[0]['text']))
 
             try:
                 lexer = notebook.metadata.language_info.pygments_lexer
@@ -407,6 +407,7 @@ class ExecuteJupyterCells(SphinxTransform):
                 output_nodes = cell_output_to_nodes(
                     cell,
                     self.config.jupyter_execute_data_priority,
+                    bool(node.attributes["stderr"]),
                     sphinx_abs_dir(self.env),
                     thebe_config
                 )
@@ -463,7 +464,7 @@ def split_on(pred, it):
     return (list(x) for _, x in groupby(it, count))
 
 
-def cell_output_to_nodes(cell, data_priority, dir, thebe_config):
+def cell_output_to_nodes(cell, data_priority, write_stderr, dir, thebe_config):
     """Convert a jupyter cell with outputs and filenames to doctree nodes.
 
     Parameters
@@ -471,6 +472,8 @@ def cell_output_to_nodes(cell, data_priority, dir, thebe_config):
     cell : jupyter cell
     data_priority : list of mime types
         Which media types to prioritize.
+    write_stderr : bool
+        If True include stderr in cell output
     dir : string
         Sphinx "absolute path" to the output folder, so it is a relative path
         to the source folder prefixed with ``/``.
@@ -483,6 +486,8 @@ def cell_output_to_nodes(cell, data_priority, dir, thebe_config):
         if (
             output_type == 'stream'
         ):
+            if not write_stderr and output["name"] == "stderr":
+                continue
             to_add.append(docutils.nodes.literal_block(
                 text=output['text'],
                 rawsource=output['text'],
