@@ -303,8 +303,8 @@ class ThebeButtonNode(docutils.nodes.Element):
 
     def html(self):
         text = self['text']
-        return ('<button title="Make live" class="thebelab-button" id="thebelab-activate-button" ' +
-                'onclick="initThebelab()">{}</button>'.format(text))
+        return ('<button title="{text}" class="thebelab-button" id="thebelab-activate-button" '
+                'onclick="initThebelab()">{text}</button>'.format(text=text))
 
 ### Doctree transformations
 
