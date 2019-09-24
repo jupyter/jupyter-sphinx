@@ -64,7 +64,7 @@ can use variables and functions defined in cells earlier in the document:
     print('second cell: a = {}'.format(a))
 
 Because jupyter-sphinx uses the machinery of ``nbconvert``, it is capable of rendering
-much richer output than mere text; plots, for example:
+any rich output, for example plots:
 
 .. jupyter-execute::
 
@@ -77,6 +77,13 @@ much richer output than mere text; plots, for example:
     pyplot.plot(x, np.sin(x) / x)
     pyplot.plot(x, np.cos(x))
     pyplot.grid()
+
+LaTeX output:
+
+.. jupyter-execute::
+
+  from IPython.display import Latex
+  Latex('∫_{-∞}^∞ e^{-x²}dx = \sqrt{π}')
 
 or even full-blown javascript widgets:
 
