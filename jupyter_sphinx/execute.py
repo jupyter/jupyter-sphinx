@@ -11,11 +11,11 @@ from sphinx.util.fileutil import copy_asset
 from sphinx.transforms import SphinxTransform
 from sphinx.errors import ExtensionError
 from sphinx.addnodes import download_reference
-from sphinx.ext.mathbase import displaymath
 
 import docutils
 from IPython.lib.lexers import IPythonTracebackLexer, IPython3Lexer
 from docutils.parsers.rst import Directive, directives
+from docutils.nodes import math_block
 
 import nbconvert
 from nbconvert.preprocessors.execute import executenb
@@ -528,8 +528,8 @@ def cell_output_to_nodes(cell, data_priority, write_stderr, dir, thebe_config):
                     format='html'
                 ))
             elif mime_type == 'text/latex':
-                to_add.append(displaymath(
-                    latex=data,
+                to_add.append(math_block(
+                    text=data,
                     nowrap=False,
                     number=None,
                  ))
