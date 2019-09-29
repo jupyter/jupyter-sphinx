@@ -491,6 +491,7 @@ def cell_output_to_nodes(cell, data_priority, write_stderr, dir, thebe_config):
             to_add.append(docutils.nodes.literal_block(
                 text=output['text'],
                 rawsource=output['text'],
+                language='none',
             ))
         elif (
             output_type == 'error'
@@ -537,6 +538,7 @@ def cell_output_to_nodes(cell, data_priority, write_stderr, dir, thebe_config):
                 to_add.append(docutils.nodes.literal_block(
                     text=data,
                     rawsource=data,
+                    language='none',
                 ))
             elif mime_type == 'application/javascript':
                 to_add.append(docutils.nodes.raw(
