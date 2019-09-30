@@ -30,6 +30,11 @@ extensions = [
 ]
 
 html_theme = 'alabaster'
+html_theme_options = {
+    "github_user": "jupyter",
+    "github_repo": "jupyter-sphinx",
+    "github_banner": True,
+}
 
 jupyter_sphinx_thebelab_config = {
     "binderOptions": {
