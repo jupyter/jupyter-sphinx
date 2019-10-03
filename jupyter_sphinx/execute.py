@@ -153,6 +153,7 @@ class JupyterCell(Directive):
         'hide-code': directives.flag,
         'hide-output': directives.flag,
         'code-below': directives.flag,
+        'linenos': directives.flag,
         'raises': csv_option,
         'stderr': directives.flag,
     }
@@ -187,6 +188,7 @@ class JupyterCell(Directive):
             hide_code=('hide-code' in self.options),
             hide_output=('hide-output' in self.options),
             code_below=('code-below' in self.options),
+            linenos=('linenos' in self.options),
             raises=self.options.get('raises'),
             stderr=('stderr' in self.options),
         )]
@@ -391,6 +393,12 @@ class ExecuteJupyterCells(SphinxTransform):
             for node in nodes:
                 source = node.children[0]
                 source.attributes['language'] = lexer
+
+            # Add line numbers
+            for node in nodes:
+                if node["linenos"]:
+                    source = node.children[0]
+                    source["linenos"] = True
 
             # Write certain cell outputs (e.g. images) to separate files, and
             # modify the metadata of the associated cells in 'notebook' to

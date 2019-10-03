@@ -175,6 +175,24 @@ produces:
 
     print('this code is below the output')
 
+You may also add *line numbers* to the source code with ``:linenos:``::
+
+    .. jupyter-execute::
+        :linenos:
+
+        print('A')
+        print('B')
+        print('C')
+
+produces:
+
+.. jupyter-execute::
+    :linenos:
+
+    print('A')
+    print('B')
+    print('C')
+
 
 Controlling exceptions
 ----------------------

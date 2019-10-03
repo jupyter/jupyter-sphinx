@@ -68,6 +68,7 @@ def test_basic(doctree):
     assert cell.attributes['code_below'] is False
     assert cell.attributes['hide_code'] is False
     assert cell.attributes['hide_output'] is False
+    assert cell.attributes['linenos'] is False
     assert cell.children[0].rawsource.strip() == "2 + 2"
     assert cell.children[1].rawsource.strip() == "4"
 
@@ -112,6 +113,32 @@ def test_code_below(doctree):
     assert cell.attributes['code_below'] is True
     assert cell.children[0].rawsource.strip() == "4"
     assert cell.children[1].rawsource.strip() == "2 + 2"
+
+
+def test_linenos(doctree):
+    source = '''
+    .. jupyter-execute::
+        :linenos:
+
+        2 + 2
+    '''
+    tree = doctree(source)
+    cell, = tree.traverse(JupyterCellNode)
+    assert cell.attributes['linenos'] is True
+    assert len(cell.children) == 2
+    assert cell.children[0].rawsource.strip() == "2 + 2"
+    assert cell.children[1].rawsource.strip() == "4"
+    source = '''
+    .. jupyter-execute::
+        :linenos:
+        :code-below:
+
+        2 + 2
+    '''
+    tree = doctree(source)
+    cell, = tree.traverse(JupyterCellNode)
+    assert len(cell.children) == 2
+    assert cell.attributes['linenos'] is True
 
 
 def test_execution_environment_carries_over(doctree):
