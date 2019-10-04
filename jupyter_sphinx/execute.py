@@ -154,6 +154,7 @@ class JupyterCell(Directive):
         'hide-output': directives.flag,
         'code-below': directives.flag,
         'linenos': directives.flag,
+        'continue_linenos': directives.flag,
         'raises': csv_option,
         'stderr': directives.flag,
     }
@@ -189,6 +190,7 @@ class JupyterCell(Directive):
             hide_output=('hide-output' in self.options),
             code_below=('code-below' in self.options),
             linenos=('linenos' in self.options),
+            continue_linenos=('continue_linenos' in self.options),
             raises=self.options.get('raises'),
             stderr=('stderr' in self.options),
         )]
@@ -394,11 +396,23 @@ class ExecuteJupyterCells(SphinxTransform):
                 source = node.children[0]
                 source.attributes['language'] = lexer
 
-            # Add line numbers
+            # Add line numbers to code cells if linenos directive is set.
+            # Continue line numbers from previous cell with line numbers
+            # if continue_linenos directive is set.
+            linenostart = 1
             for node in nodes:
-                if node["linenos"]:
-                    source = node.children[0]
+                source = node.children[0]
+                if node["continue_linenos"]:
                     source["linenos"] = True
+                    source["highlight_args"] = {'linenostart': linenostart}
+                elif node["linenos"]:
+                    linenostart = 1
+                    source["linenos"] = True
+                # Advance linenostart or reset it
+                if node["continue_linenos"] or node["linenos"]:
+                    linenostart += len(source.rawsource.split("\n"))
+                else:
+                    linenostart = 1
 
             # Write certain cell outputs (e.g. images) to separate files, and
             # modify the metadata of the associated cells in 'notebook' to

@@ -193,6 +193,31 @@ produces:
     print('B')
     print('C')
 
+You may also *continue line numbers* from the previous cell with ``:continue_linenos:``::
+
+  .. jupyter-execute::
+      :linenos:
+
+      print('A')
+
+  .. jupyter-execute::
+      :continue_linenos:
+
+      print('B')
+      print('C')
+
+produces:
+
+.. jupyter-execute::
+    :linenos:
+
+    print('A')
+
+.. jupyter-execute::
+    :continue_linenos:
+
+    print('B')
+    print('C')
 
 Controlling exceptions
 ----------------------
