@@ -149,7 +149,7 @@ def test_continue_linenos(doctree):
         2 + 2
 
     .. jupyter-execute::
-        :continue_linenos:
+        :continue-linenos:
 
         3 + 3
     '''
@@ -162,7 +162,7 @@ def test_continue_linenos(doctree):
     assert 'highlight_args' not in cell0.children[0].attributes
     assert cell0.children[0].rawsource.strip() == "2 + 2"
     assert cell0.children[1].rawsource.strip() == "4"
-    # :continue_linenos:
+    # :continue-linenos:
     assert cell1.attributes['linenos'] is False
     assert cell1.attributes['continue_linenos']
     assert 'highlight_args' not in cell1.attributes
@@ -183,7 +183,7 @@ def test_continue_linenos(doctree):
         'cell1'  # should restart with line number 1
 
     .. jupyter-execute::
-        :continue_linenos:
+        :continue-linenos:
 
         'cell2'  # should be line number 2
 
@@ -192,12 +192,12 @@ def test_continue_linenos(doctree):
         'cell3' # no line number directive
 
     .. jupyter-execute::
-        :continue_linenos:
+        :continue-linenos:
 
         'cell4' # should restart at line number 1
 
     .. jupyter-execute::
-        :continue_linenos:
+        :continue-linenos:
 
         'cell5' # should continue with line number 2
     '''
@@ -211,16 +211,16 @@ def test_continue_linenos(doctree):
     # :linenos:
     assert cell1.children[0].attributes["linenos"]
     assert "highlight_args" not in cell1.children[0].attributes
-    # :continue_linenos:
+    # :continue-linenos:
     assert cell2.children[0].attributes["linenos"]
     assert cell2.children[0].attributes["highlight_args"]["linenostart"] == 2
     # (No line number directive)
     assert "linenos" not in cell3.children[0].attributes
     assert "highlight_args" not in cell3.children[0].attributes
-    # :continue_linenos:
+    # :continue-linenos:
     assert cell4.children[0].attributes["linenos"]
     assert cell4.children[0].attributes["highlight_args"]["linenostart"] == 1
-    # :continue_linenos:
+    # :continue-linenos:
     assert cell5.children[0].attributes["linenos"]
     assert cell5.children[0].attributes["highlight_args"]["linenostart"] == 2
 

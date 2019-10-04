@@ -154,7 +154,7 @@ class JupyterCell(Directive):
         'hide-output': directives.flag,
         'code-below': directives.flag,
         'linenos': directives.flag,
-        'continue_linenos': directives.flag,
+        'continue-linenos': directives.flag,
         'raises': csv_option,
         'stderr': directives.flag,
     }
@@ -190,7 +190,7 @@ class JupyterCell(Directive):
             hide_output=('hide-output' in self.options),
             code_below=('code-below' in self.options),
             linenos=('linenos' in self.options),
-            continue_linenos=('continue_linenos' in self.options),
+            continue_linenos=('continue-linenos' in self.options),
             raises=self.options.get('raises'),
             stderr=('stderr' in self.options),
         )]
@@ -398,7 +398,7 @@ class ExecuteJupyterCells(SphinxTransform):
 
             # Add line numbers to code cells if linenos directive is set.
             # Continue line numbers from previous cell with line numbers
-            # if continue_linenos directive is set.
+            # if continue-linenos directive is set.
             linenostart = 1
             for node in nodes:
                 source = node.children[0]
