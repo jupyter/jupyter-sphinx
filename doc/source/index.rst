@@ -330,11 +330,9 @@ jupyter_execute_kwargs
 
 jupyter_sphinx_linenos
 
-    Boolean argument it use line numbering in code cell display by default. Equivalent
-    to setting the `linenos` directive for all code cells.
+    Whether to show line numbering in all ``jupyter-execute`` sources.
 
 jupyter_sphinx_continue_linenos
 
-    Boolean argument to use line numbering in code cells and continue line numbering
-    from the previous cell. When set, line number can be reset to start at one by using
-    the directive `linenos`.
+    Whether to show continuous line numbering in all ``jupyter-execute`` sources.
+    Line numbering can be reset to one with a ``linenos`` directive.
