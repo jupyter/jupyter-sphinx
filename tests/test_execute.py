@@ -139,91 +139,58 @@ def test_linenos(doctree):
     cell, = tree.traverse(JupyterCellNode)
     assert len(cell.children) == 2
     assert cell.attributes['linenos'] is True
-#
-#
-# def test_continue_linenos(doctree):
-#     source = '''
-#     .. jupyter-execute::
-#         :linenos:
-#
-#         2 + 2
-#
-#     .. jupyter-execute::
-#         :continue-linenos:
-#
-#         3 + 3
-#     '''
-#     tree = doctree(source)
-#     (cell0, cell1) = tree.traverse(JupyterCellNode)
-#     # :linenos:
-#     assert cell0.attributes['linenos']
-#     assert cell0.attributes['continue_linenos'] is False
-#     assert cell0.children[0].attributes['linenos']
-#     assert 'highlight_args' not in cell0.children[0].attributes
-#     assert cell0.children[0].rawsource.strip() == "2 + 2"
-#     assert cell0.children[1].rawsource.strip() == "4"
-#     # :continue-linenos:
-#     assert cell1.attributes['linenos'] is False
-#     assert cell1.attributes['continue_linenos']
-#     assert 'highlight_args' not in cell1.attributes
-#     assert cell1.children[0].attributes['linenos']
-#     assert cell1.children[0].attributes['highlight_args']['linenostart'] == 2
-#     assert cell1.children[0].rawsource.strip() == "3 + 3"
-#     assert cell1.children[1].rawsource.strip() == "6"
-#
-#     source2 = '''
-#     .. jupyter-execute::
-#         :linenos:
-#
-#         'cell0'  # will be line number 1
-#
-#     .. jupyter-execute::
-#         :linenos:
-#
-#         'cell1'  # should restart with line number 1
-#
-#     .. jupyter-execute::
-#         :continue-linenos:
-#
-#         'cell2'  # should be line number 2
-#
-#     .. jupyter-execute::
-#
-#         'cell3' # no line number directive
-#
-#     .. jupyter-execute::
-#         :continue-linenos:
-#
-#         'cell4' # should restart at line number 1
-#
-#     .. jupyter-execute::
-#         :continue-linenos:
-#
-#         'cell5' # should continue with line number 2
-#     '''
-#     tree2 = doctree(source2)
-#     cells = tree2.traverse(JupyterCellNode)
-#     assert len(cells) == 6
-#     (cell0, cell1, cell2, cell3, cell4, cell5) = cells
-#     # :linenos:
-#     assert cell0.children[0].attributes["linenos"]
-#     assert "highlight_args" not in cell0.children[0].attributes
-#     # :linenos:
-#     assert cell1.children[0].attributes["linenos"]
-#     assert "highlight_args" not in cell1.children[0].attributes
-#     # :continue-linenos:
-#     assert cell2.children[0].attributes["linenos"]
-#     assert cell2.children[0].attributes["highlight_args"]["linenostart"] == 2
-#     # (No line number directive)
-#     assert "linenos" not in cell3.children[0].attributes
-#     assert "highlight_args" not in cell3.children[0].attributes
-#     # :continue-linenos:
-#     assert cell4.children[0].attributes["linenos"]
-#     assert cell4.children[0].attributes["highlight_args"]["linenostart"] == 1
-#     # :continue-linenos:
-#     assert cell5.children[0].attributes["linenos"]
-#     assert cell5.children[0].attributes["highlight_args"]["linenostart"] == 2
-#
+
+
+def test_linenos_conf_option(doctree):
+    source = '''
+    .. jupyter-execute::
+
+        2 + 2
+    '''
+    tree = doctree(source, config="jupyter_sphinx_linenos = True")
+    cell, = tree.traverse(JupyterCellNode)
+    assert cell.children[0].attributes['linenos']
+    assert 'highlight_args' not in cell.children[0].attributes
+    assert cell.children[0].rawsource.strip() == "2 + 2"
+    assert cell.children[1].rawsource.strip() == "4"
+
+
+def test_continue_linenos_conf_option(doctree):
+    source = '''
+    .. jupyter-execute::
+
+        2 + 2
+
+    .. jupyter-execute::
+
+        3 + 3
+
+    .. jupyter-execute::
+        :linenos:
+
+        4 + 4
+
+    '''
+    continue_linenos_config = "jupyter_sphinx_continue_linenos = True"
+    tree = doctree(source, config=continue_linenos_config)
+    cell0, cell1, cell2 = tree.traverse(JupyterCellNode)
+    assert cell0.children[0].attributes['linenos']
+    assert cell0.children[0].attributes['highlight_args']['linenostart'] == 1
+    assert cell0.children[0].rawsource.strip() == "2 + 2"
+    assert cell0.children[1].rawsource.strip() == "4"
+
+    assert cell1.children[0].attributes['linenos']
+    assert cell1.children[0].attributes['highlight_args']['linenostart'] == 2
+    assert cell1.children[0].rawsource.strip() == "3 + 3"
+    assert cell1.children[1].rawsource.strip() == "6"
+
+    # :linenos: directive should restart line numbering at one.
+    assert cell2.attributes['linenos']
+    assert cell2.children[0].attributes['linenos']
+    assert cell2.children[0].attributes['highlight_args']['linenostart'] == 1
+    assert cell2.children[0].rawsource.strip() == "4 + 4"
+    assert cell2.children[1].rawsource.strip() == "8"
+
 
 def test_execution_environment_carries_over(doctree):
     source = '''
