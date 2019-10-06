@@ -410,7 +410,7 @@ class ExecuteJupyterCells(SphinxTransform):
                     source["linenos"] = True
                 # Advance linenostart or reset it
                 if node["continue_linenos"] or node["linenos"]:
-                    linenostart += len(source.rawsource.split("\n"))
+                    linenostart += source.rawsource.count("\n") + 1
                 else:
                     linenostart = 1
 
