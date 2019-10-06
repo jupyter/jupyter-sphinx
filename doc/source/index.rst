@@ -193,32 +193,6 @@ produces:
     print('B')
     print('C')
 
-You may also *continue line numbers* from the previous cell with ``:continue-linenos:``::
-
-  .. jupyter-execute::
-      :linenos:
-
-      print('A')
-
-  .. jupyter-execute::
-      :continue-linenos:
-
-      print('B')
-      print('C')
-
-produces:
-
-.. jupyter-execute::
-    :linenos:
-
-    print('A')
-
-.. jupyter-execute::
-    :continue-linenos:
-
-    print('B')
-    print('C')
-
 Controlling exceptions
 ----------------------
 
@@ -353,3 +327,14 @@ jupyter_execute_kwargs
 
     Keyword arguments to pass to ``nbconvert.preprocessors.execute.executenb``, which controls how
     code cells are executed. The default is ``dict(timeout=-1, allow_errors=True)``.
+
+jupyter_sphinx_linenos
+
+    Boolean argument it use line numbering in code cell display by default. Equivalent
+    to setting the `linenos` directive for all code cells.
+
+jupyter_sphinx_continue_linenos
+
+    Boolean argument to use line numbering in code cells and continue line numbering
+    from the previous cell. When set, line number can be reset to start at one by using
+    the directive `linenos`.

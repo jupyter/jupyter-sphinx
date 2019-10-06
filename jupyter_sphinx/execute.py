@@ -131,6 +131,8 @@ class JupyterCell(Directive):
         If provided, the cell output will not be displayed in the output.
     code-below : bool
         If provided, the code will be shown below the cell output.
+    linenos : bool
+        If provided, the code will be shown with line numbering.
     raises : comma separated list of exception types
         If provided, a comma-separated list of exception type names that
         the cell may raise. If one of the listed execption types is raised
@@ -154,7 +156,7 @@ class JupyterCell(Directive):
         'hide-output': directives.flag,
         'code-below': directives.flag,
         'linenos': directives.flag,
-        'continue-linenos': directives.flag,
+        # 'continue-linenos': directives.flag,   #<--- remove this
         'raises': csv_option,
         'stderr': directives.flag,
     }
@@ -190,7 +192,7 @@ class JupyterCell(Directive):
             hide_output=('hide-output' in self.options),
             code_below=('code-below' in self.options),
             linenos=('linenos' in self.options),
-            continue_linenos=('continue-linenos' in self.options),
+            # continue_linenos=('continue-linenos' in self.options),
             raises=self.options.get('raises'),
             stderr=('stderr' in self.options),
         )]
@@ -329,7 +331,8 @@ class ExecuteJupyterCells(SphinxTransform):
         default_kernel = self.config.jupyter_execute_default_kernel
         default_names = default_notebook_names(docname)
         thebe_config = self.config.jupyter_sphinx_thebelab_config
-
+        linenos_config = self.config.jupyter_sphinx_linenos
+        continue_linenos = self.config.jupyter_sphinx_continue_linenos
         # Check if we have anything to execute.
         if not doctree.traverse(JupyterCellNode):
             return
@@ -396,23 +399,24 @@ class ExecuteJupyterCells(SphinxTransform):
                 source = node.children[0]
                 source.attributes['language'] = lexer
 
-            # Add line numbers to code cells if linenos directive is set.
-            # Continue line numbers from previous cell with line numbers
-            # if continue-linenos directive is set.
+            # Add line numbers to code cells if jupyter_sphinx_linenos or
+            # jupyter_sphinx_continue_linenos are set in the configuration,
+            # or the linenos directive is set.
+            # Reset linenumber if linenos directive is set.
+            # Update current line numbers from cell if jupyter_sphinx_continue_linenos
+            # is set.
             linenostart = 1
             for node in nodes:
                 source = node.children[0]
-                if node["continue_linenos"]:
+                if linenos_config or continue_linenos:
+                    source["linenos"] = True
+                if node["linenos"]:
+                    linenostart = 1
+                    source["linenos"] = True
+                if continue_linenos:
                     source["linenos"] = True
                     source["highlight_args"] = {'linenostart': linenostart}
-                elif node["linenos"]:
-                    linenostart = 1
-                    source["linenos"] = True
-                # Advance linenostart or reset it
-                if node["continue_linenos"] or node["linenos"]:
                     linenostart += source.rawsource.count("\n") + 1
-                else:
-                    linenostart = 1
 
             # Write certain cell outputs (e.g. images) to separate files, and
             # modify the metadata of the associated cells in 'notebook' to
@@ -790,6 +794,10 @@ def setup(app):
     app.add_config_value('jupyter_sphinx_thebelab_config', None, 'html')
 
     app.add_config_value('jupyter_sphinx_thebelab_url', THEBELAB_URL_DEFAULT, 'html')
+
+    # linenos config
+    app.add_config_value('jupyter_sphinx_linenos', False, 'env')
+    app.add_config_value('jupyter_sphinx_continue_linenos', False, 'env')
 
     # Used for nodes that do not need to be rendered
     def skip(self, node):
