@@ -328,3 +328,8 @@ jupyter_execute_kwargs
 
     Keyword arguments to pass to ``nbconvert.preprocessors.execute.executenb``, which controls how
     code cells are executed. The default is ``dict(timeout=-1, allow_errors=True)``.
+
+jupyter_sphinx_truncate_traceback
+
+    Whether to truncate trackback on a error, displaying only the first two lines
+    followed by an ellipsis.

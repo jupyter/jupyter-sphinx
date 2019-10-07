@@ -367,3 +367,19 @@ def test_thebe_button_none(doctree):
     source = "No Jupyter cells"
     tree = doctree(source, config)
     assert len(tree.traverse(ThebeButtonNode)) == 0
+
+def test_truncate_traceback(doctree):
+    config = "jupyter_sphinx_truncate_traceback = True"
+    source = """
+    .. jupyter-execute::
+        :raises:
+
+        1/0"""
+    tree = doctree(source, config)
+    cell, = tree.traverse(JupyterCellNode)
+    output = cell.children[1]
+    assert output.rawsource == (
+        "---------------------------------------------------------------------------\n"
+        "ZeroDivisionError                         Traceback (most recent call last)\n"
+        "...\n"
+    )
