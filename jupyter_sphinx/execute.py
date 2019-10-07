@@ -327,6 +327,7 @@ class ExecuteJupyterCells(SphinxTransform):
         default_kernel = self.config.jupyter_execute_default_kernel
         default_names = default_notebook_names(docname)
         thebe_config = self.config.jupyter_sphinx_thebelab_config
+        truncate_traceback = self.config.jupyter_sphinx_truncate_traceback
 
         # Check if we have anything to execute.
         if not doctree.traverse(JupyterCellNode):
@@ -417,7 +418,8 @@ class ExecuteJupyterCells(SphinxTransform):
                     self.config.jupyter_execute_data_priority,
                     bool(node.attributes["stderr"]),
                     sphinx_abs_dir(self.env),
-                    thebe_config
+                    thebe_config,
+                    truncate_traceback
                 )
                 attach_outputs(output_nodes, node, thebe_config, cm_language)
 
@@ -472,7 +474,9 @@ def split_on(pred, it):
     return (list(x) for _, x in groupby(it, count))
 
 
-def cell_output_to_nodes(cell, data_priority, write_stderr, dir, thebe_config):
+def cell_output_to_nodes(cell, data_priority, write_stderr, dir, thebe_config,
+                         truncate_traceback):
+
     """Convert a jupyter cell with outputs and filenames to doctree nodes.
 
     Parameters
@@ -487,6 +491,8 @@ def cell_output_to_nodes(cell, data_priority, write_stderr, dir, thebe_config):
         to the source folder prefixed with ``/``.
     thebe_config: dict
         Thebelab configuration object or None
+    truncate_traceback: bool
+        Whether to truncate traceback in cell output
     """
     to_add = []
     for index, output in enumerate(cell.get('outputs', [])):
@@ -504,7 +510,11 @@ def cell_output_to_nodes(cell, data_priority, write_stderr, dir, thebe_config):
         elif (
             output_type == 'error'
         ):
-            traceback = '\n'.join(output['traceback'])
+            if truncate_traceback:
+                traceback = '\n'.join(output['traceback'][0:2]) + '\n...\n'
+            else:
+                traceback = '\n'.join(output['traceback'])
+
             text = nbconvert.filters.strip_ansi(traceback)
             to_add.append(docutils.nodes.literal_block(
                 text=text,
@@ -776,6 +786,9 @@ def setup(app):
     app.add_config_value('jupyter_sphinx_thebelab_config', None, 'html')
 
     app.add_config_value('jupyter_sphinx_thebelab_url', THEBELAB_URL_DEFAULT, 'html')
+
+    # traceback config
+    app.add_config_value('jupyter_sphinx_truncate_traceback', False, 'env')
 
     # Used for nodes that do not need to be rendered
     def skip(self, node):
