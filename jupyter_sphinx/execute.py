@@ -191,7 +191,6 @@ class JupyterCell(Directive):
             hide_output=('hide-output' in self.options),
             code_below=('code-below' in self.options),
             linenos=('linenos' in self.options),
-            # continue_linenos=('continue-linenos' in self.options),
             raises=self.options.get('raises'),
             stderr=('stderr' in self.options),
         )]
