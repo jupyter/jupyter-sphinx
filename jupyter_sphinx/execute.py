@@ -156,7 +156,6 @@ class JupyterCell(Directive):
         'hide-output': directives.flag,
         'code-below': directives.flag,
         'linenos': directives.flag,
-        # 'continue-linenos': directives.flag,   #<--- remove this
         'raises': csv_option,
         'stderr': directives.flag,
     }
