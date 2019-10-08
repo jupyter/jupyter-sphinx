@@ -520,16 +520,6 @@ def cell_output_to_nodes(cell, data_priority, write_stderr, dir, thebe_config):
                             classes=["error", "stderr"]
                     ))
                     to_add.append(container)
-
-                    # Alternative, without container
-
-                    # to_add.append(docutils.nodes.literal_block(
-                    #         text=output['text'],
-                    #         rawsource='', # disables Pygment highlighting
-                    #         language='none',
-                    #         classes=["error", "stderr"]
-                    # ))
-
             else:
                 to_add.append(docutils.nodes.literal_block(
                     text=output['text'],
