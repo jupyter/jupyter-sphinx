@@ -505,8 +505,8 @@ def cell_output_to_nodes(cell, data_priority, write_stderr, dir, thebe_config):
                     # the container and the literal_block.
                     #
                     # Also adds "error" as a base class, which is fairly common
-                    # class in Sphinx themes. It should result in differenciation
-                    # from  stdout in most standard themes.
+                    # class in Sphinx themes. It should result in differentiation
+                    # from stdout in most Sphinx themes.
                     #
                     # Not setting "rawsource" disables Pygment hightlighting, which
                     # would otherwise add a <div class="highlight"> to the container
