@@ -498,19 +498,18 @@ def cell_output_to_nodes(cell, data_priority, write_stderr, dir, thebe_config):
                 if not write_stderr:
                     continue
                 else:
-                    # Produce a container with an unhighlighted literal block for
+                    # Output a container with an unhighlighted literal block for
                     # `stderr` messages.
                     #
                     # Adds a "stderr" class that can be customized by the user for both
                     # the container and the literal_block.
                     #
-                    # Also adds "error" as a base class, which is fairly common
+                    # Also adds "error" as a base class, which is a fairly common
                     # class in Sphinx themes. It should result in differentiation
                     # from stdout in most Sphinx themes.
                     #
                     # Not setting "rawsource" disables Pygment hightlighting, which
-                    # would otherwise add a <div class="highlight"> to the container
-                    # that would hold the literal_block (<pre>).
+                    # would otherwise add a <div class="highlight">.
 
                     container = docutils.nodes.container(classes=["error", "stderr"])
                     container.append(docutils.nodes.literal_block(
