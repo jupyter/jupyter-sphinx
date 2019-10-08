@@ -494,13 +494,48 @@ def cell_output_to_nodes(cell, data_priority, write_stderr, dir, thebe_config):
         if (
             output_type == 'stream'
         ):
-            if not write_stderr and output["name"] == "stderr":
-                continue
-            to_add.append(docutils.nodes.literal_block(
-                text=output['text'],
-                rawsource=output['text'],
-                language='none',
-            ))
+            if output["name"] == "stderr":
+                if not write_stderr:
+                    continue
+                else:
+                    # Produce a container with an unhighlighted literal block for
+                    # `stderr` messages.
+                    #
+                    # Adds a "stderr" class that can be customized by the user for both
+                    # the container and the literal_block.
+                    #
+                    # Also adds "error" as a base class, which is fairly common
+                    # class in Sphinx themes. It should result in differenciation
+                    # from  stdout in most standard themes.
+                    #
+                    # Not setting "rawsource" disables Pygment hightlighting, which
+                    # would otherwise add a <div class="highlight"> to the container
+                    # that would hold the literal_block (<pre>).
+
+                    container = docutils.nodes.container(classes=["error", "stderr"])
+                    container.append(docutils.nodes.literal_block(
+                            text=output['text'],
+                            rawsource='',  # disables Pygment highlighting
+                            language='none',
+                            classes=["error", "stderr"]
+                    ))
+                    to_add.append(container)
+
+                    # Alternative, without container
+
+                    # to_add.append(docutils.nodes.literal_block(
+                    #         text=output['text'],
+                    #         rawsource='', # disables Pygment highlighting
+                    #         language='none',
+                    #         classes=["error", "stderr"]
+                    # ))
+
+            else:
+                to_add.append(docutils.nodes.literal_block(
+                    text=output['text'],
+                    rawsource=output['text'],
+                    language='none',
+                ))
         elif (
             output_type == 'error'
         ):
