@@ -255,7 +255,7 @@ produces:
   To adjust the CSS of the ``stderr`` stream, use the ``stderr`` class. If you are using
   the default Sphinx theme, for example, add the following
   `custom CSS <https://alabaster.readthedocs.io/en/latest/customization.html#custom-stylesheet>`_:
-    ``.stderr {background-color: #FCC}``.
+    ``.stderr {background-color: #FCC}``
 
 
 Controlling the execution environment
