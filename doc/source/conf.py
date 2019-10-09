@@ -41,3 +41,4 @@ jupyter_sphinx_thebelab_config = {
         "repo": "jupyter/jupyter-sphinx",
     },
 }
+html_static_path = ["_static/custom.css"]  # css overrides for Alabaster theme

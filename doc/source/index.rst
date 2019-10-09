@@ -251,10 +251,13 @@ produces:
 
     print("hello, world!", file=sys.stderr)
 
-.. warning::
+.. note::
+  To `adjust the CSS <https://docs.readthedocs.io/en/stable/guides/adding-custom-css.html>`_
+  of the ``stderr`` stream, use the ``stderr`` class. If you are using the default
+  Sphinx theme, for example, add the following
+  `custom CSS <https://alabaster.readthedocs.io/en/latest/customization.html#custom-stylesheet>`_:
+    ``.stderr {background-color: #FCC}``.
 
-    Note that output written to ``stderr`` is not displayed any differently than output written
-    to ``stdout``.
 
 Controlling the execution environment
 -------------------------------------
