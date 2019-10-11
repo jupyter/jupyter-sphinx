@@ -268,7 +268,6 @@ def test_stderr(doctree):
     cell, = tree.traverse(JupyterCellNode)
     assert len(cell.children) == 2
     assert 'stderr' in cell.children[1].attributes['classes']
-    assert 'error' in cell.children[1].attributes['classes']
     assert cell.children[1].astext().strip() == "hello world"
 
 
