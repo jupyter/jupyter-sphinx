@@ -79,6 +79,7 @@ div.jupyter_container * {
 .jupyter_container .stderr {
     background-color: #FCC;
     border: none;
+    padding: 3px;
 }
 .jupyter_container .output {
     border: none;
