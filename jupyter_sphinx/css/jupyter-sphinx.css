@@ -94,15 +94,10 @@ div.jupyter_container * {
 }
 .jupyter_container .code_cell td.linenos {
   align: right;
-  padding: 0 0 0 1em;
+  padding: 4px 4px 4px 8px;
   border-right: 1px solid #cfcfcf;
   color: #999;
 }
 .jupyter_container .output .highlight {
   background-color: #ffffff;
-}
-.jupyter_container .output td.linenos {
-  align: right;
-  padding: 0 0 0 1em;
-  border-right: 1px solid #cfcfcf;
 }
