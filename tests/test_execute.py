@@ -184,14 +184,6 @@ def test_continue_linenos_conf_option(doctree):
     assert cell1.children[0].rawsource.strip() == "3 + 3"
     assert cell1.children[1].rawsource.strip() == "6"
 
-    # :linenos: directive should restart line numbering at one.
-    assert cell2.attributes['linenos']
-    assert cell2.children[0].attributes['linenos']
-    assert cell2.children[0].attributes['highlight_args']['linenostart'] == 1
-    assert cell2.children[0].rawsource.strip() == "4 + 4"
-    assert cell2.children[1].rawsource.strip() == "8"
-
-
 def test_execution_environment_carries_over(doctree):
     source = '''
     .. jupyter-execute::
