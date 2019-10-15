@@ -101,3 +101,8 @@ div.jupyter_container * {
 .jupyter_container .output .highlight {
   background-color: #ffffff;
 }
+/* combine sequential jupyter cells,
+   by moving sequential ones up higher on y-axis */
+div.jupyter_container + div.jupyter_container {
+    margin: -.5em 0 .4em 0; 
+}
