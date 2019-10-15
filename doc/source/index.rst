@@ -335,4 +335,3 @@ jupyter_sphinx_linenos
 jupyter_sphinx_continue_linenos
 
     Whether to show continuous line numbering in all ``jupyter-execute`` sources.
-    Line numbering can be reset to one with a ``linenos`` directive.
