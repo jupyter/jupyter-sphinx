@@ -55,10 +55,13 @@ def builder_inited(app):
     if embed_url:
         app.add_js_file(embed_url)
 
+    # add jupyter-sphinx css
+    app.add_css_file('jupyter-sphinx.css')
     # Check if a thebelab config was specified
     if app.config.jupyter_sphinx_thebelab_config:
         app.add_js_file('thebelab-helper.js')
         app.add_css_file('thebelab.css')
+
 
 ### Directives and their associated doctree nodes
 
@@ -766,6 +769,11 @@ def build_finished(app, env):
     if app.builder.format != 'html':
         return
 
+    # Copy stylesheet
+    src = os.path.join(os.path.dirname(__file__), 'css')
+    dst = os.path.join(app.outdir, '_static')
+    copy_asset(src, dst)
+
     thebe_config = app.config.jupyter_sphinx_thebelab_config
     if not thebe_config:
         return
@@ -778,11 +786,6 @@ def build_finished(app, env):
 
 def setup(app):
     # Configuration
-    # Copy stylesheet
-    src = os.path.join(os.path.dirname(__file__), 'css')
-    dst = os.path.join(app.outdir, '_static')
-    copy_asset(src, dst)
-    app.add_css_file('jupyter-sphinx.css')
 
     app.add_config_value(
         'jupyter_execute_kwargs',
