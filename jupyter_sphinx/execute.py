@@ -134,6 +134,8 @@ class JupyterCell(Directive):
         If provided, the cell output will not be displayed in the output.
     code-below : bool
         If provided, the code will be shown below the cell output.
+    linenos : bool
+        If provided, the code will be shown with line numbers.
     raises : comma separated list of exception types
         If provided, a comma-separated list of exception type names that
         the cell may raise. If one of the listed execption types is raised
@@ -596,6 +598,8 @@ def cell_output_to_nodes(cell, data_priority, write_stderr, dir, thebe_config):
 
 
 def attach_outputs(output_nodes, node, thebe_config, cm_language):
+    if not node.attributes["hide_code"]:  # only add css if code is displayed
+        node.attributes["classes"] = ["jupyter_container"]
     if thebe_config:
         source = node.children[0]
         thebe_source = ThebeSourceNode(hide_code=node.attributes['hide_code'],
@@ -604,7 +608,6 @@ def attach_outputs(output_nodes, node, thebe_config, cm_language):
         thebe_source.children = [source]
 
         node.children = [thebe_source]
-        node.attributes["classes"] = ["jupyter_container"] # add jupyter classes even if thebe_config <-- CHECK
 
         if not node.attributes['hide_output']:
             thebe_output = ThebeOutputNode()
@@ -614,12 +617,8 @@ def attach_outputs(output_nodes, node, thebe_config, cm_language):
             else:
                 node.children = node.children + [thebe_output]
     else:
-        # Only add container class if code is shown
         if node.attributes['hide_code']:
             node.children = []
-        else:
-            node.attributes["classes"] = ["jupyter_container"]
-
         if not node.attributes['hide_output']:
             if node.attributes['code_below']:
                 node.children = output_nodes + node.children
