@@ -165,15 +165,10 @@ def test_continue_linenos_conf_option(doctree):
 
         3 + 3
 
-    .. jupyter-execute::
-        :linenos:
-
-        4 + 4
-
     '''
     continue_linenos_config = "jupyter_sphinx_continue_linenos = True"
     tree = doctree(source, config=continue_linenos_config)
-    cell0, cell1, cell2 = tree.traverse(JupyterCellNode)
+    cell0, cell1 = tree.traverse(JupyterCellNode)
     assert cell0.children[0].attributes['linenos']
     assert cell0.children[0].attributes['highlight_args']['linenostart'] == 1
     assert cell0.children[0].rawsource.strip() == "2 + 2"
@@ -183,6 +178,7 @@ def test_continue_linenos_conf_option(doctree):
     assert cell1.children[0].attributes['highlight_args']['linenostart'] == 2
     assert cell1.children[0].rawsource.strip() == "3 + 3"
     assert cell1.children[1].rawsource.strip() == "6"
+
 
 def test_execution_environment_carries_over(doctree):
     source = '''
