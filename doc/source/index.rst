@@ -250,11 +250,6 @@ produces:
 
     print("hello, world!", file=sys.stderr)
 
-.. warning::
-
-    Note that output written to ``stderr`` is not displayed any differently than output written
-    to ``stdout``.
-
 Controlling the execution environment
 -------------------------------------
 The execution environment can be controlled by using the ``jupyter-kernel`` directive. This directive takes
@@ -288,6 +283,30 @@ applied to (``index`` in this case) is the name of the document for which you wi
 the code. If a document contains ``jupyter-kernel`` directives with ``:id:`` specified, then
 the name provided to ``:id:`` can be used to get the code for the cells belonging to the
 that Jupyter session.
+
+Styling options
+---------------
+
+The CSS (Cascading Style Sheet) class structure of jupyter-sphinx is the
+following::
+
+  - jupyter_container
+    - code_cell
+    - stderr
+    - output
+
+If a code cell is not displayed, the output is provided without the
+``jupyter_container``. If you want to adjust the styles, add a new stylesheet,
+e.g. ``custom.css``, and adjust your ``conf.py`` to load it. How you do so depends on
+the theme you are using.
+
+Here is a sample ``custom.css`` file overriding the ``stderr`` background color:
+
+.. code-block:: css
+
+  .jupyter_container .stderr {
+      background-color: #7FFF00;
+  }
 
 
 Configuration options

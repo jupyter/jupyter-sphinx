@@ -55,10 +55,13 @@ def builder_inited(app):
     if embed_url:
         app.add_js_file(embed_url)
 
+    # add jupyter-sphinx css
+    app.add_css_file('jupyter-sphinx.css')
     # Check if a thebelab config was specified
     if app.config.jupyter_sphinx_thebelab_config:
         app.add_js_file('thebelab-helper.js')
         app.add_css_file('thebelab.css')
+
 
 ### Directives and their associated doctree nodes
 
@@ -411,6 +414,12 @@ class ExecuteJupyterCells(SphinxTransform):
                     source["highlight_args"] = {'linenostart': linenostart}
                     linenostart += source.rawsource.count("\n") + 1
 
+
+            # Add code cell CSS class
+            for node in nodes:
+                source = node.children[0]
+                source.attributes["classes"] = ["code_cell"]
+
             # Write certain cell outputs (e.g. images) to separate files, and
             # modify the metadata of the associated cells in 'notebook' to
             # include the path to the output file.
@@ -505,13 +514,34 @@ def cell_output_to_nodes(cell, data_priority, write_stderr, dir, thebe_config):
         if (
             output_type == 'stream'
         ):
-            if not write_stderr and output["name"] == "stderr":
-                continue
-            to_add.append(docutils.nodes.literal_block(
-                text=output['text'],
-                rawsource=output['text'],
-                language='none',
-            ))
+            if output["name"] == "stderr":
+                if not write_stderr:
+                    continue
+                else:
+                    # Output a container with an unhighlighted literal block for
+                    # `stderr` messages.
+                    #
+                    # Adds a "stderr" class that can be customized by the user for both
+                    # the container and the literal_block.
+                    #
+                    # Not setting "rawsource" disables Pygment hightlighting, which
+                    # would otherwise add a <div class="highlight">.
+
+                    container = docutils.nodes.container(classes=["stderr"])
+                    container.append(docutils.nodes.literal_block(
+                            text=output['text'],
+                            rawsource='',  # disables Pygment highlighting
+                            language='none',
+                            classes=["stderr"]
+                    ))
+                    to_add.append(container)
+            else:
+                to_add.append(docutils.nodes.literal_block(
+                    text=output['text'],
+                    rawsource=output['text'],
+                    language='none',
+                    classes=["output", "stream"]
+                ))
         elif (
             output_type == 'error'
         ):
@@ -521,6 +551,7 @@ def cell_output_to_nodes(cell, data_priority, write_stderr, dir, thebe_config):
                 text=text,
                 rawsource=text,
                 language='ipythontb',
+                classes =["output", "traceback"]
             ))
         elif (
             output_type in ('display_data', 'execute_result')
@@ -545,19 +576,23 @@ def cell_output_to_nodes(cell, data_priority, write_stderr, dir, thebe_config):
             elif mime_type == 'text/html':
                 to_add.append(docutils.nodes.raw(
                     text=data,
-                    format='html'
+                    format='html',
+                    classes=["output", "text_html"]
+
                 ))
             elif mime_type == 'text/latex':
                 to_add.append(math_block(
                     text=data,
                     nowrap=False,
                     number=None,
+                    classes=["output", "text_latex"]
                  ))
             elif mime_type == 'text/plain':
                 to_add.append(docutils.nodes.literal_block(
                     text=data,
                     rawsource=data,
                     language='none',
+                    classes=["output", "text_plain"]
                 ))
             elif mime_type == 'application/javascript':
                 to_add.append(docutils.nodes.raw(
@@ -572,9 +607,10 @@ def cell_output_to_nodes(cell, data_priority, write_stderr, dir, thebe_config):
 
 
 def attach_outputs(output_nodes, node, thebe_config, cm_language):
+    if not node.attributes["hide_code"]:  # only add css if code is displayed
+        node.attributes["classes"] = ["jupyter_container"]
     if thebe_config:
         source = node.children[0]
-
         thebe_source = ThebeSourceNode(hide_code=node.attributes['hide_code'],
                                        code_below=node.attributes['code_below'],
                                        language=cm_language)
@@ -592,7 +628,6 @@ def attach_outputs(output_nodes, node, thebe_config, cm_language):
     else:
         if node.attributes['hide_code']:
             node.children = []
-
         if not node.attributes['hide_output']:
             if node.attributes['code_below']:
                 node.children = output_nodes + node.children
@@ -742,6 +777,11 @@ def build_finished(app, env):
     if app.builder.format != 'html':
         return
 
+    # Copy stylesheet
+    src = os.path.join(os.path.dirname(__file__), 'css')
+    dst = os.path.join(app.outdir, '_static')
+    copy_asset(src, dst)
+
     thebe_config = app.config.jupyter_sphinx_thebelab_config
     if not thebe_config:
         return
@@ -754,6 +794,7 @@ def build_finished(app, env):
 
 def setup(app):
     # Configuration
+
     app.add_config_value(
         'jupyter_execute_kwargs',
         dict(timeout=-1, allow_errors=True, store_widget_state=True),

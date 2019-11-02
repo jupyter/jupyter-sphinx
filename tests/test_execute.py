@@ -310,7 +310,8 @@ def test_stderr(doctree):
     tree = doctree(source)
     cell, = tree.traverse(JupyterCellNode)
     assert len(cell.children) == 2
-    assert cell.children[1].rawsource.strip() == "hello world"
+    assert 'stderr' in cell.children[1].attributes['classes']
+    assert cell.children[1].astext().strip() == "hello world"
 
 
 thebe_config = "jupyter_sphinx_thebelab_config = {\"dummy\": True}"
