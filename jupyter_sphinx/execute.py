@@ -135,7 +135,7 @@ class JupyterCell(Directive):
     code-below : bool
         If provided, the code will be shown below the cell output.
     linenos : bool
-        If provided, the code will be shown with line numbers.
+        If provided, the code will be shown with line numbering.
     raises : comma separated list of exception types
         If provided, a comma-separated list of exception type names that
         the cell may raise. If one of the listed execption types is raised
@@ -332,7 +332,8 @@ class ExecuteJupyterCells(SphinxTransform):
         default_kernel = self.config.jupyter_execute_default_kernel
         default_names = default_notebook_names(docname)
         thebe_config = self.config.jupyter_sphinx_thebelab_config
-
+        linenos_config = self.config.jupyter_sphinx_linenos
+        continue_linenos = self.config.jupyter_sphinx_continue_linenos
         # Check if we have anything to execute.
         if not doctree.traverse(JupyterCellNode):
             return
@@ -399,11 +400,19 @@ class ExecuteJupyterCells(SphinxTransform):
                 source = node.children[0]
                 source.attributes['language'] = lexer
 
-            # Add line numbers
+            # Add line numbers to code cells if jupyter_sphinx_linenos or
+            # jupyter_sphinx_continue_linenos are set in the configuration,
+            # or the linenos directive is set.
+            # Update current line numbers from cell if jupyter_sphinx_continue_linenos
+            # is set.
+            linenostart = 1
             for node in nodes:
-                if node["linenos"]:
-                    source = node.children[0]
+                source = node.children[0]
+                if linenos_config or continue_linenos or node["linenos"]:
                     source["linenos"] = True
+                if continue_linenos:
+                    source["highlight_args"] = {'linenostart': linenostart}
+                    linenostart += source.rawsource.count("\n") + 1
 
 
             # Add code cell CSS class
@@ -819,6 +828,10 @@ def setup(app):
     app.add_config_value('jupyter_sphinx_thebelab_config', None, 'html')
 
     app.add_config_value('jupyter_sphinx_thebelab_url', THEBELAB_URL_DEFAULT, 'html')
+
+    # linenos config
+    app.add_config_value('jupyter_sphinx_linenos', False, 'env')
+    app.add_config_value('jupyter_sphinx_continue_linenos', False, 'env')
 
     # Used for nodes that do not need to be rendered
     def skip(self, node):

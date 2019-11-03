@@ -193,7 +193,6 @@ produces:
     print('B')
     print('C')
 
-
 Controlling exceptions
 ----------------------
 
@@ -347,3 +346,11 @@ jupyter_execute_kwargs
 
     Keyword arguments to pass to ``nbconvert.preprocessors.execute.executenb``, which controls how
     code cells are executed. The default is ``dict(timeout=-1, allow_errors=True)``.
+
+jupyter_sphinx_linenos
+
+    Whether to show line numbering in all ``jupyter-execute`` sources.
+
+jupyter_sphinx_continue_linenos
+
+    Whether to show continuous line numbering in all ``jupyter-execute`` sources.

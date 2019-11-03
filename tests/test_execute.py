@@ -141,6 +141,45 @@ def test_linenos(doctree):
     assert cell.attributes['linenos'] is True
 
 
+def test_linenos_conf_option(doctree):
+    source = '''
+    .. jupyter-execute::
+
+        2 + 2
+    '''
+    tree = doctree(source, config="jupyter_sphinx_linenos = True")
+    cell, = tree.traverse(JupyterCellNode)
+    assert cell.children[0].attributes['linenos']
+    assert 'highlight_args' not in cell.children[0].attributes
+    assert cell.children[0].rawsource.strip() == "2 + 2"
+    assert cell.children[1].rawsource.strip() == "4"
+
+
+def test_continue_linenos_conf_option(doctree):
+    source = '''
+    .. jupyter-execute::
+
+        2 + 2
+
+    .. jupyter-execute::
+
+        3 + 3
+
+    '''
+    continue_linenos_config = "jupyter_sphinx_continue_linenos = True"
+    tree = doctree(source, config=continue_linenos_config)
+    cell0, cell1 = tree.traverse(JupyterCellNode)
+    assert cell0.children[0].attributes['linenos']
+    assert cell0.children[0].attributes['highlight_args']['linenostart'] == 1
+    assert cell0.children[0].rawsource.strip() == "2 + 2"
+    assert cell0.children[1].rawsource.strip() == "4"
+
+    assert cell1.children[0].attributes['linenos']
+    assert cell1.children[0].attributes['highlight_args']['linenostart'] == 2
+    assert cell1.children[0].rawsource.strip() == "3 + 3"
+    assert cell1.children[1].rawsource.strip() == "6"
+
+
 def test_execution_environment_carries_over(doctree):
     source = '''
     .. jupyter-execute::
