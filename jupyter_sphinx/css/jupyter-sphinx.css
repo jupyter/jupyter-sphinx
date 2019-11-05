@@ -38,6 +38,7 @@ div.jupyter_container {
   border-radius: 2px;
   background-color: #f7f7f7;
   margin: 0 0;
+  overflow: auto;
 }
 
 .jupyter_container div.code_cell pre {
