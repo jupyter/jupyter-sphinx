@@ -109,6 +109,6 @@ div.jupyter_container + div.jupyter_container {
 }
 
 /* Fix for sphinx_rtd_theme spacing after jupyter_container #91 */
-.rst-content .jupyter_container + p {
-  margin-top: 24px;
+.rst-content .jupyter_container {
+    margin: 0 0 24px 0;
 }
