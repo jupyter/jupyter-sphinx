@@ -407,3 +407,21 @@ def test_thebe_button_none(doctree):
     source = "No Jupyter cells"
     tree = doctree(source, config)
     assert len(tree.traverse(ThebeButtonNode)) == 0
+
+
+def test_latex(doctree):
+    source = r"""
+    .. jupyter-execute::
+
+        from IPython.display import Latex
+        Latex(r"{}\int{}")
+    """
+
+    delimiter_pairs = (
+        pair.split() for pair in r'\( \),\[ \],$$ $$,$ $'.split(',')
+    )
+
+    for start, end in delimiter_pairs:
+        tree = doctree(source.format(start, end))
+        cell, = tree.traverse(JupyterCellNode)
+        assert cell.children[1].astext() == r'\int'
