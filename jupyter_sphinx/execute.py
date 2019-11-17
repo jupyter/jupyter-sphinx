@@ -492,6 +492,25 @@ def split_on(pred, it):
     return (list(x) for _, x in groupby(it, count))
 
 
+def strip_latex_delimiters(source):
+    """Remove LaTeX math delimiters that would be rendered by the math block.
+
+    These are: ``\(…\)``, ``\[…\]``, ``$…$``, and ``$$…$$``.
+    This is necessary because sphinx does not have a dedicated role for
+    generic LaTeX, while Jupyter only defines generic LaTeX output, see
+    https://github.com/jupyter/jupyter-sphinx/issues/90 for discussion.
+    """
+    source = source.strip()
+    delimiter_pairs = (
+        pair.split() for pair in r'\( \),\[ \],$$ $$,$ $'.split(',')
+    )
+    for start, end in delimiter_pairs:
+        if source.startswith(start) and source.endswith(end):
+            return source[len(start):-len(end)]
+
+    return source
+
+
 def cell_output_to_nodes(cell, data_priority, write_stderr, dir, thebe_config):
     """Convert a jupyter cell with outputs and filenames to doctree nodes.
 
@@ -582,7 +601,7 @@ def cell_output_to_nodes(cell, data_priority, write_stderr, dir, thebe_config):
                 ))
             elif mime_type == 'text/latex':
                 to_add.append(math_block(
-                    text=data,
+                    text=strip_latex_delimiters(data),
                     nowrap=False,
                     number=None,
                     classes=["output", "text_latex"]
