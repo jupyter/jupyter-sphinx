@@ -416,11 +416,8 @@ class ExecuteJupyterCells(SphinxTransform):
 
                 if linenos_config or continue_linenos or node["linenos"]:
                     source["linenos"] = True
-
-                highlight_args = source['highlight_args'] = {}
-
                 if continue_linenos:
-                    highlight_args['linenostart'] = linenostart
+                    source['highlight_args'] = {'linenostart': linenostart}
                     linenostart += nlines
 
                 emphasize_linespec = node['emphasize_lines']
@@ -431,6 +428,7 @@ class ExecuteJupyterCells(SphinxTransform):
                             'Line number spec is out of range(1-{}): {}'.format(
                                 nlines, emphasize_linespec), location=node['_location'])
                     hl_lines = [i + 1 for i in hl_lines if i < nlines]
+                    highlight_args = source.setdefault('highlight_args', {})
                     highlight_args['hl_lines'] = hl_lines
 
             # Add code cell CSS class
