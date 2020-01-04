@@ -180,6 +180,22 @@ def test_continue_linenos_conf_option(doctree):
     assert cell1.children[1].rawsource.strip() == "6"
 
 
+def test_emphasize_lines(doctree):
+    source = '''
+    .. jupyter-execute::
+        :emphasize-lines: 1,3-5
+
+        1 + 1
+        2 + 2
+        3 + 3
+        4 + 4
+        5 + 5
+    '''
+    tree = doctree(source)
+    cell, = tree.traverse(JupyterCellNode)
+    assert cell.attributes['emphasize_lines'] == '1,3-5'
+
+
 def test_execution_environment_carries_over(doctree):
     source = '''
     .. jupyter-execute::
