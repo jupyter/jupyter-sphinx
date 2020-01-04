@@ -2,11 +2,9 @@
 
 import os
 from itertools import groupby, count
-from operator import itemgetter
 import json
 
-import sphinx
-from sphinx.util import logging
+from sphinx.util import logging, parselinenos
 from sphinx.util.fileutil import copy_asset
 from sphinx.transforms import SphinxTransform
 from sphinx.errors import ExtensionError
@@ -26,7 +24,6 @@ from jupyter_client.kernelspec import get_kernel_spec, NoSuchKernel
 
 import nbformat
 
-from ipywidgets import Widget
 import ipywidgets.embed
 
 from ._version import __version__
@@ -136,6 +133,8 @@ class JupyterCell(Directive):
         If provided, the code will be shown below the cell output.
     linenos : bool
         If provided, the code will be shown with line numbering.
+    emphasize-lines : comma separated list of line numbers
+        If provided, the specified lines will be highlighted.
     raises : comma separated list of exception types
         If provided, a comma-separated list of exception type names that
         the cell may raise. If one of the listed execption types is raised
@@ -159,11 +158,14 @@ class JupyterCell(Directive):
         'hide-output': directives.flag,
         'code-below': directives.flag,
         'linenos': directives.flag,
+        'emphasize-lines': directives.unchanged_required,
         'raises': csv_option,
         'stderr': directives.flag,
     }
 
     def run(self):
+        location = self.state_machine.get_source_and_line(self.lineno)
+
         if self.arguments:
             # As per 'sphinx.directives.code.LiteralInclude'
             env = self.state.document.settings.env
@@ -172,7 +174,7 @@ class JupyterCell(Directive):
             if self.content:
                 logger.warning(
                     'Ignoring inline code in Jupyter cell included from "{}"'
-                    .format(rel_filename)
+                    .format(rel_filename), location=location
                 )
             try:
                 with open(filename) as f:
@@ -185,6 +187,23 @@ class JupyterCell(Directive):
             self.assert_has_content()
             content = self.content
 
+        # The code fragment is taken from CodeBlock directive almost unchanged:
+        # https://github.com/sphinx-doc/sphinx/blob/0319faf8f1503453b6ce19020819a8cf44e39f13/sphinx/directives/code.py#L134-L148
+        emphasize_linespec = self.options.get('emphasize-lines')
+        if emphasize_linespec:
+            try:
+                nlines = len(content)
+                hl_lines = parselinenos(emphasize_linespec, nlines)
+                if any(i >= nlines for i in hl_lines):
+                    logger.warning(
+                        'Line number spec is out of range(1-{}): {}'.format(
+                            nlines, emphasize_linespec), location=location)
+                hl_lines = [i + 1 for i in hl_lines if i < nlines]
+            except ValueError as err:
+                return [self.state.document.reporter.warning(err, line=self.lineno)]
+        else:
+            hl_lines = []
+
         return [JupyterCellNode(
             '',
             docutils.nodes.literal_block(
@@ -194,6 +213,7 @@ class JupyterCell(Directive):
             hide_output=('hide-output' in self.options),
             code_below=('code-below' in self.options),
             linenos=('linenos' in self.options),
+            emphasize_lines=hl_lines,
             raises=self.options.get('raises'),
             stderr=('stderr' in self.options),
         )]
@@ -408,12 +428,18 @@ class ExecuteJupyterCells(SphinxTransform):
             linenostart = 1
             for node in nodes:
                 source = node.children[0]
+                nlines = source.rawsource.count("\n") + 1
+
                 if linenos_config or continue_linenos or node["linenos"]:
                     source["linenos"] = True
                 if continue_linenos:
-                    source["highlight_args"] = {'linenostart': linenostart}
-                    linenostart += source.rawsource.count("\n") + 1
+                    source['highlight_args'] = {'linenostart': linenostart}
+                    linenostart += nlines
 
+                hl_lines = node['emphasize_lines']
+                if hl_lines:
+                    highlight_args = source.setdefault('highlight_args', {})
+                    highlight_args['hl_lines'] = hl_lines
 
             # Add code cell CSS class
             for node in nodes:
