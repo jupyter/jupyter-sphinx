@@ -193,6 +193,32 @@ produces:
     print('B')
     print('C')
 
+You may also emphasize particular lines in the source code with ``:emphasize-lines:``::
+
+    .. jupyter-execute::
+        :emphasize-lines: 2,5-6
+
+        d = {
+            'a': 1,
+            'b': 2,
+            'c': 3,
+            'd': 4,
+            'e': 5,
+        }
+
+produces:
+
+.. jupyter-execute::
+    :emphasize-lines: 2,5-6
+
+    d = {
+        'a': 1,
+        'b': 2,
+        'c': 3,
+        'd': 4,
+        'e': 5,
+    }
+
 Controlling exceptions
 ----------------------
 
