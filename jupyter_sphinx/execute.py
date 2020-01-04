@@ -187,6 +187,21 @@ class JupyterCell(Directive):
             self.assert_has_content()
             content = self.content
 
+        emphasize_linespec = self.options.get('emphasize-lines')
+        if emphasize_linespec:
+            try:
+                nlines = len(content)
+                hl_lines = parselinenos(emphasize_linespec, nlines)
+                if any(i >= nlines for i in hl_lines):
+                    logger.warning(
+                        'Line number spec is out of range(1-{}): {}'.format(
+                            nlines, emphasize_linespec), location=location)
+                hl_lines = [i + 1 for i in hl_lines if i < nlines]
+            except ValueError as err:
+                return [self.state.document.reporter.warning(err, line=self.lineno)]
+        else:
+            hl_lines = []
+
         return [JupyterCellNode(
             '',
             docutils.nodes.literal_block(
@@ -196,10 +211,9 @@ class JupyterCell(Directive):
             hide_output=('hide-output' in self.options),
             code_below=('code-below' in self.options),
             linenos=('linenos' in self.options),
-            emphasize_lines=self.options.get('emphasize-lines'),
+            emphasize_lines=hl_lines,
             raises=self.options.get('raises'),
             stderr=('stderr' in self.options),
-            _location=location,
         )]
 
 
@@ -420,14 +434,8 @@ class ExecuteJupyterCells(SphinxTransform):
                     source['highlight_args'] = {'linenostart': linenostart}
                     linenostart += nlines
 
-                emphasize_linespec = node['emphasize_lines']
-                if emphasize_linespec:
-                    hl_lines = parselinenos(emphasize_linespec, nlines)
-                    if any(i >= nlines for i in hl_lines):
-                        logger.warning(
-                            'Line number spec is out of range(1-{}): {}'.format(
-                                nlines, emphasize_linespec), location=node['_location'])
-                    hl_lines = [i + 1 for i in hl_lines if i < nlines]
+                hl_lines = node['emphasize_lines']
+                if hl_lines:
                     highlight_args = source.setdefault('highlight_args', {})
                     highlight_args['hl_lines'] = hl_lines
 

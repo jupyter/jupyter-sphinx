@@ -190,10 +190,21 @@ def test_emphasize_lines(doctree):
         3 + 3
         4 + 4
         5 + 5
+    
+    .. jupyter-execute::
+        :emphasize-lines: 2, 4
+
+        1 + 1
+        2 + 2
+        3 + 3
+        4 + 4
+        5 + 5
     '''
     tree = doctree(source)
-    cell, = tree.traverse(JupyterCellNode)
-    assert cell.attributes['emphasize_lines'] == '1,3-5'
+    cell0, cell1 = tree.traverse(JupyterCellNode)
+
+    assert cell0.attributes['emphasize_lines'] == [1, 3, 4, 5]
+    assert cell1.attributes['emphasize_lines'] == [2, 4]
 
 
 def test_execution_environment_carries_over(doctree):
