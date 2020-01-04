@@ -187,6 +187,8 @@ class JupyterCell(Directive):
             self.assert_has_content()
             content = self.content
 
+        # The code fragment is taken from CodeBlock directive almost unchanged:
+        # https://github.com/sphinx-doc/sphinx/blob/0319faf8f1503453b6ce19020819a8cf44e39f13/sphinx/directives/code.py#L134-L148
         emphasize_linespec = self.options.get('emphasize-lines')
         if emphasize_linespec:
             try:
