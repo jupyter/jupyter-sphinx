@@ -248,3 +248,18 @@ def write_notebook_output(notebook, output_dir, notebook_name):
 def contains_widgets(notebook):
     widgets = get_widgets(notebook)
     return widgets and widgets['state']
+
+
+def setup(app):
+    """A temporary setup function so that we can use it for
+    backwards compatability.
+
+    This should be removed after a deprecation cycle.
+    """
+    js.logger.warning(("`jupyter-sphinx` was initialized with the "
+                      "`jupyter_sphinx.execute` sub-module. Replace this with "
+                      "`jupyter_sphinx`. Initializing with "
+                      "`jupyter_sphinx.execute` will be removed in "
+                      "version 0.3"))
+    out = js._setup(app)
+    return out

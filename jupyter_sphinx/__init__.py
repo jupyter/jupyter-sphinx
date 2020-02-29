@@ -60,7 +60,12 @@ def build_finished(app, env):
     copy_asset(src, dst)
 
 
-def setup(app):
+def _setup(app):
+    """A temporary setup function so that we can use it here and in execute.
+
+    This should be removed and converted into `setup` after a deprecation
+    cycle.
+    """
     # Configuration
 
     app.add_config_value(
@@ -233,3 +238,12 @@ def setup(app):
         'version': __version__,
         'parallel_read_safe': True,
     }
+
+
+def setup(app):
+    """The main setup function.
+
+    This should be replaced with `_setup` after a deprecation cycle.
+    """
+    out = _setup(app)
+    return out
