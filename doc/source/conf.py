@@ -26,7 +26,7 @@ master_doc = 'index'
 
 extensions = [
     'sphinx.ext.mathjax',
-    'jupyter_sphinx.execute',
+    'jupyter_sphinx',
 ]
 
 html_theme = 'alabaster'

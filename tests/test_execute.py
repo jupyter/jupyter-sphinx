@@ -10,15 +10,13 @@ from docutils.nodes import raw
 
 import pytest
 
-from jupyter_sphinx.execute import (
-    JupyterCellNode,
-    JupyterKernelNode,
-    JupyterWidgetViewNode,
-    JupyterWidgetStateNode,
+from jupyter_sphinx.ast import JupyterCellNode, JupyterWidgetViewNode, JupyterWidgetStateNode
+from jupyter_sphinx.thebelab import (
     ThebeSourceNode,
     ThebeOutputNode,
     ThebeButtonNode,
 )
+
 
 @pytest.fixture()
 def doctree():
@@ -30,7 +28,7 @@ def doctree():
         src_dir = tempfile.mkdtemp()
         source_trees.append(src_dir)
         with open(os.path.join(src_dir, 'conf.py'), 'w') as f:
-            f.write("extensions = ['jupyter_sphinx.execute']")
+            f.write("extensions = ['jupyter_sphinx']")
             if config is not None:
                 f.write('\n' + config)
         with open(os.path.join(src_dir, 'contents.rst'), 'w') as f:
@@ -190,7 +188,7 @@ def test_emphasize_lines(doctree):
         3 + 3
         4 + 4
         5 + 5
-    
+
     .. jupyter-execute::
         :emphasize-lines: 2, 4
 
