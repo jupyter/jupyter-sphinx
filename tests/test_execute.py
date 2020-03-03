@@ -24,11 +24,11 @@ def doctree():
     apps = []
     syspath = sys.path[:]
 
-    def doctree(source, config=None, return_warnings=False):
+    def doctree(source, config=None, return_warnings=False, entrypoint="jupyter_sphinx"):
         src_dir = tempfile.mkdtemp()
         source_trees.append(src_dir)
         with open(os.path.join(src_dir, "conf.py"), "w") as f:
-            f.write("extensions = ['jupyter_sphinx']")
+            f.write("extensions = ['%s']" % entrypoint)
             if config is not None:
                 f.write("\n" + config)
         with open(os.path.join(src_dir, "contents.rst"), "w") as f:
@@ -61,6 +61,22 @@ def test_basic(doctree):
         2 + 2
     """
     tree = doctree(source)
+    cell, = tree.traverse(JupyterCellNode)
+    assert cell.attributes["code_below"] is False
+    assert cell.attributes["hide_code"] is False
+    assert cell.attributes["hide_output"] is False
+    assert cell.attributes["linenos"] is False
+    assert cell.children[0].rawsource.strip() == "2 + 2"
+    assert cell.children[1].rawsource.strip() == "4"
+
+
+def test_basic_old_entrypoint(doctree):
+    source = """
+    .. jupyter-execute::
+
+        2 + 2
+    """
+    tree = doctree(source, entrypoint="jupyter_sphinx.execute")
     cell, = tree.traverse(JupyterCellNode)
     assert cell.attributes["code_below"] is False
     assert cell.attributes["hide_code"] is False
