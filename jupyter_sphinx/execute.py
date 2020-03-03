@@ -280,6 +280,8 @@ def setup(app):
 
     This should be removed after a deprecation cycle.
     """
+    # To avoid circular imports we'll lazily import
+    from . import setup as jssetup
     js.logger.warning(
         (
             "`jupyter-sphinx` was initialized with the "
@@ -289,5 +291,5 @@ def setup(app):
             "version 0.3"
         )
     )
-    out = js._setup(app)
+    out = jssetup(app)
     return out

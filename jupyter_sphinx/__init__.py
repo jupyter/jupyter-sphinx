@@ -26,7 +26,47 @@ THEBELAB_URL_DEFAULT = "https://unpkg.com/thebelab@^0.4.0"
 
 logger = logging.getLogger(__name__)
 
+##############################################################################
+# Constants and functions we'll use later
 
+# Used for nodes that do not need to be rendered
+def skip(self, node):
+    raise docutils.nodes.SkipNode
+
+# Renders the children of a container
+render_container = (
+    lambda self, node: self.visit_container(node),
+    lambda self, node: self.depart_container(node),
+)
+
+# Used to render the container and its children as HTML
+def visit_container_html(self, node):
+    self.body.append(node.visit_html())
+    self.visit_container(node)
+
+def depart_container_html(self, node):
+    self.depart_container(node)
+    self.body.append(node.depart_html())
+
+# Used to render an element node as HTML
+def visit_element_html(self, node):
+    self.body.append(node.html())
+    raise docutils.nodes.SkipNode
+
+# Used to render the ThebeSourceNode conditionally for non-HTML builders
+def visit_thebe_source(self, node):
+    if node["hide_code"]:
+        raise docutils.nodes.SkipNode
+    else:
+        self.visit_container(node)
+
+render_thebe_source = (
+    visit_thebe_source,
+    lambda self, node: self.depart_container(node),
+)
+
+##############################################################################
+# Sphinx callback functions
 def builder_inited(app):
     """
     2 cases
@@ -75,7 +115,9 @@ def build_finished(app, env):
     copy_asset(src, dst)
 
 
-def _setup(app):
+##############################################################################
+# Main setup
+def setup(app):
     """A temporary setup function so that we can use it here and in execute.
 
     This should be removed and converted into `setup` after a deprecation
@@ -110,48 +152,11 @@ def _setup(app):
 
     # thebelab config, can be either a filename or a dict
     app.add_config_value("jupyter_sphinx_thebelab_config", None, "html")
-
     app.add_config_value("jupyter_sphinx_thebelab_url", THEBELAB_URL_DEFAULT, "html")
 
     # linenos config
     app.add_config_value("jupyter_sphinx_linenos", False, "env")
     app.add_config_value("jupyter_sphinx_continue_linenos", False, "env")
-
-    # Used for nodes that do not need to be rendered
-    def skip(self, node):
-        raise docutils.nodes.SkipNode
-
-    # Renders the children of a container
-    render_container = (
-        lambda self, node: self.visit_container(node),
-        lambda self, node: self.depart_container(node),
-    )
-
-    # Used to render the container and its children as HTML
-    def visit_container_html(self, node):
-        self.body.append(node.visit_html())
-        self.visit_container(node)
-
-    def depart_container_html(self, node):
-        self.depart_container(node)
-        self.body.append(node.depart_html())
-
-    # Used to render an element node as HTML
-    def visit_element_html(self, node):
-        self.body.append(node.html())
-        raise docutils.nodes.SkipNode
-
-    # Used to render the ThebeSourceNode conditionally for non-HTML builders
-    def visit_thebe_source(self, node):
-        if node["hide_code"]:
-            raise docutils.nodes.SkipNode
-        else:
-            self.visit_container(node)
-
-    render_thebe_source = (
-        visit_thebe_source,
-        lambda self, node: self.depart_container(node),
-    )
 
     # JupyterKernelNode is just a doctree marker for the
     # ExecuteJupyterCells transform, so we don't actually render it.
@@ -245,12 +250,3 @@ def _setup(app):
     app.connect("build-finished", build_finished)
 
     return {"version": __version__, "parallel_read_safe": True}
-
-
-def setup(app):
-    """The main setup function.
-
-    This should be replaced with `_setup` after a deprecation cycle.
-    """
-    out = _setup(app)
-    return out
