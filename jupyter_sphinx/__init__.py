@@ -8,12 +8,21 @@ import os
 from sphinx.util.fileutil import copy_asset
 from IPython.lib.lexers import IPythonTracebackLexer, IPython3Lexer
 
-from .ast import JupyterCell, JupyterCellNode, JupyterWidgetViewNode, JupyterWidgetStateNode, WIDGET_VIEW_MIMETYPE, jupyter_download_role
+from .ast import (
+    JupyterCell,
+    JupyterCellNode,
+    JupyterWidgetViewNode,
+    JupyterWidgetStateNode,
+    WIDGET_VIEW_MIMETYPE,
+    jupyter_download_role,
+)
 from .execute import JupyterKernelNode, JupyterKernel, ExecuteJupyterCells
 from .thebelab import ThebeButton, ThebeButtonNode, ThebeOutputNode, ThebeSourceNode
 
-REQUIRE_URL_DEFAULT = 'https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js'
-THEBELAB_URL_DEFAULT = 'https://unpkg.com/thebelab@^0.4.0'
+REQUIRE_URL_DEFAULT = (
+    "https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"
+)
+THEBELAB_URL_DEFAULT = "https://unpkg.com/thebelab@^0.4.0"
 
 logger = logging.getLogger(__name__)
 
@@ -27,27 +36,33 @@ def builder_inited(app):
     require_url = app.config.jupyter_sphinx_require_url
     if require_url:
         app.add_js_file(require_url)
-        embed_url = app.config.jupyter_sphinx_embed_url or ipywidgets.embed.DEFAULT_EMBED_REQUIREJS_URL
+        embed_url = (
+            app.config.jupyter_sphinx_embed_url
+            or ipywidgets.embed.DEFAULT_EMBED_REQUIREJS_URL
+        )
     else:
-        embed_url = app.config.jupyter_sphinx_embed_url or ipywidgets.embed.DEFAULT_EMBED_SCRIPT_URL
+        embed_url = (
+            app.config.jupyter_sphinx_embed_url
+            or ipywidgets.embed.DEFAULT_EMBED_SCRIPT_URL
+        )
     if embed_url:
         app.add_js_file(embed_url)
 
     # add jupyter-sphinx css
-    app.add_css_file('jupyter-sphinx.css')
+    app.add_css_file("jupyter-sphinx.css")
     # Check if a thebelab config was specified
     if app.config.jupyter_sphinx_thebelab_config:
-        app.add_js_file('thebelab-helper.js')
-        app.add_css_file('thebelab.css')
+        app.add_js_file("thebelab-helper.js")
+        app.add_css_file("thebelab.css")
 
 
 def build_finished(app, env):
-    if app.builder.format != 'html':
+    if app.builder.format != "html":
         return
 
     # Copy stylesheet
-    src = os.path.join(os.path.dirname(__file__), 'css')
-    dst = os.path.join(app.outdir, '_static')
+    src = os.path.join(os.path.dirname(__file__), "css")
+    dst = os.path.join(app.outdir, "_static")
     copy_asset(src, dst)
 
     thebe_config = app.config.jupyter_sphinx_thebelab_config
@@ -55,8 +70,8 @@ def build_finished(app, env):
         return
 
     # Copy all thebelab related assets
-    src = os.path.join(os.path.dirname(__file__), 'thebelab')
-    dst = os.path.join(app.outdir, '_static')
+    src = os.path.join(os.path.dirname(__file__), "thebelab")
+    dst = os.path.join(app.outdir, "_static")
     copy_asset(src, dst)
 
 
@@ -69,42 +84,38 @@ def _setup(app):
     # Configuration
 
     app.add_config_value(
-        'jupyter_execute_kwargs',
+        "jupyter_execute_kwargs",
         dict(timeout=-1, allow_errors=True, store_widget_state=True),
-        'env'
+        "env",
     )
+    app.add_config_value("jupyter_execute_default_kernel", "python3", "env")
     app.add_config_value(
-        'jupyter_execute_default_kernel',
-        'python3',
-        'env'
-    )
-    app.add_config_value(
-        'jupyter_execute_data_priority',
+        "jupyter_execute_data_priority",
         [
             WIDGET_VIEW_MIMETYPE,
-            'application/javascript',
-            'text/html',
-            'image/svg+xml',
-            'image/png',
-            'image/jpeg',
-            'text/latex',
-            'text/plain'
+            "application/javascript",
+            "text/html",
+            "image/svg+xml",
+            "image/png",
+            "image/jpeg",
+            "text/latex",
+            "text/plain",
         ],
-        'env',
+        "env",
     )
 
     # ipywidgets config
-    app.add_config_value('jupyter_sphinx_require_url', REQUIRE_URL_DEFAULT, 'html')
-    app.add_config_value('jupyter_sphinx_embed_url', None, 'html')
+    app.add_config_value("jupyter_sphinx_require_url", REQUIRE_URL_DEFAULT, "html")
+    app.add_config_value("jupyter_sphinx_embed_url", None, "html")
 
     # thebelab config, can be either a filename or a dict
-    app.add_config_value('jupyter_sphinx_thebelab_config', None, 'html')
+    app.add_config_value("jupyter_sphinx_thebelab_config", None, "html")
 
-    app.add_config_value('jupyter_sphinx_thebelab_url', THEBELAB_URL_DEFAULT, 'html')
+    app.add_config_value("jupyter_sphinx_thebelab_url", THEBELAB_URL_DEFAULT, "html")
 
     # linenos config
-    app.add_config_value('jupyter_sphinx_linenos', False, 'env')
-    app.add_config_value('jupyter_sphinx_continue_linenos', False, 'env')
+    app.add_config_value("jupyter_sphinx_linenos", False, "env")
+    app.add_config_value("jupyter_sphinx_continue_linenos", False, "env")
 
     # Used for nodes that do not need to be rendered
     def skip(self, node):
@@ -132,16 +143,15 @@ def _setup(app):
 
     # Used to render the ThebeSourceNode conditionally for non-HTML builders
     def visit_thebe_source(self, node):
-        if node['hide_code']:
+        if node["hide_code"]:
             raise docutils.nodes.SkipNode
         else:
             self.visit_container(node)
 
     render_thebe_source = (
         visit_thebe_source,
-        lambda self, node: self.depart_container(node)
+        lambda self, node: self.depart_container(node),
     )
-
 
     # JupyterKernelNode is just a doctree marker for the
     # ExecuteJupyterCells transform, so we don't actually render it.
@@ -220,24 +230,21 @@ def _setup(app):
         man=(skip, None),
     )
 
-    app.add_directive('jupyter-execute', JupyterCell)
-    app.add_directive('jupyter-kernel', JupyterKernel)
-    app.add_directive('thebe-button', ThebeButton)
-    app.add_role('jupyter-download:notebook', jupyter_download_role)
-    app.add_role('jupyter-download:script', jupyter_download_role)
+    app.add_directive("jupyter-execute", JupyterCell)
+    app.add_directive("jupyter-kernel", JupyterKernel)
+    app.add_directive("thebe-button", ThebeButton)
+    app.add_role("jupyter-download:notebook", jupyter_download_role)
+    app.add_role("jupyter-download:script", jupyter_download_role)
     app.add_transform(ExecuteJupyterCells)
 
     # For syntax highlighting
-    app.add_lexer('ipythontb', IPythonTracebackLexer())
-    app.add_lexer('ipython', IPython3Lexer())
+    app.add_lexer("ipythontb", IPythonTracebackLexer())
+    app.add_lexer("ipython", IPython3Lexer())
 
-    app.connect('builder-inited', builder_inited)
-    app.connect('build-finished', build_finished)
+    app.connect("builder-inited", builder_inited)
+    app.connect("build-finished", build_finished)
 
-    return {
-        'version': __version__,
-        'parallel_read_safe': True,
-    }
+    return {"version": __version__, "parallel_read_safe": True}
 
 
 def setup(app):

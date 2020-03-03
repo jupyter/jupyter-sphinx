@@ -1,26 +1,27 @@
 """Manipulating the Sphinx AST with Jupyter objects"""
 
 import os
+import json
+
 import docutils
 from docutils.parsers.rst import Directive, directives
+from docutils.nodes import math_block
 from sphinx.util import parselinenos
 from sphinx.addnodes import download_reference
-import ipywidgets.embed
-import json
-import nbconvert
-from docutils.nodes import math_block
 
+import ipywidgets.embed
+import nbconvert
 
 import jupyter_sphinx as js
 from .utils import strip_latex_delimiters, sphinx_abs_dir
 from .thebelab import ThebeSourceNode, ThebeOutputNode
 
-WIDGET_VIEW_MIMETYPE = 'application/vnd.jupyter.widget-view+json'
-WIDGET_STATE_MIMETYPE = 'application/vnd.jupyter.widget-state+json'
+WIDGET_VIEW_MIMETYPE = "application/vnd.jupyter.widget-view+json"
+WIDGET_STATE_MIMETYPE = "application/vnd.jupyter.widget-state+json"
 
 
 def csv_option(s):
-    return [p.strip() for p in s.split(',')] if s else []
+    return [p.strip() for p in s.split(",")] if s else []
 
 
 class JupyterCell(Directive):
@@ -66,13 +67,13 @@ class JupyterCell(Directive):
     has_content = True
 
     option_spec = {
-        'hide-code': directives.flag,
-        'hide-output': directives.flag,
-        'code-below': directives.flag,
-        'linenos': directives.flag,
-        'emphasize-lines': directives.unchanged_required,
-        'raises': csv_option,
-        'stderr': directives.flag,
+        "hide-code": directives.flag,
+        "hide-output": directives.flag,
+        "code-below": directives.flag,
+        "linenos": directives.flag,
+        "emphasize-lines": directives.unchanged_required,
+        "raises": csv_option,
+        "stderr": directives.flag,
     }
 
     def run(self):
@@ -85,50 +86,53 @@ class JupyterCell(Directive):
             env.note_dependency(rel_filename)
             if self.content:
                 js.logger.warning(
-                    'Ignoring inline code in Jupyter cell included from "{}"'
-                    .format(rel_filename), location=location
+                    'Ignoring inline code in Jupyter cell included from "{}"'.format(
+                        rel_filename
+                    ),
+                    location=location,
                 )
             try:
                 with open(filename) as f:
                     content = [line.rstrip() for line in f.readlines()]
             except (IOError, OSError):
-                raise IOError(
-                    'File {} not found or reading it failed'.format(filename)
-                )
+                raise IOError("File {} not found or reading it failed".format(filename))
         else:
             self.assert_has_content()
             content = self.content
 
         # The code fragment is taken from CodeBlock directive almost unchanged:
         # https://github.com/sphinx-doc/sphinx/blob/0319faf8f1503453b6ce19020819a8cf44e39f13/sphinx/directives/code.py#L134-L148
-        emphasize_linespec = self.options.get('emphasize-lines')
+        emphasize_linespec = self.options.get("emphasize-lines")
         if emphasize_linespec:
             try:
                 nlines = len(content)
                 hl_lines = parselinenos(emphasize_linespec, nlines)
                 if any(i >= nlines for i in hl_lines):
                     js.logger.warning(
-                        'Line number spec is out of range(1-{}): {}'.format(
-                            nlines, emphasize_linespec), location=location)
+                        "Line number spec is out of range(1-{}): {}".format(
+                            nlines, emphasize_linespec
+                        ),
+                        location=location,
+                    )
                 hl_lines = [i + 1 for i in hl_lines if i < nlines]
             except ValueError as err:
                 return [self.state.document.reporter.warning(err, line=self.lineno)]
         else:
             hl_lines = []
 
-        return [JupyterCellNode(
-            '',
-            docutils.nodes.literal_block(
-                text='\n'.join(content),
-            ),
-            hide_code=('hide-code' in self.options),
-            hide_output=('hide-output' in self.options),
-            code_below=('code-below' in self.options),
-            linenos=('linenos' in self.options),
-            emphasize_lines=hl_lines,
-            raises=self.options.get('raises'),
-            stderr=('stderr' in self.options),
-        )]
+        return [
+            JupyterCellNode(
+                "",
+                docutils.nodes.literal_block(text="\n".join(content)),
+                hide_code=("hide-code" in self.options),
+                hide_output=("hide-output" in self.options),
+                code_below=("code-below" in self.options),
+                linenos=("linenos" in self.options),
+                emphasize_lines=hl_lines,
+                raises=self.options.get("raises"),
+                stderr=("stderr" in self.options),
+            )
+        ]
 
 
 class JupyterCellNode(docutils.nodes.container):
@@ -147,12 +151,13 @@ class JupyterWidgetViewNode(docutils.nodes.Element):
     outputs this doctree node is rendered generically.
     """
 
-    def __init__(self, rawsource='', *children, **attributes):
-        super().__init__('', view_spec=attributes['view_spec'])
+    def __init__(self, rawsource="", *children, **attributes):
+        super().__init__("", view_spec=attributes["view_spec"])
 
     def html(self):
         return ipywidgets.embed.widget_view_template.format(
-            view_spec=json.dumps(self['view_spec']))
+            view_spec=json.dumps(self["view_spec"])
+        )
 
 
 class JupyterWidgetStateNode(docutils.nodes.Element):
@@ -166,15 +171,16 @@ class JupyterWidgetStateNode(docutils.nodes.Element):
     from all script tags on the page of the correct mimetype.
     """
 
-    def __init__(self, rawsource='', *children, **attributes):
-        super().__init__('', state=attributes['state'])
+    def __init__(self, rawsource="", *children, **attributes):
+        super().__init__("", state=attributes["state"])
 
     def html(self):
         # TODO: render into a separate file if 'html-manager' starts fully
         #       parsing script tags, and not just grabbing their innerHTML
         # https://github.com/jupyter-widgets/ipywidgets/blob/master/packages/html-manager/src/libembed.ts#L36
         return ipywidgets.embed.snippet_template.format(
-            load='', widget_views='', json_data=json.dumps(self['state']))
+            load="", widget_views="", json_data=json.dumps(self["state"])
+        )
 
 
 def cell_output_to_nodes(cell, data_priority, write_stderr, dir, thebe_config):
@@ -194,11 +200,9 @@ def cell_output_to_nodes(cell, data_priority, write_stderr, dir, thebe_config):
         Thebelab configuration object or None
     """
     to_add = []
-    for _, output in enumerate(cell.get('outputs', [])):
-        output_type = output['output_type']
-        if (
-            output_type == 'stream'
-        ):
+    for _, output in enumerate(cell.get("outputs", [])):
+        output_type = output["output_type"]
+        if output_type == "stream":
             if output["name"] == "stderr":
                 if not write_stderr:
                     continue
@@ -213,78 +217,82 @@ def cell_output_to_nodes(cell, data_priority, write_stderr, dir, thebe_config):
                     # would otherwise add a <div class="highlight">.
 
                     container = docutils.nodes.container(classes=["stderr"])
-                    container.append(docutils.nodes.literal_block(
-                            text=output['text'],
-                            rawsource='',  # disables Pygment highlighting
-                            language='none',
-                            classes=["stderr"]
-                    ))
+                    container.append(
+                        docutils.nodes.literal_block(
+                            text=output["text"],
+                            rawsource="",  # disables Pygment highlighting
+                            language="none",
+                            classes=["stderr"],
+                        )
+                    )
                     to_add.append(container)
             else:
-                to_add.append(docutils.nodes.literal_block(
-                    text=output['text'],
-                    rawsource=output['text'],
-                    language='none',
-                    classes=["output", "stream"]
-                ))
-        elif (
-            output_type == 'error'
-        ):
-            traceback = '\n'.join(output['traceback'])
+                to_add.append(
+                    docutils.nodes.literal_block(
+                        text=output["text"],
+                        rawsource=output["text"],
+                        language="none",
+                        classes=["output", "stream"],
+                    )
+                )
+        elif output_type == "error":
+            traceback = "\n".join(output["traceback"])
             text = nbconvert.filters.strip_ansi(traceback)
-            to_add.append(docutils.nodes.literal_block(
-                text=text,
-                rawsource=text,
-                language='ipythontb',
-                classes =["output", "traceback"]
-            ))
-        elif (
-            output_type in ('display_data', 'execute_result')
-        ):
+            to_add.append(
+                docutils.nodes.literal_block(
+                    text=text,
+                    rawsource=text,
+                    language="ipythontb",
+                    classes=["output", "traceback"],
+                )
+            )
+        elif output_type in ("display_data", "execute_result"):
             try:
                 # First mime_type by priority that occurs in output.
-                mime_type = next(
-                    x for x in data_priority if x in output['data']
-                )
+                mime_type = next(x for x in data_priority if x in output["data"])
             except StopIteration:
                 continue
-            data = output['data'][mime_type]
-            if mime_type.startswith('image'):
+            data = output["data"][mime_type]
+            if mime_type.startswith("image"):
                 # Sphinx treats absolute paths as being rooted at the source
                 # directory, so make a relative path, which Sphinx treats
                 # as being relative to the current working directory.
-                filename = os.path.basename(
-                    output.metadata['filenames'][mime_type]
-                )
+                filename = os.path.basename(output.metadata["filenames"][mime_type])
                 uri = os.path.join(dir, filename)
                 to_add.append(docutils.nodes.image(uri=uri))
-            elif mime_type == 'text/html':
-                to_add.append(docutils.nodes.raw(
-                    text=data,
-                    format='html',
-                    classes=["output", "text_html"]
-
-                ))
-            elif mime_type == 'text/latex':
-                to_add.append(math_block(
-                    text=strip_latex_delimiters(data),
-                    nowrap=False,
-                    number=None,
-                    classes=["output", "text_latex"]
-                 ))
-            elif mime_type == 'text/plain':
-                to_add.append(docutils.nodes.literal_block(
-                    text=data,
-                    rawsource=data,
-                    language='none',
-                    classes=["output", "text_plain"]
-                ))
-            elif mime_type == 'application/javascript':
-                to_add.append(docutils.nodes.raw(
-                    text='<script type="{mime_type}">{data}</script>'
-                         .format(mime_type=mime_type, data=data),
-                    format='html',
-                ))
+            elif mime_type == "text/html":
+                to_add.append(
+                    docutils.nodes.raw(
+                        text=data, format="html", classes=["output", "text_html"]
+                    )
+                )
+            elif mime_type == "text/latex":
+                to_add.append(
+                    math_block(
+                        text=strip_latex_delimiters(data),
+                        nowrap=False,
+                        number=None,
+                        classes=["output", "text_latex"],
+                    )
+                )
+            elif mime_type == "text/plain":
+                to_add.append(
+                    docutils.nodes.literal_block(
+                        text=data,
+                        rawsource=data,
+                        language="none",
+                        classes=["output", "text_plain"],
+                    )
+                )
+            elif mime_type == "application/javascript":
+                to_add.append(
+                    docutils.nodes.raw(
+                        text='<script type="{mime_type}">{data}</script>'.format(
+                            mime_type=mime_type, data=data
+                        ),
+                        format="html",
+                    )
+                )
             elif mime_type == WIDGET_VIEW_MIMETYPE:
                 to_add.append(JupyterWidgetViewNode(view_spec=data))
 
@@ -296,39 +304,40 @@ def attach_outputs(output_nodes, node, thebe_config, cm_language):
         node.attributes["classes"] = ["jupyter_container"]
     if thebe_config:
         source = node.children[0]
-        thebe_source = ThebeSourceNode(hide_code=node.attributes['hide_code'],
-                                       code_below=node.attributes['code_below'],
-                                       language=cm_language)
+        thebe_source = ThebeSourceNode(
+            hide_code=node.attributes["hide_code"],
+            code_below=node.attributes["code_below"],
+            language=cm_language,
+        )
         thebe_source.children = [source]
 
         node.children = [thebe_source]
 
-        if not node.attributes['hide_output']:
+        if not node.attributes["hide_output"]:
             thebe_output = ThebeOutputNode()
             thebe_output.children = output_nodes
-            if node.attributes['code_below']:
+            if node.attributes["code_below"]:
                 node.children = [thebe_output] + node.children
             else:
                 node.children = node.children + [thebe_output]
     else:
-        if node.attributes['hide_code']:
+        if node.attributes["hide_code"]:
             node.children = []
-        if not node.attributes['hide_output']:
-            if node.attributes['code_below']:
+        if not node.attributes["hide_output"]:
+            if node.attributes["code_below"]:
                 node.children = output_nodes + node.children
             else:
                 node.children = node.children + output_nodes
 
 
 def jupyter_download_role(name, rawtext, text, lineno, inliner):
-    _, filetype = name.split(':')
-    assert filetype in ('notebook', 'script')
-    ext = '.ipynb' if filetype == 'notebook' else '.py'
+    _, filetype = name.split(":")
+    assert filetype in ("notebook", "script")
+    ext = ".ipynb" if filetype == "notebook" else ".py"
     output_dir = sphinx_abs_dir(inliner.document.settings.env)
     download_file = text + ext
     node = download_reference(
-        download_file, download_file,
-        reftarget=os.path.join(output_dir, download_file)
+        download_file, download_file, reftarget=os.path.join(output_dir, download_file)
     )
     return [node], []
 

@@ -16,10 +16,22 @@ from nbconvert.writers import FilesWriter
 import nbformat
 
 import jupyter_sphinx as js
-from .utils import default_notebook_names, output_directory, split_on, sphinx_abs_dir, blank_nb
-from .ast import JupyterCellNode, cell_output_to_nodes, JupyterWidgetStateNode, attach_outputs, get_widgets
 from .thebelab import ThebeButtonNode, add_thebelab_library
 from ._version import __version__
+from .utils import (
+    default_notebook_names,
+    output_directory,
+    split_on,
+    sphinx_abs_dir,
+    blank_nb,
+)
+from .ast import (
+    JupyterCellNode,
+    cell_output_to_nodes,
+    JupyterWidgetStateNode,
+    attach_outputs,
+    get_widgets,
+)
 
 
 class JupyterKernel(Directive):
@@ -47,16 +59,16 @@ class JupyterKernel(Directive):
     final_argument_whitespace = False
     has_content = False
 
-    option_spec = {
-        'id': directives.unchanged,
-    }
+    option_spec = {"id": directives.unchanged}
 
     def run(self):
-        return [JupyterKernelNode(
-            '',
-            kernel_name=self.arguments[0].strip() if self.arguments else '',
-            kernel_id=self.options.get('id', '').strip(),
-        )]
+        return [
+            JupyterKernelNode(
+                "",
+                kernel_name=self.arguments[0].strip() if self.arguments else "",
+                kernel_id=self.options.get("id", "").strip(),
+            )
+        ]
 
 
 class JupyterKernelNode(docutils.nodes.Element):
@@ -76,6 +88,7 @@ class ExecuteJupyterCells(SphinxTransform):
    a new kernel every time a JupyterKernel node is encountered. The output
    from each code cell is inserted into the doctree.
    """
+
     default_priority = 180  # An early transform, idk
 
     def apply(self):
@@ -98,20 +111,20 @@ class ExecuteJupyterCells(SphinxTransform):
 
             add_thebelab_library(doctree, self.env)
 
-        js.logger.info('executing {}'.format(docname))
+        js.logger.info("executing {}".format(docname))
         output_dir = os.path.join(output_directory(self.env), doc_relpath)
 
         # Start new notebook whenever a JupyterKernelNode is encountered
         jupyter_nodes = (JupyterCellNode, JupyterKernelNode)
         nodes_by_notebook = split_on(
             lambda n: isinstance(n, JupyterKernelNode),
-            doctree.traverse(lambda n: isinstance(n, jupyter_nodes))
+            doctree.traverse(lambda n: isinstance(n, jupyter_nodes)),
         )
 
         for first, *nodes in nodes_by_notebook:
             if isinstance(first, JupyterKernelNode):
-                kernel_name = first['kernel_name'] or default_kernel
-                file_name = first['kernel_id'] or next(default_names)
+                kernel_name = first["kernel_name"] or default_kernel
+                file_name = first["kernel_id"] or next(default_names)
             else:
                 nodes = (first, *nodes)
                 kernel_name = default_kernel
@@ -125,23 +138,35 @@ class ExecuteJupyterCells(SphinxTransform):
 
             # Raise error if cells raised exceptions and were not marked as doing so
             for node, cell in zip(nodes, notebook.cells):
-                errors = [output for output in cell.outputs if output['output_type'] == 'error']
-                allowed_errors = node.attributes.get('raises') or []
-                raises_provided = node.attributes['raises'] is not None
-                if raises_provided and not allowed_errors: # empty 'raises': supress all errors
+                errors = [
+                    output
+                    for output in cell.outputs
+                    if output["output_type"] == "error"
+                ]
+                allowed_errors = node.attributes.get("raises") or []
+                raises_provided = node.attributes["raises"] is not None
+                if (
+                    raises_provided and not allowed_errors
+                ):  # empty 'raises': supress all errors
                     pass
-                elif errors and not any(e['ename'] in allowed_errors for e in errors):
-                    raise ExtensionError('Cell raised uncaught exception:\n{}'
-                                         .format('\n'.join(errors[0]['traceback'])))
+                elif errors and not any(e["ename"] in allowed_errors for e in errors):
+                    raise ExtensionError(
+                        "Cell raised uncaught exception:\n{}".format(
+                            "\n".join(errors[0]["traceback"])
+                        )
+                    )
 
             # Raise error if cells print to stderr
             for node, cell in zip(nodes, notebook.cells):
-                stderr = [output for output in cell.outputs
-                          if output['output_type'] == 'stream'
-                             and output['name'] == 'stderr']
-                if stderr and not node.attributes['stderr']:
-                    js.logger.warning('Cell printed to stderr:\n{}'
-                                   .format(stderr[0]['text']))
+                stderr = [
+                    output
+                    for output in cell.outputs
+                    if output["output_type"] == "stream" and output["name"] == "stderr"
+                ]
+                if stderr and not node.attributes["stderr"]:
+                    js.logger.warning(
+                        "Cell printed to stderr:\n{}".format(stderr[0]["text"])
+                    )
 
             try:
                 lexer = notebook.metadata.language_info.pygments_lexer
@@ -151,7 +176,7 @@ class ExecuteJupyterCells(SphinxTransform):
             # Highlight the code cells now that we know what language they are
             for node in nodes:
                 source = node.children[0]
-                source.attributes['language'] = lexer
+                source.attributes["language"] = lexer
 
             # Add line numbers to code cells if jupyter_sphinx_linenos or
             # jupyter_sphinx_continue_linenos are set in the configuration,
@@ -166,13 +191,13 @@ class ExecuteJupyterCells(SphinxTransform):
                 if linenos_config or continue_linenos or node["linenos"]:
                     source["linenos"] = True
                 if continue_linenos:
-                    source['highlight_args'] = {'linenostart': linenostart}
+                    source["highlight_args"] = {"linenostart": linenostart}
                     linenostart += nlines
 
-                hl_lines = node['emphasize_lines']
+                hl_lines = node["emphasize_lines"]
                 if hl_lines:
-                    highlight_args = source.setdefault('highlight_args', {})
-                    highlight_args['hl_lines'] = hl_lines
+                    highlight_args = source.setdefault("highlight_args", {})
+                    highlight_args["hl_lines"] = hl_lines
 
             # Add code cell CSS class
             for node in nodes:
@@ -196,7 +221,7 @@ class ExecuteJupyterCells(SphinxTransform):
                     self.config.jupyter_execute_data_priority,
                     bool(node.attributes["stderr"]),
                     sphinx_abs_dir(self.env),
-                    thebe_config
+                    thebe_config,
                 )
                 attach_outputs(output_nodes, node, thebe_config, cm_language)
 
@@ -206,6 +231,7 @@ class ExecuteJupyterCells(SphinxTransform):
 
 ### Roles
 
+
 def execute_cells(kernel_name, cells, execute_kwargs):
     """Execute Jupyter cells in the specified kernel and return the notebook."""
     notebook = blank_nb(kernel_name)
@@ -214,7 +240,7 @@ def execute_cells(kernel_name, cells, execute_kwargs):
     try:
         executenb(notebook, **execute_kwargs)
     except Exception as e:
-        raise ExtensionError('Notebook execution failed', orig_exc=e)
+        raise ExtensionError("Notebook execution failed", orig_exc=e)
 
     return notebook
 
@@ -225,29 +251,27 @@ def write_notebook_output(notebook, output_dir, notebook_name):
     This also modifies 'notebook' in-place, adding metadata to each cell that
     maps output mime-types to the filenames the output was saved under.
     """
-    resources = dict(
-        unique_key=os.path.join(output_dir, notebook_name),
-        outputs={}
-    )
+    resources = dict(unique_key=os.path.join(output_dir, notebook_name), outputs={})
 
     # Modifies 'resources' in-place
     ExtractOutputPreprocessor().preprocess(notebook, resources)
     # Write the cell outputs to files where we can (images and PDFs),
     # as well as the notebook file.
     FilesWriter(build_directory=output_dir).write(
-        nbformat.writes(notebook), resources,
-        os.path.join(output_dir, notebook_name + '.ipynb')
+        nbformat.writes(notebook),
+        resources,
+        os.path.join(output_dir, notebook_name + ".ipynb"),
     )
     # Write a script too.
     ext = notebook.metadata.language_info.file_extension
-    contents = '\n\n'.join(cell.source for cell in notebook.cells)
-    with open(os.path.join(output_dir, notebook_name + ext), 'w') as f:
+    contents = "\n\n".join(cell.source for cell in notebook.cells)
+    with open(os.path.join(output_dir, notebook_name + ext), "w") as f:
         f.write(contents)
 
 
 def contains_widgets(notebook):
     widgets = get_widgets(notebook)
-    return widgets and widgets['state']
+    return widgets and widgets["state"]
 
 
 def setup(app):
@@ -256,10 +280,14 @@ def setup(app):
 
     This should be removed after a deprecation cycle.
     """
-    js.logger.warning(("`jupyter-sphinx` was initialized with the "
-                      "`jupyter_sphinx.execute` sub-module. Replace this with "
-                      "`jupyter_sphinx`. Initializing with "
-                      "`jupyter_sphinx.execute` will be removed in "
-                      "version 0.3"))
+    js.logger.warning(
+        (
+            "`jupyter-sphinx` was initialized with the "
+            "`jupyter_sphinx.execute` sub-module. Replace this with "
+            "`jupyter_sphinx`. Initializing with "
+            "`jupyter_sphinx.execute` will be removed in "
+            "version 0.3"
+        )
+    )
     out = js._setup(app)
     return out
