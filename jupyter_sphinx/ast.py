@@ -12,7 +12,6 @@ from sphinx.addnodes import download_reference
 import ipywidgets.embed
 import nbconvert
 
-import jupyter_sphinx as js
 from .utils import strip_latex_delimiters, sphinx_abs_dir
 from .thebelab import ThebeSourceNode, ThebeOutputNode
 
@@ -77,6 +76,8 @@ class JupyterCell(Directive):
     }
 
     def run(self):
+        # This only works lazily because the logger is inited by Sphinx
+        from . import logger
         location = self.state_machine.get_source_and_line(self.lineno)
 
         if self.arguments:
@@ -85,7 +86,7 @@ class JupyterCell(Directive):
             rel_filename, filename = env.relfn2path(self.arguments[0])
             env.note_dependency(rel_filename)
             if self.content:
-                js.logger.warning(
+                logger.warning(
                     'Ignoring inline code in Jupyter cell included from "{}"'.format(
                         rel_filename
                     ),
@@ -108,7 +109,7 @@ class JupyterCell(Directive):
                 nlines = len(content)
                 hl_lines = parselinenos(emphasize_linespec, nlines)
                 if any(i >= nlines for i in hl_lines):
-                    js.logger.warning(
+                    logger.warning(
                         "Line number spec is out of range(1-{}): {}".format(
                             nlines, emphasize_linespec
                         ),
