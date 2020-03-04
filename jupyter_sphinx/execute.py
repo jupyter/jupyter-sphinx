@@ -27,6 +27,7 @@ from .utils import (
 )
 from .ast import (
     JupyterCellNode,
+    JupyterKernelNode,
     cell_output_to_nodes,
     JupyterWidgetStateNode,
     attach_outputs,
@@ -69,14 +70,6 @@ class JupyterKernel(Directive):
                 kernel_id=self.options.get("id", "").strip(),
             )
         ]
-
-
-class JupyterKernelNode(docutils.nodes.Element):
-    """Inserted into doctree whenever a JupyterKernel directive is encountered.
-
-    Used as a marker to signal that the following JupyterCellNodes (until the
-    next, if any, JupyterKernelNode) should be executed in a separate kernel.
-    """
 
 
 ### Doctree transformations

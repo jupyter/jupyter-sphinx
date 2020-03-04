@@ -143,6 +143,14 @@ class JupyterCellNode(docutils.nodes.container):
     """
 
 
+class JupyterKernelNode(docutils.nodes.Element):
+    """Inserted into doctree whenever a JupyterKernel directive is encountered.
+
+    Used as a marker to signal that the following JupyterCellNodes (until the
+    next, if any, JupyterKernelNode) should be executed in a separate kernel.
+    """
+
+
 class JupyterWidgetViewNode(docutils.nodes.Element):
     """Inserted into doctree whenever a Jupyter cell produces a widget as output.
 

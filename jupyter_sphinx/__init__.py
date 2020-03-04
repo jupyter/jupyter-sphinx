@@ -11,12 +11,13 @@ from IPython.lib.lexers import IPythonTracebackLexer, IPython3Lexer
 from .ast import (
     JupyterCell,
     JupyterCellNode,
+    JupyterKernelNode,
     JupyterWidgetViewNode,
     JupyterWidgetStateNode,
     WIDGET_VIEW_MIMETYPE,
     jupyter_download_role,
 )
-from .execute import JupyterKernelNode, JupyterKernel, ExecuteJupyterCells
+from .execute import JupyterKernel, ExecuteJupyterCells
 from .thebelab import ThebeButton, ThebeButtonNode, ThebeOutputNode, ThebeSourceNode
 
 REQUIRE_URL_DEFAULT = (
