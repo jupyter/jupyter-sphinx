@@ -9,35 +9,28 @@
 import os
 import sys
 
-sys.path.insert(0, os.path.abspath('../..'))
+sys.path.insert(0, os.path.abspath("../.."))
 
 import jupyter_sphinx
 
-project = 'Jupyter Sphinx'
-copyright = '2019, Jupyter Development Team'
-author = 'Jupyter Development Team'
+project = "Jupyter Sphinx"
+copyright = "2019, Jupyter Development Team"
+author = "Jupyter Development Team"
 
 # The full version, including alpha/beta/rc tags
 release = jupyter_sphinx.__version__
 # The short X.Y version
-version = release[:len(release) - len(release.lstrip('0123456789.'))].rstrip('.')
+version = release[: len(release) - len(release.lstrip("0123456789."))].rstrip(".")
 
-master_doc = 'index'
+master_doc = "index"
 
-extensions = [
-    'sphinx.ext.mathjax',
-    'jupyter_sphinx.execute',
-]
+extensions = ["sphinx.ext.mathjax", "jupyter_sphinx"]
 
-html_theme = 'alabaster'
+html_theme = "alabaster"
 html_theme_options = {
     "github_user": "jupyter",
     "github_repo": "jupyter-sphinx",
     "github_banner": True,
 }
 
-jupyter_sphinx_thebelab_config = {
-    "binderOptions": {
-        "repo": "jupyter/jupyter-sphinx",
-    },
-}
+jupyter_sphinx_thebelab_config = {"binderOptions": {"repo": "jupyter/jupyter-sphinx"}}
