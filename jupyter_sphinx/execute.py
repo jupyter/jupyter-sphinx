@@ -27,6 +27,7 @@ from .utils import (
 )
 from .ast import (
     JupyterCellNode,
+    CellOutputBundleNode,
     JupyterKernelNode,
     cell_output_to_nodes,
     JupyterWidgetStateNode,
@@ -200,7 +201,7 @@ class ExecuteJupyterCells(SphinxTransform):
             # Add code cell CSS class
             for node in nodes:
                 source = node.children[0]
-                source.attributes["classes"] = ["code_cell"]
+                source.attributes["classes"].append("code_cell")
 
             # Write certain cell outputs (e.g. images) to separate files, and
             # modify the metadata of the associated cells in 'notebook' to
@@ -211,17 +212,12 @@ class ExecuteJupyterCells(SphinxTransform):
                 cm_language = notebook.metadata.language_info.codemirror_mode.name
             except AttributeError:
                 cm_language = notebook.metadata.kernelspec.language
+            for node in nodes:
+                node.cm_language = cm_language
 
             # Add doctree nodes for cell outputs.
             for node, cell in zip(nodes, notebook.cells):
-                output_nodes = cell_output_to_nodes(
-                    cell,
-                    self.config.jupyter_execute_data_priority,
-                    bool(node.attributes["stderr"]),
-                    sphinx_abs_dir(self.env),
-                    thebe_config,
-                )
-                attach_outputs(output_nodes, node, thebe_config, cm_language)
+                node += CellOutputBundleNode(cell.outputs)
 
             if contains_widgets(notebook):
                 doctree.append(JupyterWidgetStateNode(state=get_widgets(notebook)))

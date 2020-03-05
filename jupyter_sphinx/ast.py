@@ -5,9 +5,11 @@ import json
 
 import docutils
 from docutils.parsers.rst import Directive, directives
-from docutils.nodes import math_block
+from docutils.nodes import math_block, image
 from sphinx.util import parselinenos
 from sphinx.addnodes import download_reference
+from sphinx.transforms import SphinxTransform
+from sphinx.environment.collectors.asset import ImageCollector
 
 import ipywidgets.embed
 import nbconvert
@@ -127,20 +129,24 @@ class JupyterCell(Directive):
         else:
             hl_lines = []
 
-        return [
-            JupyterCellNode(
-                "",
-                docutils.nodes.literal_block(text="\n".join(content)),
-                hide_code=("hide-code" in self.options),
-                hide_output=("hide-output" in self.options),
-                code_below=("code-below" in self.options),
-                linenos=("linenos" in self.options),
-                linenostart=(self.options.get("lineno-start")),
-                emphasize_lines=hl_lines,
-                raises=self.options.get("raises"),
-                stderr=("stderr" in self.options),
-            )
-        ]
+        # A top-level placeholder for our cell
+        cell_node = JupyterCellNode(
+            hide_code=("hide-code" in self.options),
+            hide_output=("hide-output" in self.options),
+            code_below=("code-below" in self.options),
+            linenos=("linenos" in self.options),
+            linenostart=(self.options.get("lineno-start")),
+            emphasize_lines=hl_lines,
+            raises=self.options.get("raises"),
+            stderr=("stderr" in self.options),
+            classes=["jupyter_cell"],
+        )
+
+        # Add the input section of the cell, we'll add output at execution time
+        cell_input = CellInputNode(classes=["cell_input"])
+        cell_input += docutils.nodes.literal_block(text="\n".join(content))
+        cell_node += cell_input
+        return [cell_node]
 
 
 class JupyterCellNode(docutils.nodes.container):
@@ -149,6 +155,28 @@ class JupyterCellNode(docutils.nodes.container):
     Contains code that will be executed in a Jupyter kernel at a later
     doctree-transformation step.
     """
+
+
+class CellInputNode(docutils.nodes.container):
+    """Represent an input cell in the Sphinx AST."""
+
+    def __init__(self, rawsource="", *children, **attributes):
+        super().__init__("", **attributes)
+
+
+class CellOutputNode(docutils.nodes.container):
+    """Represent an output cell in the Sphinx AST."""
+
+    def __init__(self, rawsource="", *children, **attributes):
+        super().__init__("", **attributes)
+
+
+class CellOutputBundleNode(docutils.nodes.container):
+    """Represent a MimeBundle in the Sphinx AST, to be transformed later."""
+
+    def __init__(self, outputs, rawsource="", *children, **attributes):
+        self.outputs = outputs
+        super().__init__("", **attributes)
 
 
 class JupyterKernelNode(docutils.nodes.Element):
@@ -199,12 +227,12 @@ class JupyterWidgetStateNode(docutils.nodes.Element):
         )
 
 
-def cell_output_to_nodes(cell, data_priority, write_stderr, dir, thebe_config):
+def cell_output_to_nodes(outputs, data_priority, write_stderr, dir, thebe_config):
     """Convert a jupyter cell with outputs and filenames to doctree nodes.
 
     Parameters
     ----------
-    cell : jupyter cell
+    outputs : a list of outputs from a Jupyter cell
     data_priority : list of mime types
         Which media types to prioritize.
     write_stderr : bool
@@ -214,9 +242,14 @@ def cell_output_to_nodes(cell, data_priority, write_stderr, dir, thebe_config):
         to the source folder prefixed with ``/``.
     thebe_config: dict
         Thebelab configuration object or None
+
+    Returns
+    -------
+    to_add : list of docutils nodes
+        Each output, converted into a docutils node.
     """
     to_add = []
-    for _, output in enumerate(cell.get("outputs", [])):
+    for output in outputs:
         output_type = output["output_type"]
         if output_type == "stream":
             if output["name"] == "stderr":
@@ -270,6 +303,9 @@ def cell_output_to_nodes(cell, data_priority, write_stderr, dir, thebe_config):
                 continue
             data = output["data"][mime_type]
             if mime_type.startswith("image"):
+                ####################################
+                # TODO: Figure out how to handle either inline or absolute image paths
+
                 # Sphinx treats absolute paths as being rooted at the source
                 # directory, so make a relative path, which Sphinx treats
                 # as being relative to the current working directory.
@@ -326,32 +362,37 @@ def cell_output_to_nodes(cell, data_priority, write_stderr, dir, thebe_config):
 def attach_outputs(output_nodes, node, thebe_config, cm_language):
     if not node.attributes["hide_code"]:  # only add css if code is displayed
         node.attributes["classes"] = ["jupyter_container"]
+
+    input_node = _return_first_node_type(node, CellInputNode)
+    outputbundle_node = _return_first_node_type(node, CellOutputBundleNode)
+    output_node = CellOutputNode(classes=["cell_output"])
     if thebe_config:
-        source = node.children[0]
+        # Move the source from the input node into the thebe_source node
+        source = input_node.children.pop(0)
         thebe_source = ThebeSourceNode(
             hide_code=node.attributes["hide_code"],
             code_below=node.attributes["code_below"],
             language=cm_language,
         )
         thebe_source.children = [source]
-
-        node.children = [thebe_source]
+        input_node.children = [thebe_source]
 
         if not node.attributes["hide_output"]:
             thebe_output = ThebeOutputNode()
             thebe_output.children = output_nodes
-            if node.attributes["code_below"]:
-                node.children = [thebe_output] + node.children
-            else:
-                node.children = node.children + [thebe_output]
+            output_node += thebe_output
     else:
         if node.attributes["hide_code"]:
-            node.children = []
+            node.children.pop(0)
         if not node.attributes["hide_output"]:
-            if node.attributes["code_below"]:
-                node.children = output_nodes + node.children
-            else:
-                node.children = node.children + output_nodes
+            output_node.children = output_nodes
+
+    # Now replace the bundle with our OutputNode
+    outputbundle_node.replace_self(output_node)
+
+    # Swap inputs and outputs if we want the code below
+    if node.attributes["code_below"]:
+        node.children = node.children[::-1]
 
 
 def jupyter_download_role(name, rawtext, text, lineno, inliner):
@@ -373,3 +414,50 @@ def get_widgets(notebook):
         # Don't catch KeyError, as it's a bug if 'widgets' does
         # not contain 'WIDGET_STATE_MIMETYPE'
         return None
+
+
+class CellOutputsToNodes(SphinxTransform):
+    """Use the builder context to transform a CellOutputNode into Sphinx nodes."""
+
+    default_priority = 700
+
+    def apply(self):
+        thebe_config = self.config.jupyter_sphinx_thebelab_config
+
+        for cell_node in self.document.traverse(JupyterCellNode):
+            output_bundle_node = _return_first_node_type(
+                cell_node, CellOutputBundleNode
+            )
+            # Create doctree nodes for cell outputs.
+            output_nodes = cell_output_to_nodes(
+                output_bundle_node.outputs,
+                self.config.jupyter_execute_data_priority,
+                bool(cell_node.attributes["stderr"]),
+                sphinx_abs_dir(self.env),
+                thebe_config,
+            )
+            # Remove the outputbundlenode and we'll attach the outputs next
+            attach_outputs(output_nodes, cell_node, thebe_config, cell_node.cm_language)
+
+        # Image collect extra nodes from cell outputs that we need to process
+        for node in self.document.traverse(image):
+            # If the image node has `candidates` then it's already been processed
+            # as in-line markdown, so skip it
+            if "candidates" in node:
+                continue
+            col = ImageCollector()
+            col.process_doc(self.app, node)
+
+
+def _return_first_node_type(node, node_type):
+    found_nodes = list(node.traverse(node_type))
+    if len(found_nodes) == 0:
+        raise ValueError(f"Found no nodes of type {node_type} in node {node}")
+    if len(found_nodes) > 1:
+        raise ValueError(
+            (
+                f"Found more than one nodes of type {node_type} in node {node}. "
+                "only return the first instance"
+            )
+        )
+    return found_nodes[0]

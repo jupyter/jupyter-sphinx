@@ -6,16 +6,21 @@ import docutils
 import ipywidgets
 import os
 from sphinx.util.fileutil import copy_asset
+from sphinx.errors import ExtensionError
 from IPython.lib.lexers import IPythonTracebackLexer, IPython3Lexer
 
 from .ast import (
     JupyterCell,
     JupyterCellNode,
+    CellInputNode,
+    CellOutputNode,
+    CellOutputBundleNode,
     JupyterKernelNode,
     JupyterWidgetViewNode,
     JupyterWidgetStateNode,
     WIDGET_VIEW_MIMETYPE,
     jupyter_download_role,
+    CellOutputsToNodes,
 )
 from .execute import JupyterKernel, ExecuteJupyterCells
 from .thebelab import ThebeButton, ThebeButtonNode, ThebeOutputNode, ThebeSourceNode
@@ -34,6 +39,11 @@ logger = logging.getLogger(__name__)
 def skip(self, node):
     raise docutils.nodes.SkipNode
 
+# Used for nodes that should be gone by rendering time (OutputMimeBundleNode)
+def halt(self, node):
+    raise ExtensionError((f"Rendering encountered a node type that should "
+                         "have been removed before rendering: {type(node)}"))
+
 # Renders the children of a container
 render_container = (
     lambda self, node: self.visit_container(node),
@@ -45,14 +55,17 @@ def visit_container_html(self, node):
     self.body.append(node.visit_html())
     self.visit_container(node)
 
+
 def depart_container_html(self, node):
     self.depart_container(node)
     self.body.append(node.depart_html())
+
 
 # Used to render an element node as HTML
 def visit_element_html(self, node):
     self.body.append(node.html())
     raise docutils.nodes.SkipNode
+
 
 # Used to render the ThebeSourceNode conditionally for non-HTML builders
 def visit_thebe_source(self, node):
@@ -60,6 +73,7 @@ def visit_thebe_source(self, node):
         raise docutils.nodes.SkipNode
     else:
         self.visit_container(node)
+
 
 render_thebe_source = (
     visit_thebe_source,
@@ -170,15 +184,28 @@ def setup(app):
         man=(skip, None),
     )
 
-    # JupyterCellNode is a container that holds the input and
-    # any output, so we render it as a container.
+    # Register our container nodes, these should behave just like a regular container
+    for node in [JupyterCellNode, CellInputNode, CellOutputNode]:
+        app.add_node(
+            node,
+            override=True,
+            html=(render_container),
+            latex=(render_container),
+            textinfo=(render_container),
+            text=(render_container),
+            man=(render_container),
+        )
+
+    # Register the output bundle node.
+    # No translators should touch this node because we'll replace it in a post-transform
     app.add_node(
-        JupyterCellNode,
-        html=render_container,
-        latex=render_container,
-        textinfo=render_container,
-        text=render_container,
-        man=render_container,
+        CellOutputBundleNode,
+        override=True,
+        html=(halt, None),
+        latex=(halt, None),
+        textinfo=(halt, None),
+        text=(halt, None),
+        man=(halt, None),
     )
 
     # JupyterWidgetViewNode holds widget view JSON,
@@ -242,6 +269,7 @@ def setup(app):
     app.add_role("jupyter-download:notebook", jupyter_download_role)
     app.add_role("jupyter-download:script", jupyter_download_role)
     app.add_transform(ExecuteJupyterCells)
+    app.add_post_transform(CellOutputsToNodes)
 
     # For syntax highlighting
     app.add_lexer("ipythontb", IPythonTracebackLexer())
