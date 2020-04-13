@@ -47,6 +47,7 @@ div.jupyter_container {
   background-color: #f7f7f7;
   border: none;
   background: none;
+  box-shadow: none;
   -webkit-box-shadow: none; /* for nature */
   -moz-box-shadow: none; /* for nature */
 }
@@ -90,11 +91,12 @@ div.jupyter_container {
     background: none;
     padding: 4px;
     border: none;
+    box-shadow: none;
     -webkit-box-shadow: none; /* for nature */
     -moz-box-shadow: none; /* for nature */
 }
 .jupyter_container .code_cell td.linenos {
-  align: right;
+  text-align: right;
   padding: 4px 4px 4px 8px;
   border-right: 1px solid #cfcfcf;
   color: #999;
