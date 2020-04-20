@@ -215,7 +215,6 @@ produces:
 You may also emphasize particular lines in the source code with ``:emphasize-lines:``::
 
     .. jupyter-execute::
-        :lineno-start: 2
         :emphasize-lines: 2,5-6
 
         d = {
