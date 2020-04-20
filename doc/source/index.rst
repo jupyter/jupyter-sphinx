@@ -193,7 +193,6 @@ produces:
     print('B')
     print('C')
 
-
 To add *line numbers from a specific line* to the source code, use the
 ``lineno-start`` directive::
 
@@ -216,6 +215,7 @@ produces:
 You may also emphasize particular lines in the source code with ``:emphasize-lines:``::
 
     .. jupyter-execute::
+        :lineno-start: 2
         :emphasize-lines: 2,5-6
 
         d = {
@@ -229,6 +229,7 @@ You may also emphasize particular lines in the source code with ``:emphasize-lin
 produces:
 
 .. jupyter-execute::
+    :lineno-start: 2
     :emphasize-lines: 2,5-6
 
     d = {
