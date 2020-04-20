@@ -56,6 +56,120 @@ def doctree():
         shutil.rmtree(tree)
 
 
+def test_basic(doctree):
+    source = """
+    .. jupyter-execute::
+
+        2 + 2
+    """
+    tree = doctree(source)
+    (cell,) = tree.traverse(JupyterCellNode)
+    assert cell.attributes["code_below"] is False
+    assert cell.attributes["hide_code"] is False
+    assert cell.attributes["hide_output"] is False
+    assert cell.attributes["linenos"] is False
+    assert cell.children[0].rawsource.strip() == "2 + 2"
+    assert cell.children[1].rawsource.strip() == "4"
+
+
+def test_basic_old_entrypoint(doctree):
+    source = """
+    .. jupyter-execute::
+
+        2 + 2
+    """
+    tree = doctree(source, entrypoint="jupyter_sphinx.execute")
+    (cell,) = tree.traverse(JupyterCellNode)
+    assert cell.attributes["code_below"] is False
+    assert cell.attributes["hide_code"] is False
+    assert cell.attributes["hide_output"] is False
+    assert cell.attributes["linenos"] is False
+    assert cell.children[0].rawsource.strip() == "2 + 2"
+    assert cell.children[1].rawsource.strip() == "4"
+
+
+def test_hide_output(doctree):
+    source = """
+    .. jupyter-execute::
+        :hide-output:
+
+        2 + 2
+    """
+    tree = doctree(source)
+    (cell,) = tree.traverse(JupyterCellNode)
+    assert cell.attributes["hide_output"] is True
+    assert len(cell.children) == 1
+    assert cell.children[0].rawsource.strip() == "2 + 2"
+
+
+def test_hide_code(doctree):
+    source = """
+    .. jupyter-execute::
+        :hide-code:
+
+        2 + 2
+    """
+    tree = doctree(source)
+    (cell,) = tree.traverse(JupyterCellNode)
+    assert cell.attributes["hide_code"] is True
+    assert len(cell.children) == 1
+    assert cell.children[0].rawsource.strip() == "4"
+
+
+def test_code_below(doctree):
+    source = """
+    .. jupyter-execute::
+        :code-below:
+
+        2 + 2
+    """
+    tree = doctree(source)
+    (cell,) = tree.traverse(JupyterCellNode)
+    assert cell.attributes["code_below"] is True
+    assert cell.children[0].rawsource.strip() == "4"
+    assert cell.children[1].rawsource.strip() == "2 + 2"
+
+
+def test_linenos(doctree):
+    source = """
+    .. jupyter-execute::
+        :linenos:
+
+        2 + 2
+    """
+    tree = doctree(source)
+    (cell,) = tree.traverse(JupyterCellNode)
+    assert cell.attributes["linenos"] is True
+    assert len(cell.children) == 2
+    assert cell.children[0].rawsource.strip() == "2 + 2"
+    assert cell.children[1].rawsource.strip() == "4"
+    source = """
+    .. jupyter-execute::
+        :linenos:
+        :code-below:
+
+        2 + 2
+    """
+    tree = doctree(source)
+    (cell,) = tree.traverse(JupyterCellNode)
+    assert len(cell.children) == 2
+    assert cell.attributes["linenos"] is True
+
+
+def test_linenos_conf_option(doctree):
+    source = """
+    .. jupyter-execute::
+
+        2 + 2
+    """
+    tree = doctree(source, config="jupyter_sphinx_linenos = True")
+    (cell,) = tree.traverse(JupyterCellNode)
+    assert cell.children[0].attributes["linenos"]
+    assert "highlight_args" not in cell.children[0].attributes
+    assert cell.children[0].rawsource.strip() == "2 + 2"
+    assert cell.children[1].rawsource.strip() == "4"
+
+
 def test_continue_linenos_conf_option(doctree):
     # Test no linenumbering without linenos config or lineno-start directive
     source = """
@@ -71,7 +185,7 @@ def test_continue_linenos_conf_option(doctree):
     assert cell.children[0].rawsource.strip() == "2 + 2"
     assert cell.children[1].rawsource.strip() == "4"
 
-    # Test continuous line numbeirng
+    # Test continuous line numbering
     source = """
     .. jupyter-execute::
 
@@ -100,6 +214,7 @@ def test_continue_linenos_conf_option(doctree):
     assert cell1.children[1].rawsource.strip() == "6"
 
     # Line number should continue after lineno-start option
+
     source = """
     .. jupyter-execute::
        :lineno-start: 7
