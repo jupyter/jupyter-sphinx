@@ -177,17 +177,37 @@ produces:
 
 You may also add *line numbers* to the source code with ``:linenos:``::
 
-    .. jupyter-execute::
-        :linenos:
+  .. jupyter-execute::
+     :linenos:
 
-        print('A')
-        print('B')
-        print('C')
+     print('A')
+     print('B')
+     print('C')
 
 produces:
 
 .. jupyter-execute::
     :linenos:
+
+    print('A')
+    print('B')
+    print('C')
+
+
+To add *line numbers from a specific line* to the source code, use the
+``lineno-start`` directive::
+
+  .. jupyter-execute::
+     :lineno-start: 7
+
+     print('A')
+     print('B')
+     print('C')
+
+produces:
+
+.. jupyter-execute::
+    :lineno-start: 7
 
     print('A')
     print('B')
@@ -379,4 +399,5 @@ jupyter_sphinx_linenos
 
 jupyter_sphinx_continue_linenos
 
-    Whether to show continuous line numbering in all ``jupyter-execute`` sources.
+    Whether to continue line numbering from previous cell in all ``jupyter-execute``
+    sources.
