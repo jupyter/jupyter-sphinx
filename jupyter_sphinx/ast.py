@@ -45,6 +45,9 @@ class JupyterCell(Directive):
         If provided, the code will be shown below the cell output.
     linenos : bool
         If provided, the code will be shown with line numbering.
+    lineno-start: nonnegative int
+        If provided, the code will be show with line numbering beginning from
+        specified line.
     emphasize-lines : comma separated list of line numbers
         If provided, the specified lines will be highlighted.
     raises : comma separated list of exception types
@@ -70,6 +73,7 @@ class JupyterCell(Directive):
         "hide-output": directives.flag,
         "code-below": directives.flag,
         "linenos": directives.flag,
+        "lineno-start": directives.nonnegative_int,
         "emphasize-lines": directives.unchanged_required,
         "raises": csv_option,
         "stderr": directives.flag,
@@ -78,6 +82,7 @@ class JupyterCell(Directive):
     def run(self):
         # This only works lazily because the logger is inited by Sphinx
         from . import logger
+
         location = self.state_machine.get_source_and_line(self.lineno)
 
         if self.arguments:
@@ -103,6 +108,7 @@ class JupyterCell(Directive):
 
         # The code fragment is taken from CodeBlock directive almost unchanged:
         # https://github.com/sphinx-doc/sphinx/blob/0319faf8f1503453b6ce19020819a8cf44e39f13/sphinx/directives/code.py#L134-L148
+
         emphasize_linespec = self.options.get("emphasize-lines")
         if emphasize_linespec:
             try:
@@ -129,6 +135,7 @@ class JupyterCell(Directive):
                 hide_output=("hide-output" in self.options),
                 code_below=("code-below" in self.options),
                 linenos=("linenos" in self.options),
+                linenostart=(self.options.get("lineno-start")),
                 emphasize_lines=hl_lines,
                 raises=self.options.get("raises"),
                 stderr=("stderr" in self.options),

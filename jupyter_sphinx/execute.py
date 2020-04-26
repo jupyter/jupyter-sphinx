@@ -171,20 +171,25 @@ class ExecuteJupyterCells(SphinxTransform):
                 source = node.children[0]
                 source.attributes["language"] = lexer
 
-            # Add line numbers to code cells if jupyter_sphinx_linenos or
-            # jupyter_sphinx_continue_linenos are set in the configuration,
-            # or the linenos directive is set.
-            # Update current line numbers from cell if jupyter_sphinx_continue_linenos
-            # is set.
+            # Add line numbering
+
             linenostart = 1
+
             for node in nodes:
                 source = node.children[0]
                 nlines = source.rawsource.count("\n") + 1
+                show_numbering = (
+                    linenos_config or node["linenos"] or node["linenostart"]
+                )
 
-                if linenos_config or continue_linenos or node["linenos"]:
+                if show_numbering:
                     source["linenos"] = True
-                if continue_linenos:
-                    source["highlight_args"] = {"linenostart": linenostart}
+                    if node["linenostart"]:
+                        linenostart = node["linenostart"]
+                    if node["linenostart"] or continue_linenos:
+                        source["highlight_args"] = {"linenostart": linenostart}
+                    else:
+                        linenostart = 1
                     linenostart += nlines
 
                 hl_lines = node["emphasize_lines"]
@@ -275,6 +280,7 @@ def setup(app):
     """
     # To avoid circular imports we'll lazily import
     from . import setup as jssetup
+
     js.logger.warning(
         (
             "`jupyter-sphinx` was initialized with the "
