@@ -515,8 +515,8 @@ def test_latex(doctree):
         (cell,) = tree.traverse(JupyterCellNode)
         assert cell.children[1].astext() == r"\int"
 
-        
-def test_image_mimetype(doctree):
+
+def test_image_mimetype_uri(doctree):
     # tests the image uri paths on conversion to docutils image nodes
     priority =  ['image/png', 'image/jpeg', 'text/latex', 'text/plain']
     output_dir = '/_build/jupyter_execute'
@@ -530,9 +530,7 @@ def test_image_mimetype(doctree):
             [{'data': {'image/png': 'iVBOJggg==\n', 'text/plain': '<Figure size 432x288 with 1 Axes>'}, 'metadata': {'filenames': {'image/png': img_locs[1]}}, 'output_type': 'display_data'}]
         }]
 
-    index = 0
-    for cell in cells:
+    for index, cell in enumerate(cells):
         cell = from_dict(cell)
         output_node = cell_output_to_nodes(cell, priority, True, output_dir, None)
         assert output_node[0].attributes['uri'] == img_locs[index]
-        index += 1
