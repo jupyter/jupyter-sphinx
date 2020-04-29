@@ -7,6 +7,7 @@ from io import StringIO
 from sphinx.testing.util import SphinxTestApp, path
 from sphinx.errors import ExtensionError
 from docutils.nodes import raw
+from nbformat import from_dict
 
 import pytest
 
@@ -14,6 +15,7 @@ from jupyter_sphinx.ast import (
     JupyterCellNode,
     JupyterWidgetViewNode,
     JupyterWidgetStateNode,
+    cell_output_to_nodes,
 )
 from jupyter_sphinx.thebelab import ThebeSourceNode, ThebeOutputNode, ThebeButtonNode
 
@@ -512,3 +514,23 @@ def test_latex(doctree):
         tree = doctree(source.format(start, end))
         (cell,) = tree.traverse(JupyterCellNode)
         assert cell.children[1].astext() == r"\int"
+
+
+def test_image_mimetype_uri(doctree):
+    # tests the image uri paths on conversion to docutils image nodes
+    priority =  ['image/png', 'image/jpeg', 'text/latex', 'text/plain']
+    output_dir = '/_build/jupyter_execute'
+    img_locs = ['/_build/jupyter_execute/docs/image_1.png','/_build/jupyter_execute/image_2.png']
+
+    cells = [
+        {'outputs': 
+            [{'data': {'image/png': 'Vxb6L1wAAAABJRU5ErkJggg==\n', 'text/plain': '<Figure size 432x288 with 1 Axes>'}, 'metadata': {'filenames': {'image/png': img_locs[0]}}, 'output_type': 'display_data'}]
+        },
+        {'outputs': 
+            [{'data': {'image/png': 'iVBOJggg==\n', 'text/plain': '<Figure size 432x288 with 1 Axes>'}, 'metadata': {'filenames': {'image/png': img_locs[1]}}, 'output_type': 'display_data'}]
+        }]
+
+    for index, cell in enumerate(cells):
+        cell = from_dict(cell)
+        output_node = cell_output_to_nodes(cell, priority, True, output_dir, None)
+        assert output_node[0].attributes['uri'] == img_locs[index]
