@@ -275,7 +275,7 @@ def cell_output_to_nodes(cell, data_priority, write_stderr, dir, thebe_config):
                 # as being relative to the current working directory.
                 filename = os.path.basename(output.metadata["filenames"][mime_type])
 
-                # checks if file dir path is inside a subpath of dir
+                # checks if file dir path is inside a subdir of dir
                 filedir = os.path.dirname(output.metadata["filenames"][mime_type])
                 subpaths = filedir.split(dir)
                 if subpaths and len(subpaths) > 1:
