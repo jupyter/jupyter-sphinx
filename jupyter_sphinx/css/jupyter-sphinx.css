@@ -58,7 +58,7 @@ div.jupyter_container {
 div.jupyter_container div.highlight {
   background-color: #f7f7f7; /* for haiku */
 }
-div.jupyter_container * {
+div.jupyter_container {
     padding: 0;
     margin: 0;
 }

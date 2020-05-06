@@ -363,8 +363,8 @@ def attach_outputs(output_nodes, node, thebe_config, cm_language):
     if not node.attributes["hide_code"]:  # only add css if code is displayed
         node.attributes["classes"] = ["jupyter_container"]
 
-    input_node = _return_first_node_type(node, CellInputNode)
-    outputbundle_node = _return_first_node_type(node, CellOutputBundleNode)
+    input_node = _find_only_child_by_type(node, CellInputNode)
+    outputbundle_node = _find_only_child_by_type(node, CellOutputBundleNode)
     output_node = CellOutputNode(classes=["cell_output"])
     if thebe_config:
         # Move the source from the input node into the thebe_source node
@@ -425,7 +425,7 @@ class CellOutputsToNodes(SphinxTransform):
         thebe_config = self.config.jupyter_sphinx_thebelab_config
 
         for cell_node in self.document.traverse(JupyterCellNode):
-            output_bundle_node = _return_first_node_type(
+            output_bundle_node = _find_only_child_by_type(
                 cell_node, CellOutputBundleNode
             )
             # Create doctree nodes for cell outputs.
@@ -451,7 +451,7 @@ class CellOutputsToNodes(SphinxTransform):
             col.process_doc(self.app, node)
 
 
-def _return_first_node_type(node, node_type):
+def _find_only_child_by_type(node, node_type):
     found_nodes = list(node.traverse(node_type))
     if len(found_nodes) == 0:
         raise ValueError("Found no nodes of type %s in node %s" % (node_type, node))
