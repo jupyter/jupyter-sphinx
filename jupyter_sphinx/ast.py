@@ -442,9 +442,11 @@ class CellOutputsToNodes(SphinxTransform):
         # Image collect extra nodes from cell outputs that we need to process
         for node in self.document.traverse(image):
             # If the image node has `candidates` then it's already been processed
-            # as in-line markdown, so skip it
+            # as in-line content, so skip it
             if "candidates" in node:
                 continue
+            # re-initialize an ImageCollector because the `app` imagecollector instance
+            # is only available via event listeners.
             col = ImageCollector()
             col.process_doc(self.app, node)
 
@@ -452,12 +454,12 @@ class CellOutputsToNodes(SphinxTransform):
 def _return_first_node_type(node, node_type):
     found_nodes = list(node.traverse(node_type))
     if len(found_nodes) == 0:
-        raise ValueError(f"Found no nodes of type {node_type} in node {node}")
+        raise ValueError("Found no nodes of type %s in node %s" % (node_type, node))
     if len(found_nodes) > 1:
         raise ValueError(
             (
-                f"Found more than one nodes of type {node_type} in node {node}. "
-                "only return the first instance"
+                "Found more than one nodes of type %s in node %s."
+                "only return the first instance" % (node_type, node)
             )
         )
     return found_nodes[0]

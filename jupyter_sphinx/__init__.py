@@ -39,10 +39,16 @@ logger = logging.getLogger(__name__)
 def skip(self, node):
     raise docutils.nodes.SkipNode
 
+
 # Used for nodes that should be gone by rendering time (OutputMimeBundleNode)
 def halt(self, node):
-    raise ExtensionError((f"Rendering encountered a node type that should "
-                         "have been removed before rendering: {type(node)}"))
+    raise ExtensionError(
+        (
+            "Rendering encountered a node type that should "
+            "have been removed before rendering: %s" % type(node)
+        )
+    )
+
 
 # Renders the children of a container
 render_container = (
