@@ -1,0 +1,9 @@
+sphinx==1.8.5
+ipywidgets>=7.0.0
+IPython
+nbconvert>=5.4
+nbformat
+
+# For documentation building and testing
+matplotlib
+pytest

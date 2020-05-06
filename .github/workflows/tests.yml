@@ -23,17 +23,11 @@ jobs:
 
     - name: Install dependencies
       run: |
-        wget https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh -O miniconda.sh
-        bash miniconda.sh -b -p $HOME/miniconda
-        export PATH="$HOME/miniconda/bin:$PATH"
-        source "$HOME"/miniconda/etc/profile.d/conda.sh
-        conda config --set always_yes yes --set changeps1 no
-        conda env create -f environment.yml
-        conda activate jupyter-sphinx
-        python -m ipykernel install --user --name python3 --display-name "Python3"
-        pip install .
+        pip install --user -r requirements.txt
+        pip install --user .
 
-        pytest
+    - name: Run tests
+      run: pytest
 
   publish:
 
