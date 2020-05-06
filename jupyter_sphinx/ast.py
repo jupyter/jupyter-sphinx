@@ -303,9 +303,6 @@ def cell_output_to_nodes(outputs, data_priority, write_stderr, dir, thebe_config
                 continue
             data = output["data"][mime_type]
             if mime_type.startswith("image"):
-                ####################################
-                # TODO: Figure out how to handle either inline or absolute image paths
-
                 # Sphinx treats absolute paths as being rooted at the source
                 # directory, so make a relative path, which Sphinx treats
                 # as being relative to the current working directory.
@@ -361,10 +358,11 @@ def cell_output_to_nodes(outputs, data_priority, write_stderr, dir, thebe_config
 
 def attach_outputs(output_nodes, node, thebe_config, cm_language):
     if not node.attributes["hide_code"]:  # only add css if code is displayed
-        node.attributes["classes"] = ["jupyter_container"]
+        classes = node.attributes.get("classes", [])
+        classes += ["jupyter_container"]
 
-    input_node = _find_only_child_by_type(node, CellInputNode)
-    outputbundle_node = _find_only_child_by_type(node, CellOutputBundleNode)
+    (input_node,) = node.traverse(CellInputNode)
+    (outputbundle_node,) = node.traverse(CellOutputBundleNode)
     output_node = CellOutputNode(classes=["cell_output"])
     if thebe_config:
         # Move the source from the input node into the thebe_source node
@@ -425,9 +423,8 @@ class CellOutputsToNodes(SphinxTransform):
         thebe_config = self.config.jupyter_sphinx_thebelab_config
 
         for cell_node in self.document.traverse(JupyterCellNode):
-            output_bundle_node = _find_only_child_by_type(
-                cell_node, CellOutputBundleNode
-            )
+            (output_bundle_node,) = cell_node.traverse(CellOutputBundleNode)
+
             # Create doctree nodes for cell outputs.
             output_nodes = cell_output_to_nodes(
                 output_bundle_node.outputs,
@@ -449,17 +446,3 @@ class CellOutputsToNodes(SphinxTransform):
             # is only available via event listeners.
             col = ImageCollector()
             col.process_doc(self.app, node)
-
-
-def _find_only_child_by_type(node, node_type):
-    found_nodes = list(node.traverse(node_type))
-    if len(found_nodes) == 0:
-        raise ValueError("Found no nodes of type %s in node %s" % (node_type, node))
-    if len(found_nodes) > 1:
-        raise ValueError(
-            (
-                "Found more than one nodes of type %s in node %s."
-                "only return the first instance" % (node_type, node)
-            )
-        )
-    return found_nodes[0]

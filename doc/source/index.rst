@@ -336,10 +336,11 @@ Styling options
 The CSS (Cascading Style Sheet) class structure of jupyter-sphinx is the
 following::
 
-  - jupyter_container
-    - code_cell
-    - stderr
-    - output
+  - jupyter_container, jupyter_cell
+    - cell_input
+    - cell_output
+      - stderr
+      - output
 
 If a code cell is not displayed, the output is provided without the
 ``jupyter_container``. If you want to adjust the styles, add a new stylesheet,
