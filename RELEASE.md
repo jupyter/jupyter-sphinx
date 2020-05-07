@@ -27,9 +27,10 @@ To cut a new Jupyter Sphinx release, follow these steps:
   to build `jupyter-sphinx` and push the new version to PyPI.
   [Confirm that the version has been bumped](https://pypi.org/project/jupyter-sphinx/).
 * In [`_version.py`](https://github.com/jupyter/jupyter-sphinx/blob/master/jupyter_sphinx/_version.py),
-  bump the minor version and change the "release type" section to "alpha" e.g.:
+  bump the minor version and change the "release type" section to "alpha". **make sure to
+  include a number after the release type**, e.g.:
 
   ```python
-  version_info = (0, 2, 4, "alpha")
+  version_info = (0, 2, 4, "alpha", 1)
   ```
 * That's it!
