@@ -259,7 +259,8 @@ def write_notebook_output(notebook, output_dir, notebook_name):
     # Write a script too.
     ext = notebook.metadata.language_info.file_extension
     contents = "\n\n".join(cell.source for cell in notebook.cells)
-    with open(os.path.join(output_dir, notebook_name + ext), "w") as f:
+    with open(os.path.join(output_dir, notebook_name + ext), "w",
+              encoding = "utf8") as f:
         f.write(contents)
 
 
