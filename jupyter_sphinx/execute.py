@@ -257,15 +257,14 @@ def write_notebook_output(notebook, output_dir, notebook_name):
         os.path.join(output_dir, notebook_name + ".ipynb"),
     )
     # Write a script too.
-    if ntbk.metadata.get("language_info", {}).get("file_extension", None) is None:
+    ext = notebook.metadata.get("language_info", {}).get("file_extension", None)
+    if ext is None:
         ext = ".txt"
         js.logger.warning(
             "Notebook code has no file extension metadata, " "defaulting to `.txt`",
             # TODO correct location
             # location=document.settings.env.docname,
         )
-    else:
-        ext = notebook.metadata.language_info.file_extension
     contents = "\n\n".join(cell.source for cell in notebook.cells)
     with open(os.path.join(output_dir, notebook_name + ext), "w") as f:
         f.write(contents)
