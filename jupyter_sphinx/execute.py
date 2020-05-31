@@ -256,7 +256,8 @@ def write_notebook_output(notebook, output_dir, notebook_name):
         resources,
         os.path.join(output_dir, notebook_name + ".ipynb"),
     )
-    # Write a script too.
+    # Write a script too.  Note that utf-8 is the de facto
+    # standard encoding for notebooks. 
     ext = notebook.metadata.get("language_info", {}).get("file_extension", None)
     if ext is None:
         ext = ".txt"
@@ -266,7 +267,8 @@ def write_notebook_output(notebook, output_dir, notebook_name):
             # location=document.settings.env.docname,
         )
     contents = "\n\n".join(cell.source for cell in notebook.cells)
-    with open(os.path.join(output_dir, notebook_name + ext), "w") as f:
+    with open(os.path.join(output_dir, notebook_name + ext), "w",
+              encoding = "utf8") as f:
         f.write(contents)
 
 
