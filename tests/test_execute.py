@@ -6,7 +6,7 @@ from io import StringIO
 
 from sphinx.testing.util import SphinxTestApp, path
 from sphinx.errors import ExtensionError
-from docutils.nodes import raw
+from docutils.nodes import raw, literal, literal_block, container
 from nbformat import from_dict
 
 import pytest
@@ -546,7 +546,7 @@ def test_latex(doctree):
         assert celloutput.children[0].astext() == r"\int"
 
 
-def test_image_mimetype_uri(doctree):
+def test_cell_output_to_nodes(doctree):
     # tests the image uri paths on conversion to docutils image nodes
     priority =  ['image/png', 'image/jpeg', 'text/latex', 'text/plain']
     output_dir = '/_build/jupyter_execute'
@@ -564,3 +564,16 @@ def test_image_mimetype_uri(doctree):
         cell = from_dict(cell)
         output_node = cell_output_to_nodes(cell["outputs"], priority, True, output_dir, None)
         assert output_node[0].attributes['uri'] == img_locs[index]
+
+    # Testing inline functionality
+    outputs = [
+        {"name": "stdout", "output_type": "stream", "text": ["hi\n"]},
+        {"name": "stderr", "output_type": "stream", "text": ["hi\n"]},
+    ]
+    output_nodes = cell_output_to_nodes(outputs, priority, True, output_dir, None)
+    for output, kind in zip(output_nodes, [literal_block, container]):
+        assert isinstance(output, kind)
+
+    output_nodes = cell_output_to_nodes(outputs, priority, True, output_dir, None, inline=True)
+    for output, kind in zip(output_nodes, [literal, literal]):
+        assert isinstance(output, kind)

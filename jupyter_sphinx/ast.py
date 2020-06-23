@@ -227,7 +227,8 @@ class JupyterWidgetStateNode(docutils.nodes.Element):
         )
 
 
-def cell_output_to_nodes(outputs, data_priority, write_stderr, dir, thebe_config):
+def cell_output_to_nodes(outputs, data_priority, write_stderr, dir,
+                         thebe_config, inline=False):
     """Convert a jupyter cell with outputs and filenames to doctree nodes.
 
     Parameters
@@ -242,12 +243,22 @@ def cell_output_to_nodes(outputs, data_priority, write_stderr, dir, thebe_config
         to the source folder prefixed with ``/``.
     thebe_config: dict
         Thebelab configuration object or None
+    inline: False
+        Whether the nodes will be placed in-line with the text.
 
     Returns
     -------
     to_add : list of docutils nodes
         Each output, converted into a docutils node.
     """
+    # If we're in `inline` mode, ensure that we don't add block-level nodes
+    if inline is True:
+        literal_node = docutils.nodes.literal
+        math_node = docutils.nodes.math
+    else:
+        literal_node = docutils.nodes.literal_block
+        math_node = math_block
+
     to_add = []
     for output in outputs:
         output_type = output["output_type"]
@@ -265,19 +276,22 @@ def cell_output_to_nodes(outputs, data_priority, write_stderr, dir, thebe_config
                     # Not setting "rawsource" disables Pygment hightlighting, which
                     # would otherwise add a <div class="highlight">.
 
-                    container = docutils.nodes.container(classes=["stderr"])
-                    container.append(
-                        docutils.nodes.literal_block(
-                            text=output["text"],
-                            rawsource="",  # disables Pygment highlighting
-                            language="none",
-                            classes=["stderr"],
-                        )
+                    literal = literal_node(
+                        text=output["text"],
+                        rawsource="",  # disables Pygment highlighting
+                        language="none",
+                        classes=["stderr"],
                     )
-                    to_add.append(container)
+                    if inline is True:
+                        # In this case, we don't wrap the text in containers
+                        to_add.append(literal)
+                    else:
+                        container = docutils.nodes.container(classes=["stderr"])
+                        container.append(literal)
+                        to_add.append(container)
             else:
                 to_add.append(
-                    docutils.nodes.literal_block(
+                    literal_node(
                         text=output["text"],
                         rawsource=output["text"],
                         language="none",
@@ -288,7 +302,7 @@ def cell_output_to_nodes(outputs, data_priority, write_stderr, dir, thebe_config
             traceback = "\n".join(output["traceback"])
             text = nbconvert.filters.strip_ansi(traceback)
             to_add.append(
-                docutils.nodes.literal_block(
+                literal_node(
                     text=text,
                     rawsource=text,
                     language="ipythontb",
@@ -325,7 +339,7 @@ def cell_output_to_nodes(outputs, data_priority, write_stderr, dir, thebe_config
                 )
             elif mime_type == "text/latex":
                 to_add.append(
-                    math_block(
+                    math_node(
                         text=strip_latex_delimiters(data),
                         nowrap=False,
                         number=None,
@@ -334,7 +348,7 @@ def cell_output_to_nodes(outputs, data_priority, write_stderr, dir, thebe_config
                 )
             elif mime_type == "text/plain":
                 to_add.append(
-                    docutils.nodes.literal_block(
+                    literal_node(
                         text=data,
                         rawsource=data,
                         language="none",
