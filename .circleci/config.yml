@@ -18,10 +18,10 @@ jobs:
           name: Build documentation
           command: |
             cd doc
-            make html
+            make html-strict
 
       - store_artifacts:
-          path: doc/build/html/
+          path: doc/_build/html/
           destination: html
 
 
