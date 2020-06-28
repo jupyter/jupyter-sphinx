@@ -3,10 +3,12 @@ import shutil
 import os
 import sys
 from io import StringIO
+from unittest.mock import Mock
 
-from sphinx.testing.util import SphinxTestApp, path
+from sphinx.addnodes import download_reference
+from sphinx.testing.util import assert_node, SphinxTestApp, path
 from sphinx.errors import ExtensionError
-from docutils.nodes import raw
+from docutils.nodes import literal, raw
 from nbformat import from_dict
 
 import pytest
@@ -18,6 +20,7 @@ from jupyter_sphinx.ast import (
     JupyterWidgetViewNode,
     JupyterWidgetStateNode,
     cell_output_to_nodes,
+    JupyterDownloadRole,
 )
 from jupyter_sphinx.thebelab import ThebeSourceNode, ThebeOutputNode, ThebeButtonNode
 
@@ -564,3 +567,24 @@ def test_image_mimetype_uri(doctree):
         cell = from_dict(cell)
         output_node = cell_output_to_nodes(cell["outputs"], priority, True, output_dir, None)
         assert output_node[0].attributes['uri'] == img_locs[index]
+
+
+@pytest.mark.parametrize('text,reftarget,caption', (
+    ('nb_name', '/jupyter_execute/path/to/nb_name.ipynb', 'nb_name.ipynb'),
+    ('../nb_name', '/jupyter_execute/path/nb_name.ipynb', '../nb_name.ipynb'),
+    ('text <nb_name>', '/jupyter_execute/path/to/nb_name.ipynb', 'text'),
+))
+def test_download_role(text, reftarget, caption):
+    role = JupyterDownloadRole()
+    mock_inliner = Mock()
+    config = {
+        'document.settings.env.app.outdir': 'outdir',
+        'document.settings.env.docname': 'path/to/docname',
+        'document.settings.env.app.srcdir': 'srcdir',
+        'reporter.get_source_and_line': lambda l: ('source', l)
+    }
+    mock_inliner.configure_mock(**config)
+    ret, msg = role('jupyter-download:notebook', text, text, 0, mock_inliner)
+    assert_node(ret[0], [download_reference], reftarget=reftarget)
+    assert_node(ret[0][0], [literal, caption])
+    assert msg == []
