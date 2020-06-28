@@ -2,6 +2,7 @@
 
 import os
 import json
+import pathlib
 
 import docutils
 from docutils.parsers.rst import Directive, directives
@@ -403,6 +404,8 @@ class JupyterDownloadRole(ReferenceRole):
         output_dir = sphinx_abs_dir(self.env)
         download_file = self.target + ext
         reftarget=os.path.realpath(os.path.join(output_dir, download_file))
+        # touch the path, so that it can be found by the download collector
+        pathlib.Path(reftarget).touch()
         node = download_reference(self.rawtext, reftarget=reftarget)
         self.set_source_info(node)
         title = self.title if self.has_explicit_title else download_file
