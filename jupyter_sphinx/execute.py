@@ -206,7 +206,7 @@ class ExecuteJupyterCells(SphinxTransform):
             # Write certain cell outputs (e.g. images) to separate files, and
             # modify the metadata of the associated cells in 'notebook' to
             # include the path to the output file.
-            write_notebook_output(notebook, output_dir, file_name)
+            write_notebook_output(notebook, output_dir, file_name, self.env.docname)
 
             try:
                 cm_language = notebook.metadata.language_info.codemirror_mode.name
@@ -239,7 +239,7 @@ def execute_cells(kernel_name, cells, execute_kwargs):
     return notebook
 
 
-def write_notebook_output(notebook, output_dir, notebook_name):
+def write_notebook_output(notebook, output_dir, notebook_name, location=None):
     """Extract output from notebook cells and write to files in output_dir.
 
     This also modifies 'notebook' in-place, adding metadata to each cell that
@@ -263,8 +263,7 @@ def write_notebook_output(notebook, output_dir, notebook_name):
         ext = ".txt"
         js.logger.warning(
             "Notebook code has no file extension metadata, " "defaulting to `.txt`",
-            # TODO correct location
-            # location=document.settings.env.docname,
+            location=location,
         )
     contents = "\n\n".join(cell.source for cell in notebook.cells)
     with open(os.path.join(output_dir, notebook_name + ext), "w",
