@@ -574,13 +574,14 @@ def test_image_mimetype_uri(doctree):
     ('../nb_name', '/jupyter_execute/path/nb_name.ipynb', '../nb_name.ipynb'),
     ('text <nb_name>', '/jupyter_execute/path/to/nb_name.ipynb', 'text'),
 ))
-def test_download_role(text, reftarget, caption):
+def test_download_role(text, reftarget, caption, tmp_path):
     role = JupyterDownloadRole()
     mock_inliner = Mock()
     config = {
-        'document.settings.env.app.outdir': 'outdir',
+        'document.settings.env.app.outdir': str(tmp_path),
         'document.settings.env.docname': 'path/to/docname',
-        'document.settings.env.app.srcdir': 'srcdir',
+        'document.settings.env.srcdir': str(tmp_path),
+        'document.settings.env.app.srcdir': str(tmp_path),
         'reporter.get_source_and_line': lambda l: ('source', l)
     }
     mock_inliner.configure_mock(**config)
