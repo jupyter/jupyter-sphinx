@@ -21,7 +21,7 @@ jobs:
             make html-strict
 
       - store_artifacts:
-          path: doc/build/
+          path: doc/build/html/
           destination: html
 
 
