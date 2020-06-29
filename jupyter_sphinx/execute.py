@@ -22,7 +22,6 @@ from .utils import (
     default_notebook_names,
     output_directory,
     split_on,
-    sphinx_abs_dir,
     blank_nb,
 )
 from .ast import (

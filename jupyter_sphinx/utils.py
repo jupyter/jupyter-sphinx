@@ -69,14 +69,14 @@ def language_info(executor):
     return info_msg["content"]["language_info"]
 
 
-def sphinx_abs_dir(env):
+def sphinx_abs_dir(env, *paths):
     # We write the output files into
     # output_directory / jupyter_execute / path relative to source directory
     # Sphinx expects download links relative to source file or relative to
     # source dir and prepended with '/'. We use the latter option.
     return "/" + os.path.relpath(
         os.path.abspath(
-            os.path.join(output_directory(env), os.path.dirname(env.docname))
+            os.path.join(output_directory(env), os.path.dirname(env.docname), *paths)
         ),
         os.path.abspath(env.app.srcdir),
     )

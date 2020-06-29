@@ -570,9 +570,9 @@ def test_image_mimetype_uri(doctree):
 
 
 @pytest.mark.parametrize('text,reftarget,caption', (
-    ('nb_name', '/jupyter_execute/path/to/nb_name.ipynb', 'nb_name.ipynb'),
-    ('../nb_name', '/jupyter_execute/path/nb_name.ipynb', '../nb_name.ipynb'),
-    ('text <nb_name>', '/jupyter_execute/path/to/nb_name.ipynb', 'text'),
+    ('nb_name', '/../jupyter_execute/path/to/nb_name.ipynb', 'nb_name.ipynb'),
+    ('../nb_name', '/../jupyter_execute/path/nb_name.ipynb', '../nb_name.ipynb'),
+    ('text <nb_name>', '/../jupyter_execute/path/to/nb_name.ipynb', 'text'),
 ))
 def test_download_role(text, reftarget, caption, tmp_path):
     role = JupyterDownloadRole()

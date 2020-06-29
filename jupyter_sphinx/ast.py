@@ -401,14 +401,8 @@ class JupyterDownloadRole(ReferenceRole):
 
         assert filetype in ("notebook", "nb", "script")
         ext = ".ipynb" if filetype in ("notebook", "nb") else ".py"
-        output_dir = sphinx_abs_dir(self.env)
         download_file = self.target + ext
-        reftarget=os.path.realpath(os.path.join(output_dir, download_file))
-        # touch the path, so that it can be found by the download collector
-        path = pathlib.Path(self.env.srcdir).joinpath(reftarget[1:])
-        path.parent.mkdir(parents=True, exist_ok=True)
-        path.touch()
-        # make the nodes
+        reftarget = sphinx_abs_dir(self.env, download_file)
         node = download_reference(self.rawtext, reftarget=reftarget)
         self.set_source_info(node)
         title = self.title if self.has_explicit_title else download_file
