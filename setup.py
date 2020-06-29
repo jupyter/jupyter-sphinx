@@ -28,7 +28,7 @@ setup(
     license="BSD",
     packages=["jupyter_sphinx"],
     install_requires=[
-        "Sphinx>=1.8",
+        "Sphinx>=2",
         "ipywidgets>=7.0.0",
         "IPython",
         "nbconvert>=5.5",

@@ -19,7 +19,7 @@ from .ast import (
     JupyterWidgetViewNode,
     JupyterWidgetStateNode,
     WIDGET_VIEW_MIMETYPE,
-    jupyter_download_role,
+    JupyterDownloadRole,
     CellOutputsToNodes,
 )
 from .execute import JupyterKernel, ExecuteJupyterCells
@@ -272,8 +272,9 @@ def setup(app):
     app.add_directive("jupyter-execute", JupyterCell)
     app.add_directive("jupyter-kernel", JupyterKernel)
     app.add_directive("thebe-button", ThebeButton)
-    app.add_role("jupyter-download:notebook", jupyter_download_role)
-    app.add_role("jupyter-download:script", jupyter_download_role)
+    app.add_role("jupyter-download:notebook", JupyterDownloadRole())
+    app.add_role("jupyter-download:nb", JupyterDownloadRole())
+    app.add_role("jupyter-download:script", JupyterDownloadRole())
     app.add_transform(ExecuteJupyterCells)
     app.add_post_transform(CellOutputsToNodes)
 

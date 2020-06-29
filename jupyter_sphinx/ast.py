@@ -5,8 +5,9 @@ import json
 
 import docutils
 from docutils.parsers.rst import Directive, directives
-from docutils.nodes import math_block, image
+from docutils.nodes import math_block, image, literal
 from sphinx.util import parselinenos
+from sphinx.util.docutils import ReferenceRole
 from sphinx.addnodes import download_reference
 from sphinx.transforms import SphinxTransform
 from sphinx.environment.collectors.asset import ImageCollector
@@ -393,16 +394,19 @@ def attach_outputs(output_nodes, node, thebe_config, cm_language):
         node.children = node.children[::-1]
 
 
-def jupyter_download_role(name, rawtext, text, lineno, inliner):
-    _, filetype = name.split(":")
-    assert filetype in ("notebook", "script")
-    ext = ".ipynb" if filetype == "notebook" else ".py"
-    output_dir = sphinx_abs_dir(inliner.document.settings.env)
-    download_file = text + ext
-    node = download_reference(
-        download_file, download_file, reftarget=os.path.join(output_dir, download_file)
-    )
-    return [node], []
+class JupyterDownloadRole(ReferenceRole):
+    def run(self):
+        _, filetype = self.name.split(":")
+
+        assert filetype in ("notebook", "nb", "script")
+        ext = ".ipynb" if filetype in ("notebook", "nb") else ".py"
+        download_file = self.target + ext
+        reftarget = sphinx_abs_dir(self.env, download_file)
+        node = download_reference(self.rawtext, reftarget=reftarget)
+        self.set_source_info(node)
+        title = self.title if self.has_explicit_title else download_file
+        node += literal(self.rawtext, title, classes=["xref", "download"])
+        return [node], []
 
 
 def get_widgets(notebook):
