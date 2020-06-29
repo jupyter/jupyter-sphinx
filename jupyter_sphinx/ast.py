@@ -2,7 +2,6 @@
 
 import os
 import json
-import pathlib
 
 import docutils
 from docutils.parsers.rst import Directive, directives
