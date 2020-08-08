@@ -279,8 +279,8 @@ def setup(app):
     app.add_post_transform(CellOutputsToNodes)
 
     # For syntax highlighting
-    app.add_lexer("ipythontb", IPythonTracebackLexer())
-    app.add_lexer("ipython", IPython3Lexer())
+    app.add_lexer("ipythontb", IPythonTracebackLexer)
+    app.add_lexer("ipython", IPython3Lexer)
 
     app.connect("builder-inited", builder_inited)
     app.connect("build-finished", build_finished)
