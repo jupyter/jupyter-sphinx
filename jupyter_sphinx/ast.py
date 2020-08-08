@@ -2,6 +2,7 @@
 
 import os
 import json
+from pathlib import Path
 
 import docutils
 from docutils.parsers.rst import Directive, directives
@@ -316,7 +317,7 @@ def cell_output_to_nodes(outputs, data_priority, write_stderr, dir, thebe_config
                     subpath = subpaths[1]
                     dir += subpath
 
-                uri = os.path.join(dir, filename)
+                uri = Path(os.path.join(dir, filename)).as_posix()
                 to_add.append(docutils.nodes.image(uri=uri))
             elif mime_type == "text/html":
                 to_add.append(
