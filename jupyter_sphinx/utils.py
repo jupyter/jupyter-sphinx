@@ -4,6 +4,7 @@ from itertools import groupby, count
 from sphinx.errors import ExtensionError
 import nbformat
 from jupyter_client.kernelspec import get_kernel_spec, NoSuchKernel
+from pathlib import Path
 
 
 def blank_nb(kernel_name):
@@ -74,12 +75,20 @@ def sphinx_abs_dir(env, *paths):
     # output_directory / jupyter_execute / path relative to source directory
     # Sphinx expects download links relative to source file or relative to
     # source dir and prepended with '/'. We use the latter option.
-    return "/" + os.path.relpath(
+    out_path = Path(
         os.path.abspath(
             os.path.join(output_directory(env), os.path.dirname(env.docname), *paths)
-        ),
-        os.path.abspath(env.app.srcdir),
-    )
+        )
+    ).as_posix()
+    
+    if os.name == "nt":
+        # Can't get relative path between drives on Windows
+        return out_path
+
+    return "/" + os.path.relpath(
+            out_path,
+            os.path.abspath(env.app.srcdir),
+        )
 
 
 def output_directory(env):
