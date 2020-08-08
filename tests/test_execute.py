@@ -4,6 +4,7 @@ import os
 import sys
 from io import StringIO
 from unittest.mock import Mock
+from pathlib import Path
 
 from sphinx.addnodes import download_reference
 from sphinx.testing.util import assert_node, SphinxTestApp, path
@@ -586,6 +587,11 @@ def test_download_role(text, reftarget, caption, tmp_path):
     }
     mock_inliner.configure_mock(**config)
     ret, msg = role('jupyter-download:notebook', text, text, 0, mock_inliner)
+
+    if os.name == "nt":
+        # Get equivalent abs path for Windows
+        reftarget = Path(os.path.join(tmp_path, reftarget[1:])).resolve().as_posix()
+
     assert_node(ret[0], [download_reference], reftarget=reftarget)
     assert_node(ret[0][0], [literal, caption])
     assert msg == []
