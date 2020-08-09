@@ -270,8 +270,7 @@ def write_notebook_output(notebook, output_dir, notebook_name, location=None):
 
     notebook_file = notebook_name + ext
     output_dir = Path(output_dir)
-    with (output_dir / notebook_file).open("w", encoding = "utf8") as f:
-        f.write(contents)
+    (output_dir / notebook_file).write_text(contents, encoding = "utf8")
 
 
 def contains_widgets(notebook):

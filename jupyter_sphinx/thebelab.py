@@ -97,14 +97,13 @@ def add_thebelab_library(doctree, env):
             js.logger.warning("The supplied thebelab configuration file does not exist")
             return
 
-        with filename.open("r") as config_file:
-            try:
-                thebe_config = json.load(config_file)
-            except ValueError:
-                js.logger.warning(
-                    "The supplied thebelab configuration file is not in JSON format."
-                )
-                return
+        try:
+            thebe_config = json.load(filename.read_bytes())
+        except ValueError:
+            js.logger.warning(
+                "The supplied thebelab configuration file is not in JSON format."
+            )
+            return
     else:
         js.logger.warning(
             "The supplied thebelab configuration should be either a filename or a dictionary."
