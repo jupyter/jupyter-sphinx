@@ -37,10 +37,13 @@ def doctree():
     ):
         src_dir = Path(tempfile.mkdtemp())
         source_trees.append(src_dir.as_posix())
-        (src_dir / "conf.py").write_text("extensions = ['%s']" % entrypoint, encoding = "utf8")
+
+        conf_contents = "extensions = ['%s']" % entrypoint
         if config is not None:
-            f.write("\n" + config)
+            conf_contents += "\n" + config
+        (src_dir / "conf.py").write_text(conf_contents, encoding = "utf8")
         (src_dir / "contents.rst").write_text(source, encoding = "utf8")
+        
         warnings = StringIO()
         app = SphinxTestApp(srcdir=path(src_dir.as_posix()), status=StringIO(), warning=warnings)
         apps.append(app)
