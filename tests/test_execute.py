@@ -36,13 +36,11 @@ def doctree():
         source, config=None, return_warnings=False, entrypoint="jupyter_sphinx"
     ):
         src_dir = Path(tempfile.mkdtemp())
-        source_trees.append(src_dir)
-        with (src_dir / "conf.py").open("w", encoding = "utf8") as f:
-            f.write("extensions = ['%s']" % entrypoint)
-            if config is not None:
-                f.write("\n" + config)
-        with (src_dir / "contents.rst").open("w", encoding = "utf8") as f:
-            f.write(source)
+        source_trees.append(src_dir.as_posix())
+        (src_dir / "conf.py").write_text("extensions = ['%s']" % entrypoint, encoding = "utf8")
+        if config is not None:
+            f.write("\n" + config)
+        (src_dir / "contents.rst").write_text(source, encoding = "utf8")
         warnings = StringIO()
         app = SphinxTestApp(srcdir=path(src_dir.as_posix()), status=StringIO(), warning=warnings)
         apps.append(app)
