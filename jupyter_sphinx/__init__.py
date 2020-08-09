@@ -8,6 +8,7 @@ import os
 from sphinx.util.fileutil import copy_asset
 from sphinx.errors import ExtensionError
 from IPython.lib.lexers import IPythonTracebackLexer, IPython3Lexer
+from pathlib import Path
 
 from .ast import (
     JupyterCell,
@@ -121,9 +122,12 @@ def build_finished(app, env):
     if app.builder.format != "html":
         return
 
+    module_path = Path(__file__)
+    outdir_path = Path(app.outdir)
+
     # Copy stylesheet
-    src = os.path.join(os.path.dirname(__file__), "css")
-    dst = os.path.join(app.outdir, "_static")
+    src = module_path / "css"
+    dst = outdir_path / "_static"
     copy_asset(src, dst)
 
     thebe_config = app.config.jupyter_sphinx_thebelab_config
@@ -131,8 +135,7 @@ def build_finished(app, env):
         return
 
     # Copy all thebelab related assets
-    src = os.path.join(os.path.dirname(__file__), "thebelab")
-    dst = os.path.join(app.outdir, "_static")
+    src = module_path / "thebelab"
     copy_asset(src, dst)
 
 

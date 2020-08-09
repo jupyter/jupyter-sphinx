@@ -1,6 +1,7 @@
 """Execution and managing kernels."""
 
 import os
+from pathlib import Path
 
 from sphinx.transforms import SphinxTransform
 from sphinx.errors import ExtensionError
@@ -86,8 +87,9 @@ class ExecuteJupyterCells(SphinxTransform):
 
     def apply(self):
         doctree = self.document
-        doc_relpath = os.path.dirname(self.env.docname)  # relative to src dir
-        docname = os.path.basename(self.env.docname)
+        docname_path = Path(self.env.docname)
+        doc_dir_relpath = docname_path.parent  # relative to src dir
+        docname = docname_path.name
         default_kernel = self.config.jupyter_execute_default_kernel
         default_names = default_notebook_names(docname)
         thebe_config = self.config.jupyter_sphinx_thebelab_config
@@ -105,7 +107,7 @@ class ExecuteJupyterCells(SphinxTransform):
             add_thebelab_library(doctree, self.env)
 
         js.logger.info("executing {}".format(docname))
-        output_dir = os.path.join(output_directory(self.env), doc_relpath)
+        output_dir = Path(output_directory(self.env)) / doc_dir_relpath
 
         # Start new notebook whenever a JupyterKernelNode is encountered
         jupyter_nodes = (JupyterCellNode, JupyterKernelNode)
@@ -205,7 +207,7 @@ class ExecuteJupyterCells(SphinxTransform):
             # Write certain cell outputs (e.g. images) to separate files, and
             # modify the metadata of the associated cells in 'notebook' to
             # include the path to the output file.
-            write_notebook_output(notebook, output_dir, file_name, self.env.docname)
+            write_notebook_output(notebook, str(output_dir), file_name, self.env.docname)
 
             try:
                 cm_language = notebook.metadata.language_info.codemirror_mode.name
@@ -265,8 +267,10 @@ def write_notebook_output(notebook, output_dir, notebook_name, location=None):
             location=location,
         )
     contents = "\n\n".join(cell.source for cell in notebook.cells)
-    with open(os.path.join(output_dir, notebook_name + ext), "w",
-              encoding = "utf8") as f:
+
+    notebook_file = notebook_name + ext
+    output_dir = Path(output_dir)
+    with (output_dir / notebook_file).open("w", encoding = "utf8") as f:
         f.write(contents)
 
 

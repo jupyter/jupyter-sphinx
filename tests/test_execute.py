@@ -35,13 +35,13 @@ def doctree():
     def doctree(
         source, config=None, return_warnings=False, entrypoint="jupyter_sphinx"
     ):
-        src_dir = tempfile.mkdtemp()
+        src_dir = Path(tempfile.mkdtemp())
         source_trees.append(src_dir)
-        with open(os.path.join(src_dir, "conf.py"), "w", encoding = "utf8") as f:
+        with (src_dir / "conf.py").open("w", encoding = "utf8") as f:
             f.write("extensions = ['%s']" % entrypoint)
             if config is not None:
                 f.write("\n" + config)
-        with open(os.path.join(src_dir, "contents.rst"), "w", encoding = "utf8") as f:
+        with (src_dir / "contents.rst").open("w", encoding = "utf8") as f:
             f.write(source)
         warnings = StringIO()
         app = SphinxTestApp(srcdir=path(src_dir), status=StringIO(), warning=warnings)
@@ -590,7 +590,7 @@ def test_download_role(text, reftarget, caption, tmp_path):
 
     if os.name == "nt":
         # Get equivalent abs path for Windows
-        reftarget = Path(os.path.join(tmp_path, reftarget[1:])).resolve().as_posix()
+        reftarget = (Path(tmp_path) / reftarget[1:]).resolve().as_posix()
 
     assert_node(ret[0], [download_reference], reftarget=reftarget)
     assert_node(ret[0][0], [literal, caption])

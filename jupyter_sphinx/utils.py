@@ -75,20 +75,13 @@ def sphinx_abs_dir(env, *paths):
     # output_directory / jupyter_execute / path relative to source directory
     # Sphinx expects download links relative to source file or relative to
     # source dir and prepended with '/'. We use the latter option.
-    out_path = Path(
-        os.path.abspath(
-            os.path.join(output_directory(env), os.path.dirname(env.docname), *paths)
-        )
-    ).as_posix()
-    
+    out_path = (output_directory(env) /  Path(env.docname).parent / Path(*paths)).resolve()
+      
     if os.name == "nt":
         # Can't get relative path between drives on Windows
-        return out_path
+        return out_path.as_posix()
 
-    return "/" + os.path.relpath(
-            out_path,
-            os.path.abspath(env.app.srcdir),
-        )
+    return "/" + out_path.relative_to(env.app.srcdir).as_posix()
 
 
 def output_directory(env):
@@ -99,6 +92,4 @@ def output_directory(env):
 
     # Note: we are using an implicit fact that sphinx output directories are
     # direct subfolders of the build directory.
-    return os.path.abspath(
-        os.path.join(env.app.outdir, os.path.pardir, "jupyter_execute")
-    )
+    return (Path(env.app.outdir) / os.path.pardir / "jupyter_execute").resolve()
