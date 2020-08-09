@@ -44,7 +44,7 @@ def doctree():
         with (src_dir / "contents.rst").open("w", encoding = "utf8") as f:
             f.write(source)
         warnings = StringIO()
-        app = SphinxTestApp(srcdir=path(src_dir), status=StringIO(), warning=warnings)
+        app = SphinxTestApp(srcdir=path(src_dir.as_posix()), status=StringIO(), warning=warnings)
         apps.append(app)
         app.build()
 
