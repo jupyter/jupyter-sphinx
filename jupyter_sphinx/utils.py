@@ -81,7 +81,8 @@ def sphinx_abs_dir(env, *paths):
         # Can't get relative path between drives on Windows
         return out_path.as_posix()
 
-    return "/" + out_path.relative_to(env.app.srcdir).as_posix()
+    # Path().relative_to() doesn't work when not a direct subpath
+    return "/" + os.path.relpath(out_path, env.app.srcdir)
 
 
 def output_directory(env):

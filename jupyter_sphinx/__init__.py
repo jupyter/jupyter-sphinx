@@ -122,12 +122,12 @@ def build_finished(app, env):
     if app.builder.format != "html":
         return
 
-    module_path = Path(__file__)
-    outdir_path = Path(app.outdir)
+    module_dir = Path(__file__).parent
+    outdir = Path(app.outdir)
 
     # Copy stylesheet
-    src = module_path / "css"
-    dst = outdir_path / "_static"
+    src = module_dir / "css"
+    dst = outdir / "_static"
     copy_asset(src, dst)
 
     thebe_config = app.config.jupyter_sphinx_thebelab_config
@@ -135,7 +135,7 @@ def build_finished(app, env):
         return
 
     # Copy all thebelab related assets
-    src = module_path / "thebelab"
+    src = module_dir / "thebelab"
     copy_asset(src, dst)
 
 
