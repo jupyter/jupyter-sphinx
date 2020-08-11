@@ -102,7 +102,8 @@ class JupyterCell(Directive):
                     location=location,
                 )
             try:
-                content = [line.rstrip() for line in Path(filename).read_text()]
+                with Path(filename).open() as f:
+                    content = [line.rstrip() for line in f.readlines()]
             except (IOError, OSError):
                 raise IOError("File {} not found or reading it failed".format(filename))
         else:
