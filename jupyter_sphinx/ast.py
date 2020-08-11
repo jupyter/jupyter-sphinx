@@ -2,6 +2,7 @@
 
 import os
 import json
+from pathlib import Path
 
 import docutils
 from docutils.parsers.rst import Directive, directives
@@ -101,7 +102,7 @@ class JupyterCell(Directive):
                     location=location,
                 )
             try:
-                with open(filename) as f:
+                with Path(filename).open() as f:
                     content = [line.rstrip() for line in f.readlines()]
             except (IOError, OSError):
                 raise IOError("File {} not found or reading it failed".format(filename))
@@ -228,7 +229,7 @@ class JupyterWidgetStateNode(docutils.nodes.Element):
         )
 
 
-def cell_output_to_nodes(outputs, data_priority, write_stderr, dir, thebe_config):
+def cell_output_to_nodes(outputs, data_priority, write_stderr, out_dir, thebe_config):
     """Convert a jupyter cell with outputs and filenames to doctree nodes.
 
     Parameters
@@ -238,7 +239,7 @@ def cell_output_to_nodes(outputs, data_priority, write_stderr, dir, thebe_config
         Which media types to prioritize.
     write_stderr : bool
         If True include stderr in cell output
-    dir : string
+    out_dir : string
         Sphinx "absolute path" to the output folder, so it is a relative path
         to the source folder prefixed with ``/``.
     thebe_config: dict
@@ -304,19 +305,17 @@ def cell_output_to_nodes(outputs, data_priority, write_stderr, dir, thebe_config
                 continue
             data = output["data"][mime_type]
             if mime_type.startswith("image"):
+                file_path = Path(output.metadata["filenames"][mime_type])
+                out_dir = Path(out_dir)
                 # Sphinx treats absolute paths as being rooted at the source
                 # directory, so make a relative path, which Sphinx treats
                 # as being relative to the current working directory.
-                filename = os.path.basename(output.metadata["filenames"][mime_type])
+                filename = file_path.name
 
-                # checks if file dir path is inside a subdir of dir
-                filedir = os.path.dirname(output.metadata["filenames"][mime_type])
-                subpaths = filedir.split(dir)
-                if subpaths and len(subpaths) > 1:
-                    subpath = subpaths[1]
-                    dir += subpath
+                if out_dir in file_path.parents:
+                    out_dir = file_path.parent
 
-                uri = os.path.join(dir, filename)
+                uri = (out_dir / filename).as_posix()
                 to_add.append(docutils.nodes.image(uri=uri))
             elif mime_type == "text/html":
                 to_add.append(
