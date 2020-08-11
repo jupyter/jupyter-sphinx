@@ -98,7 +98,7 @@ def add_thebelab_library(doctree, env):
             return
 
         try:
-            thebe_config = json.load(filename.read_bytes())
+            thebe_config = json.loads(filename.read_text())
         except ValueError:
             js.logger.warning(
                 "The supplied thebelab configuration file is not in JSON format."
