@@ -36,7 +36,7 @@ def doctree():
         source, config=None, return_warnings=False, entrypoint="jupyter_sphinx"
     ):
         src_dir = Path(tempfile.mkdtemp())
-        source_trees.append(src_dir.as_posix())
+        source_trees.append(src_dir)
 
         conf_contents = "extensions = ['%s']" % entrypoint
         if config is not None:
