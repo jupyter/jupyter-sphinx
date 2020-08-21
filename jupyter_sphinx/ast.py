@@ -252,7 +252,7 @@ def cell_output_to_nodes(outputs, data_priority, write_stderr, dir,
         Each output, converted into a docutils node.
     """
     # If we're in `inline` mode, ensure that we don't add block-level nodes
-    if inline is True:
+    if inline:
         literal_node = docutils.nodes.literal
         math_node = docutils.nodes.math
     else:
@@ -282,7 +282,7 @@ def cell_output_to_nodes(outputs, data_priority, write_stderr, dir,
                         language="none",
                         classes=["stderr"],
                     )
-                    if inline is True:
+                    if inline:
                         # In this case, we don't wrap the text in containers
                         to_add.append(literal)
                     else:
