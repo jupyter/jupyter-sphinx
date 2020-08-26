@@ -2,3 +2,4 @@ python:
   version: 3.7
   install:
     - requirements: requirements.txt
+    - formats: []  # TODO: remove when #126 is closed

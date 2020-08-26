@@ -8,6 +8,7 @@ import os
 from sphinx.util.fileutil import copy_asset
 from sphinx.errors import ExtensionError
 from IPython.lib.lexers import IPythonTracebackLexer, IPython3Lexer
+from pathlib import Path
 
 from .ast import (
     JupyterCell,
@@ -19,7 +20,7 @@ from .ast import (
     JupyterWidgetViewNode,
     JupyterWidgetStateNode,
     WIDGET_VIEW_MIMETYPE,
-    jupyter_download_role,
+    JupyterDownloadRole,
     CellOutputsToNodes,
 )
 from .execute import JupyterKernel, ExecuteJupyterCells
@@ -121,9 +122,12 @@ def build_finished(app, env):
     if app.builder.format != "html":
         return
 
+    module_dir = Path(__file__).parent
+    outdir = Path(app.outdir)
+
     # Copy stylesheet
-    src = os.path.join(os.path.dirname(__file__), "css")
-    dst = os.path.join(app.outdir, "_static")
+    src = module_dir / "css"
+    dst = outdir / "_static"
     copy_asset(src, dst)
 
     thebe_config = app.config.jupyter_sphinx_thebelab_config
@@ -131,8 +135,7 @@ def build_finished(app, env):
         return
 
     # Copy all thebelab related assets
-    src = os.path.join(os.path.dirname(__file__), "thebelab")
-    dst = os.path.join(app.outdir, "_static")
+    src = module_dir / "thebelab"
     copy_asset(src, dst)
 
 
@@ -272,14 +275,15 @@ def setup(app):
     app.add_directive("jupyter-execute", JupyterCell)
     app.add_directive("jupyter-kernel", JupyterKernel)
     app.add_directive("thebe-button", ThebeButton)
-    app.add_role("jupyter-download:notebook", jupyter_download_role)
-    app.add_role("jupyter-download:script", jupyter_download_role)
+    app.add_role("jupyter-download:notebook", JupyterDownloadRole())
+    app.add_role("jupyter-download:nb", JupyterDownloadRole())
+    app.add_role("jupyter-download:script", JupyterDownloadRole())
     app.add_transform(ExecuteJupyterCells)
     app.add_post_transform(CellOutputsToNodes)
 
     # For syntax highlighting
-    app.add_lexer("ipythontb", IPythonTracebackLexer())
-    app.add_lexer("ipython", IPython3Lexer())
+    app.add_lexer("ipythontb", IPythonTracebackLexer)
+    app.add_lexer("ipython", IPython3Lexer)
 
     app.connect("builder-inited", builder_inited)
     app.connect("build-finished", build_finished)

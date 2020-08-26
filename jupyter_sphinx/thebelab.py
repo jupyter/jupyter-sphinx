@@ -3,6 +3,7 @@ import os
 import json
 import docutils
 from docutils.parsers.rst import Directive
+from pathlib import Path
 
 import jupyter_sphinx as js
 
@@ -86,23 +87,23 @@ def add_thebelab_library(doctree, env):
     if isinstance(thebe_config, dict):
         pass
     elif isinstance(thebe_config, str):
-        if os.path.isabs(thebe_config):
+        thebe_config = Path(thebe_config)
+        if thebe_config.is_absolute():
             filename = thebe_config
         else:
-            filename = os.path.join(os.path.abspath(env.app.srcdir), thebe_config)
+            filename = Path(env.app.srcdir).resolve() / thebe_config
 
-        if not os.path.exists(filename):
+        if not filename.exists():
             js.logger.warning("The supplied thebelab configuration file does not exist")
             return
 
-        with open(filename, "r") as config_file:
-            try:
-                thebe_config = json.load(config_file)
-            except ValueError:
-                js.logger.warning(
-                    "The supplied thebelab configuration file is not in JSON format."
-                )
-                return
+        try:
+            thebe_config = json.loads(filename.read_text())
+        except ValueError:
+            js.logger.warning(
+                "The supplied thebelab configuration file is not in JSON format."
+            )
+            return
     else:
         js.logger.warning(
             "The supplied thebelab configuration should be either a filename or a dictionary."

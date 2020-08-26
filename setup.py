@@ -28,12 +28,12 @@ setup(
     license="BSD",
     packages=["jupyter_sphinx"],
     install_requires=[
-        "Sphinx>=1.8",
+        "Sphinx>=2",
         "ipywidgets>=7.0.0",
         "IPython",
         "nbconvert>=5.5",
         "nbformat",
     ],
-    python_requires=">= 3.5",
+    python_requires=">= 3.6",
     package_data={"jupyter_sphinx": ["thebelab/*", "css/*"]},
 )

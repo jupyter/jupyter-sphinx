@@ -1,6 +1,7 @@
 """Execution and managing kernels."""
 
 import os
+from pathlib import Path
 
 from sphinx.transforms import SphinxTransform
 from sphinx.errors import ExtensionError
@@ -22,7 +23,6 @@ from .utils import (
     default_notebook_names,
     output_directory,
     split_on,
-    sphinx_abs_dir,
     blank_nb,
 )
 from .ast import (
@@ -87,8 +87,9 @@ class ExecuteJupyterCells(SphinxTransform):
 
     def apply(self):
         doctree = self.document
-        doc_relpath = os.path.dirname(self.env.docname)  # relative to src dir
-        docname = os.path.basename(self.env.docname)
+        docname_path = Path(self.env.docname)
+        doc_dir_relpath = docname_path.parent  # relative to src dir
+        docname = docname_path.name
         default_kernel = self.config.jupyter_execute_default_kernel
         default_names = default_notebook_names(docname)
         thebe_config = self.config.jupyter_sphinx_thebelab_config
@@ -106,7 +107,7 @@ class ExecuteJupyterCells(SphinxTransform):
             add_thebelab_library(doctree, self.env)
 
         js.logger.info("executing {}".format(docname))
-        output_dir = os.path.join(output_directory(self.env), doc_relpath)
+        output_dir = Path(output_directory(self.env)) / doc_dir_relpath
 
         # Start new notebook whenever a JupyterKernelNode is encountered
         jupyter_nodes = (JupyterCellNode, JupyterKernelNode)
@@ -206,7 +207,7 @@ class ExecuteJupyterCells(SphinxTransform):
             # Write certain cell outputs (e.g. images) to separate files, and
             # modify the metadata of the associated cells in 'notebook' to
             # include the path to the output file.
-            write_notebook_output(notebook, output_dir, file_name)
+            write_notebook_output(notebook, str(output_dir), file_name, self.env.docname)
 
             try:
                 cm_language = notebook.metadata.language_info.codemirror_mode.name
@@ -239,7 +240,7 @@ def execute_cells(kernel_name, cells, execute_kwargs):
     return notebook
 
 
-def write_notebook_output(notebook, output_dir, notebook_name):
+def write_notebook_output(notebook, output_dir, notebook_name, location=None):
     """Extract output from notebook cells and write to files in output_dir.
 
     This also modifies 'notebook' in-place, adding metadata to each cell that
@@ -256,11 +257,20 @@ def write_notebook_output(notebook, output_dir, notebook_name):
         resources,
         os.path.join(output_dir, notebook_name + ".ipynb"),
     )
-    # Write a script too.
-    ext = notebook.metadata.language_info.file_extension
+    # Write a script too.  Note that utf-8 is the de facto
+    # standard encoding for notebooks. 
+    ext = notebook.metadata.get("language_info", {}).get("file_extension", None)
+    if ext is None:
+        ext = ".txt"
+        js.logger.warning(
+            "Notebook code has no file extension metadata, " "defaulting to `.txt`",
+            location=location,
+        )
     contents = "\n\n".join(cell.source for cell in notebook.cells)
-    with open(os.path.join(output_dir, notebook_name + ext), "w") as f:
-        f.write(contents)
+
+    notebook_file = notebook_name + ext
+    output_dir = Path(output_dir)
+    (output_dir / notebook_file).write_text(contents, encoding = "utf8")
 
 
 def contains_widgets(notebook):

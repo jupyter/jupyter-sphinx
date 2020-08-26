@@ -3,8 +3,11 @@ import shutil
 import os
 import sys
 from io import StringIO
+from unittest.mock import Mock
+from pathlib import Path
 
-from sphinx.testing.util import SphinxTestApp, path
+from sphinx.addnodes import download_reference
+from sphinx.testing.util import assert_node, SphinxTestApp, path
 from sphinx.errors import ExtensionError
 from docutils.nodes import raw, literal, literal_block, container
 from nbformat import from_dict
@@ -18,6 +21,7 @@ from jupyter_sphinx.ast import (
     JupyterWidgetViewNode,
     JupyterWidgetStateNode,
     cell_output_to_nodes,
+    JupyterDownloadRole,
 )
 from jupyter_sphinx.thebelab import ThebeSourceNode, ThebeOutputNode, ThebeButtonNode
 
@@ -31,16 +35,17 @@ def doctree():
     def doctree(
         source, config=None, return_warnings=False, entrypoint="jupyter_sphinx"
     ):
-        src_dir = tempfile.mkdtemp()
+        src_dir = Path(tempfile.mkdtemp())
         source_trees.append(src_dir)
-        with open(os.path.join(src_dir, "conf.py"), "w") as f:
-            f.write("extensions = ['%s']" % entrypoint)
-            if config is not None:
-                f.write("\n" + config)
-        with open(os.path.join(src_dir, "contents.rst"), "w") as f:
-            f.write(source)
+
+        conf_contents = "extensions = ['%s']" % entrypoint
+        if config is not None:
+            conf_contents += "\n" + config
+        (src_dir / "conf.py").write_text(conf_contents, encoding = "utf8")
+        (src_dir / "contents.rst").write_text(source, encoding = "utf8")
+        
         warnings = StringIO()
-        app = SphinxTestApp(srcdir=path(src_dir), status=StringIO(), warning=warnings)
+        app = SphinxTestApp(srcdir=path(src_dir.as_posix()), status=StringIO(), warning=warnings)
         apps.append(app)
         app.build()
 
@@ -577,3 +582,31 @@ def test_cell_output_to_nodes(doctree):
     output_nodes = cell_output_to_nodes(outputs, priority, True, output_dir, None, inline=True)
     for output, kind in zip(output_nodes, [literal, literal]):
         assert isinstance(output, kind)
+
+
+@pytest.mark.parametrize('text,reftarget,caption', (
+    ('nb_name', '/../jupyter_execute/path/to/nb_name.ipynb', 'nb_name.ipynb'),
+    ('../nb_name', '/../jupyter_execute/path/nb_name.ipynb', '../nb_name.ipynb'),
+    ('text <nb_name>', '/../jupyter_execute/path/to/nb_name.ipynb', 'text'),
+))
+def test_download_role(text, reftarget, caption, tmp_path):
+    role = JupyterDownloadRole()
+    mock_inliner = Mock()
+    config = {
+        'document.settings.env.app.outdir': str(tmp_path),
+        'document.settings.env.docname': 'path/to/docname',
+        'document.settings.env.srcdir': str(tmp_path),
+        'document.settings.env.app.srcdir': str(tmp_path),
+        'reporter.get_source_and_line': lambda l: ('source', l)
+    }
+    mock_inliner.configure_mock(**config)
+    ret, msg = role('jupyter-download:notebook', text, text, 0, mock_inliner)
+
+    if os.name == "nt":
+        # Get equivalent abs path for Windows
+        reftarget = (Path(tmp_path) / reftarget[1:]).resolve().as_posix()
+
+    assert_node(ret[0], [download_reference], reftarget=reftarget)
+    assert_node(ret[0][0], [literal, caption])
+    assert msg == []
+
