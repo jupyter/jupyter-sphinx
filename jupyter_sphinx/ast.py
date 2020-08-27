@@ -136,8 +136,6 @@ class JupyterCell(Directive):
             hide_code=("hide-code" in self.options),
             hide_output=("hide-output" in self.options),
             code_below=("code-below" in self.options),
-            linenos=("linenos" in self.options),
-            linenostart=(self.options.get("lineno-start")),
             emphasize_lines=hl_lines,
             raises=self.options.get("raises"),
             stderr=("stderr" in self.options),
@@ -146,7 +144,11 @@ class JupyterCell(Directive):
 
         # Add the input section of the cell, we'll add output at execution time
         cell_input = CellInputNode(classes=["cell_input"])
-        cell_input += docutils.nodes.literal_block(text="\n".join(content))
+        cell_input += docutils.nodes.literal_block(
+            text="\n".join(content),
+            linenos=("linenos" in self.options),
+            linenostart=(self.options.get("lineno-start")),
+        )
         cell_node += cell_input
         return [cell_node]
 

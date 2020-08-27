@@ -84,10 +84,10 @@ def test_basic(doctree, buildername):
     tree = doctree(source, buildername=buildername)
     (cell,) = tree.traverse(JupyterCellNode)
     (cellinput, celloutput) = cell.children
-    assert cell.attributes["code_below"] is False
-    assert cell.attributes["hide_code"] is False
-    assert cell.attributes["hide_output"] is False
-    assert cell.attributes["linenos"] is False
+    assert not cell.attributes["code_below"]
+    assert not cell.attributes["hide_code"]
+    assert not cell.attributes["hide_output"]
+    assert not cellinput.children[0]["linenos"]
     assert cellinput.children[0].rawsource.strip() == "2 + 2"
     assert celloutput.children[0].rawsource.strip() == "4"
 
@@ -101,10 +101,10 @@ def test_basic_old_entrypoint(doctree):
     tree = doctree(source, entrypoint="jupyter_sphinx.execute")
     (cell,) = tree.traverse(JupyterCellNode)
     (cellinput, celloutput) = cell.children
-    assert cell.attributes["code_below"] is False
-    assert cell.attributes["hide_code"] is False
-    assert cell.attributes["hide_output"] is False
-    assert cell.attributes["linenos"] is False
+    assert not cell.attributes["code_below"]
+    assert not cell.attributes["hide_code"]
+    assert not cell.attributes["hide_output"]
+    assert not cellinput.children[0]["linenos"]
     assert cellinput.children[0].rawsource.strip() == "2 + 2"
     assert celloutput.children[0].rawsource.strip() == "4"
 
@@ -119,7 +119,7 @@ def test_hide_output(doctree):
     tree = doctree(source)
     (cell,) = tree.traverse(JupyterCellNode)
     (cellinput, celloutput) = cell.children
-    assert cell.attributes["hide_output"] is True
+    assert cell.attributes["hide_output"]
     assert len(celloutput.children) == 0
     assert cellinput.children[0].rawsource.strip() == "2 + 2"
 
@@ -134,7 +134,7 @@ def test_hide_code(doctree):
     tree = doctree(source)
     (cell,) = tree.traverse(JupyterCellNode)
     (celloutput,) = cell.children
-    assert cell.attributes["hide_code"] is True
+    assert cell.attributes["hide_code"]
     assert len(cell.children) == 1
     assert celloutput.children[0].rawsource.strip() == "4"
 
@@ -149,7 +149,7 @@ def test_code_below(doctree):
     tree = doctree(source)
     (cell,) = tree.traverse(JupyterCellNode)
     (celloutput, cellinput) = cell.children
-    assert cell.attributes["code_below"] is True
+    assert cell.attributes["code_below"]
     assert cellinput.children[0].rawsource.strip() == "2 + 2"
     assert celloutput.children[0].rawsource.strip() == "4"
 
@@ -164,7 +164,7 @@ def test_linenos(doctree):
     tree = doctree(source)
     (cell,) = tree.traverse(JupyterCellNode)
     (cellinput, celloutput) = cell.children
-    assert cell.attributes["linenos"] is True
+    assert cellinput.children[0]["linenos"]
     assert len(cell.children) == 2
     assert cellinput.children[0].rawsource.strip() == "2 + 2"
     assert celloutput.children[0].rawsource.strip() == "4"
@@ -177,9 +177,8 @@ def test_linenos(doctree):
     """
     tree = doctree(source)
     (cell,) = tree.traverse(JupyterCellNode)
-    (cellinput, celloutput) = cell.children
-    assert len(cell.children) == 2
-    assert cell.attributes["linenos"] is True
+    (celloutput, cellinput) = cell.children
+    assert cellinput.children[0]["linenos"]
 
 
 def test_linenos_conf_option(doctree):
@@ -191,8 +190,8 @@ def test_linenos_conf_option(doctree):
     tree = doctree(source, config="jupyter_sphinx_linenos = True")
     (cell,) = tree.traverse(JupyterCellNode)
     (cellinput, celloutput) = cell.children
-    assert cellinput.attributes["linenos"]
-    assert "highlight_args" not in cellinput.attributes
+    assert cellinput.children[0].attributes["linenos"]
+    assert "highlight_args" not in cellinput.children[0].attributes
     assert cellinput.children[0].rawsource.strip() == "2 + 2"
     assert celloutput.children[0].rawsource.strip() == "4"
 
@@ -209,7 +208,7 @@ def test_continue_linenos_conf_option(doctree):
     tree = doctree(source, config="jupyter_sphinx_continue_linenos = True")
     (cell,) = tree.traverse(JupyterCellNode)
     (cellinput, celloutput) = cell.children
-    assert "linenos" not in cellinput.attributes
+    assert not cellinput.children[0].attributes["linenos"]
     assert cellinput.children[0].rawsource.strip() == "2 + 2"
     assert celloutput.children[0].rawsource.strip() == "4"
 
@@ -234,12 +233,12 @@ def test_continue_linenos_conf_option(doctree):
     cell0, cell1 = tree.traverse(JupyterCellNode)
     (cellinput0, celloutput0) = cell0.children
     (cellinput1, celloutput1) = cell1.children
-    assert cellinput0.attributes["linenos"]
+    assert cellinput0.children[0].attributes["linenos"]
     assert cellinput0.children[0].rawsource.strip() == "2 + 2"
     assert celloutput0.children[0].rawsource.strip() == "4"
 
-    assert cellinput1.attributes["linenos"]
-    assert cellinput1.attributes["highlight_args"]["linenostart"] == 2
+    assert cellinput1.children[0].attributes["linenos"]
+    assert cellinput1.children[0].attributes["highlight_args"]["linenostart"] == 2
     assert cellinput1.children[0].rawsource.strip() == "3 + 3"
     assert celloutput1.children[0].rawsource.strip() == "6"
 
@@ -264,12 +263,12 @@ def test_continue_linenos_conf_option(doctree):
     cell0, cell1 = tree.traverse(JupyterCellNode)
     (cellinput0, celloutput0) = cell0.children
     (cellinput1, celloutput1) = cell1.children
-    assert cellinput0.attributes["highlight_args"]["linenostart"] == 7
+    assert cellinput0.children[0].attributes["highlight_args"]["linenostart"] == 7
     assert cellinput0.children[0].rawsource.strip() == "2 + 2"
     assert celloutput0.children[0].rawsource.strip() == "4"
 
-    assert cellinput1.attributes["linenos"]
-    assert cellinput1.attributes["highlight_args"]["linenostart"] == 8
+    assert cellinput1.children[0].attributes["linenos"]
+    assert cellinput1.children[0].attributes["highlight_args"]["linenostart"] == 8
     assert cellinput1.children[0].rawsource.strip() == "3 + 3"
     assert celloutput1.children[0].rawsource.strip() == "6"
 
@@ -455,7 +454,7 @@ def test_thebe_hide_output(doctree):
     tree = doctree(source, thebe_config)
     (cell,) = tree.traverse(JupyterCellNode)
     (cellinput, celloutput) = cell.children
-    assert cell.attributes["hide_output"] is True
+    assert cell.attributes["hide_output"]
     assert len(celloutput.children) == 0
 
     source = cellinput.children[0]
@@ -474,12 +473,12 @@ def test_thebe_hide_code(doctree):
     tree = doctree(source, thebe_config)
     (cell,) = tree.traverse(JupyterCellNode)
     (cellinput, celloutput) = cell.children
-    assert cell.attributes["hide_code"] is True
+    assert cell.attributes["hide_code"]
     assert len(cell.children) == 2
 
     source = cellinput.children[0]
     assert type(source) == ThebeSourceNode
-    assert source.attributes["hide_code"] is True
+    assert source.attributes["hide_code"]
     assert len(source.children) == 1
     assert source.children[0].rawsource.strip() == "2 + 2"
 
@@ -499,7 +498,7 @@ def test_thebe_code_below(doctree):
     tree = doctree(source, thebe_config)
     (cell,) = tree.traverse(JupyterCellNode)
     (cellinput, celloutput) = cell.children
-    assert cell.attributes["code_below"] is True
+    assert cell.attributes["code_below"]
 
     output = cellinput.children[0]
     assert type(output) is ThebeOutputNode
@@ -510,7 +509,7 @@ def test_thebe_code_below(doctree):
     assert type(source) is ThebeSourceNode
     assert len(source.children) == 1
     assert source.children[0].rawsource.strip() == "2 + 2"
-    assert source.attributes["code_below"] is True
+    assert source.attributes["code_below"]
 
 
 def test_thebe_button_auto(doctree):
