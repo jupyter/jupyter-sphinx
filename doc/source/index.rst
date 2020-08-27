@@ -415,3 +415,12 @@ jupyter_sphinx_continue_linenos
 
     Whether to continue line numbering from previous cell in all ``jupyter-execute``
     sources.
+
+Changelog
+---------
+
+Release 0.3.0
+~~~~~~~~~~~~~
+
+- Switch the extension name to ``jupyter-sphinx``, deprecate ``jupyter-sphinx.execute``.
+- Miscellaneous bugfixes following the restructuring of the codebase.
