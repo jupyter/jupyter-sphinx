@@ -147,7 +147,16 @@ produces:
 
     print('this code is invisible')
 
-or vice versa with ``:hide-output:``::
+this option is particularly useful if you want to embed correctness checks in building your documentation::
+
+  .. jupyter-execute::
+      :hide-code:
+
+      assert everything_works, "There's a bug somewhere"
+
+This way even though the code won't make it into the documentation, the build will fail if running the code fails.
+
+Similarly, outputs are hidden with ``:hide-output:``::
 
     .. jupyter-execute::
         :hide-output:
