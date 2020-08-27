@@ -46,7 +46,7 @@ def doctree():
         if config is not None:
             conf_contents += "\n" + config
         (src_dir / "conf.py").write_text(conf_contents, encoding = "utf8")
-        (src_dir / "contents.rst").write_text(source, encoding = "utf8")
+        (src_dir / "index.rst").write_text(source, encoding = "utf8")
         
         warnings = StringIO()
         app = SphinxTestApp(
@@ -58,7 +58,7 @@ def doctree():
         apps.append(app)
         app.build()
 
-        doctree = app.env.get_and_resolve_doctree("contents", app.builder)
+        doctree = app.env.get_and_resolve_doctree("index", app.builder)
 
         if return_warnings:
             return doctree, warnings.getvalue()
