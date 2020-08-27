@@ -1,5 +1,4 @@
 python:
-  version: 3.7
+  version: 3.8
   install:
     - requirements: requirements.txt
-    - formats: []  # TODO: remove when #126 is closed
