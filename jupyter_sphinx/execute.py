@@ -9,10 +9,14 @@ from sphinx.errors import ExtensionError
 import docutils
 from docutils.parsers.rst import Directive, directives
 
-from nbconvert.preprocessors.execute import executenb
+import nbconvert
 from nbconvert.preprocessors import ExtractOutputPreprocessor
 from nbconvert.writers import FilesWriter
 
+if nbconvert.version_info < (6,):
+     from nbconvert.preprocessors.execute import executenb
+else:
+     from nbclient.client import execute as executenb
 
 import nbformat
 
