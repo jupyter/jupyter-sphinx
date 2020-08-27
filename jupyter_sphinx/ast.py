@@ -455,13 +455,3 @@ class CellOutputsToNodes(SphinxTransform):
             # Remove the outputbundlenode and we'll attach the outputs next
             attach_outputs(output_nodes, cell_node, thebe_config)
 
-        # Image collect extra nodes from cell outputs that we need to process
-        for node in self.document.traverse(image):
-            # If the image node has `candidates` then it's already been processed
-            # as in-line content, so skip it
-            if "candidates" in node:
-                continue
-            # re-initialize an ImageCollector because the `app` imagecollector instance
-            # is only available via event listeners.
-            col = ImageCollector()
-            col.process_doc(self.app, node)
