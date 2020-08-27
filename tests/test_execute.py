@@ -87,7 +87,7 @@ def test_basic(doctree, buildername):
     assert cell.attributes["code_below"] is False
     assert cell.attributes["hide_code"] is False
     assert cell.attributes["hide_output"] is False
-    assert cell.attributes["linenos"] is False
+    assert cellinput.children[0]["linenos"] is False
     assert cellinput.children[0].rawsource.strip() == "2 + 2"
     assert celloutput.children[0].rawsource.strip() == "4"
 
@@ -104,7 +104,7 @@ def test_basic_old_entrypoint(doctree):
     assert cell.attributes["code_below"] is False
     assert cell.attributes["hide_code"] is False
     assert cell.attributes["hide_output"] is False
-    assert cell.attributes["linenos"] is False
+    assert cellinput.children[0]["linenos"] is False
     assert cellinput.children[0].rawsource.strip() == "2 + 2"
     assert celloutput.children[0].rawsource.strip() == "4"
 
@@ -164,7 +164,7 @@ def test_linenos(doctree):
     tree = doctree(source)
     (cell,) = tree.traverse(JupyterCellNode)
     (cellinput, celloutput) = cell.children
-    assert cell.attributes["linenos"] is True
+    assert cellinput.children[0]["linenos"] is True
     assert len(cell.children) == 2
     assert cellinput.children[0].rawsource.strip() == "2 + 2"
     assert celloutput.children[0].rawsource.strip() == "4"
@@ -177,9 +177,8 @@ def test_linenos(doctree):
     """
     tree = doctree(source)
     (cell,) = tree.traverse(JupyterCellNode)
-    (cellinput, celloutput) = cell.children
-    assert len(cell.children) == 2
-    assert cell.attributes["linenos"] is True
+    (celloutput, cellinput) = cell.children
+    assert cellinput.children[0]["linenos"] is True
 
 
 def test_linenos_conf_option(doctree):
@@ -191,8 +190,8 @@ def test_linenos_conf_option(doctree):
     tree = doctree(source, config="jupyter_sphinx_linenos = True")
     (cell,) = tree.traverse(JupyterCellNode)
     (cellinput, celloutput) = cell.children
-    assert cellinput.attributes["linenos"]
-    assert "highlight_args" not in cellinput.attributes
+    assert cellinput.children[0].attributes["linenos"]
+    assert "highlight_args" not in cellinput.children[0].attributes
     assert cellinput.children[0].rawsource.strip() == "2 + 2"
     assert celloutput.children[0].rawsource.strip() == "4"
 
@@ -209,7 +208,7 @@ def test_continue_linenos_conf_option(doctree):
     tree = doctree(source, config="jupyter_sphinx_continue_linenos = True")
     (cell,) = tree.traverse(JupyterCellNode)
     (cellinput, celloutput) = cell.children
-    assert "linenos" not in cellinput.attributes
+    assert not cellinput.children[0].attributes["linenos"]
     assert cellinput.children[0].rawsource.strip() == "2 + 2"
     assert celloutput.children[0].rawsource.strip() == "4"
 
@@ -234,12 +233,12 @@ def test_continue_linenos_conf_option(doctree):
     cell0, cell1 = tree.traverse(JupyterCellNode)
     (cellinput0, celloutput0) = cell0.children
     (cellinput1, celloutput1) = cell1.children
-    assert cellinput0.attributes["linenos"]
+    assert cellinput0.children[0].attributes["linenos"]
     assert cellinput0.children[0].rawsource.strip() == "2 + 2"
     assert celloutput0.children[0].rawsource.strip() == "4"
 
-    assert cellinput1.attributes["linenos"]
-    assert cellinput1.attributes["highlight_args"]["linenostart"] == 2
+    assert cellinput1.children[0].attributes["linenos"]
+    assert cellinput1.children[0].attributes["highlight_args"]["linenostart"] == 2
     assert cellinput1.children[0].rawsource.strip() == "3 + 3"
     assert celloutput1.children[0].rawsource.strip() == "6"
 
@@ -264,12 +263,12 @@ def test_continue_linenos_conf_option(doctree):
     cell0, cell1 = tree.traverse(JupyterCellNode)
     (cellinput0, celloutput0) = cell0.children
     (cellinput1, celloutput1) = cell1.children
-    assert cellinput0.attributes["highlight_args"]["linenostart"] == 7
+    assert cellinput0.children[0].attributes["highlight_args"]["linenostart"] == 7
     assert cellinput0.children[0].rawsource.strip() == "2 + 2"
     assert celloutput0.children[0].rawsource.strip() == "4"
 
-    assert cellinput1.attributes["linenos"]
-    assert cellinput1.attributes["highlight_args"]["linenostart"] == 8
+    assert cellinput1.children[0].attributes["linenos"]
+    assert cellinput1.children[0].attributes["highlight_args"]["linenostart"] == 8
     assert cellinput1.children[0].rawsource.strip() == "3 + 3"
     assert celloutput1.children[0].rawsource.strip() == "6"
 

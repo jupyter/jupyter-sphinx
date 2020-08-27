@@ -182,17 +182,18 @@ class ExecuteJupyterCells(SphinxTransform):
             linenostart = 1
 
             for node in nodes:
-                source = node.children[0]
+                # The literal_block node with the source
+                source = node.children[0].children[0]
                 nlines = source.rawsource.count("\n") + 1
                 show_numbering = (
-                    linenos_config or node["linenos"] or node["linenostart"]
+                    linenos_config or source["linenos"] or source["linenostart"]
                 )
 
                 if show_numbering:
                     source["linenos"] = True
-                    if node["linenostart"]:
-                        linenostart = node["linenostart"]
-                    if node["linenostart"] or continue_linenos:
+                    if source["linenostart"]:
+                        linenostart = source["linenostart"]
+                    if source["linenostart"] or continue_linenos:
                         source["highlight_args"] = {"linenostart": linenostart}
                     else:
                         linenostart = 1
