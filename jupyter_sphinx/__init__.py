@@ -110,13 +110,6 @@ def builder_inited(app):
     if embed_url:
         app.add_js_file(embed_url)
 
-    # add jupyter-sphinx css
-    app.add_css_file("jupyter-sphinx.css")
-    # Check if a thebelab config was specified
-    if app.config.jupyter_sphinx_thebelab_config:
-        app.add_js_file("thebelab-helper.js")
-        app.add_css_file("thebelab.css")
-
 
 def build_finished(app, env):
     if app.builder.format != "html":
@@ -287,5 +280,10 @@ def setup(app):
 
     app.connect("builder-inited", builder_inited)
     app.connect("build-finished", build_finished)
+
+    # add jupyter-sphinx and thebelab js and css
+    app.add_css_file("jupyter-sphinx.css")
+    app.add_js_file("thebelab-helper.js")
+    app.add_css_file("thebelab.css")
 
     return {"version": __version__, "parallel_read_safe": True}
