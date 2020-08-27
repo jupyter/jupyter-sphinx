@@ -33,7 +33,11 @@ def doctree():
     syspath = sys.path[:]
 
     def doctree(
-        source, config=None, return_warnings=False, entrypoint="jupyter_sphinx"
+        source,
+        config=None,
+        return_warnings=False,
+        entrypoint="jupyter_sphinx",
+        buildername='html'
     ):
         src_dir = Path(tempfile.mkdtemp())
         source_trees.append(src_dir)
@@ -45,7 +49,12 @@ def doctree():
         (src_dir / "contents.rst").write_text(source, encoding = "utf8")
         
         warnings = StringIO()
-        app = SphinxTestApp(srcdir=path(src_dir.as_posix()), status=StringIO(), warning=warnings)
+        app = SphinxTestApp(
+            srcdir=path(src_dir.as_posix()),
+            status=StringIO(),
+            warning=warnings,
+            buildername=buildername
+        )
         apps.append(app)
         app.build()
 
@@ -65,13 +74,14 @@ def doctree():
         shutil.rmtree(tree)
 
 
-def test_basic(doctree):
+@pytest.mark.parametrize('buildername', ['html', 'singlehtml'])
+def test_basic(doctree, buildername):
     source = """
     .. jupyter-execute::
 
         2 + 2
     """
-    tree = doctree(source)
+    tree = doctree(source, buildername=buildername)
     (cell,) = tree.traverse(JupyterCellNode)
     (cellinput, celloutput) = cell.children
     assert cell.attributes["code_below"] is False

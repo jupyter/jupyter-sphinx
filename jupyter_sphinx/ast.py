@@ -370,7 +370,7 @@ def cell_output_to_nodes(outputs, data_priority, write_stderr, out_dir,
     return to_add
 
 
-def attach_outputs(output_nodes, node, thebe_config, cm_language):
+def attach_outputs(output_nodes, node, thebe_config):
     if not node.attributes["hide_code"]:  # only add css if code is displayed
         classes = node.attributes.get("classes", [])
         classes += ["jupyter_container"]
@@ -384,7 +384,7 @@ def attach_outputs(output_nodes, node, thebe_config, cm_language):
         thebe_source = ThebeSourceNode(
             hide_code=node.attributes["hide_code"],
             code_below=node.attributes["code_below"],
-            language=cm_language,
+            language=node.attributes["cm_language"],
         )
         thebe_source.children = [source]
         input_node.children = [thebe_source]
@@ -451,7 +451,7 @@ class CellOutputsToNodes(SphinxTransform):
                 thebe_config,
             )
             # Remove the outputbundlenode and we'll attach the outputs next
-            attach_outputs(output_nodes, cell_node, thebe_config, cell_node.cm_language)
+            attach_outputs(output_nodes, cell_node, thebe_config)
 
         # Image collect extra nodes from cell outputs that we need to process
         for node in self.document.traverse(image):

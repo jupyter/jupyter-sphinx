@@ -214,7 +214,7 @@ class ExecuteJupyterCells(SphinxTransform):
             except AttributeError:
                 cm_language = notebook.metadata.kernelspec.language
             for node in nodes:
-                node.cm_language = cm_language
+                node.attributes["cm_language"] = cm_language
 
             # Add doctree nodes for cell outputs.
             for node, cell in zip(nodes, notebook.cells):
