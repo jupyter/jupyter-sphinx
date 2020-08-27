@@ -272,7 +272,7 @@ def setup(app):
     app.add_role("jupyter-download:nb", JupyterDownloadRole())
     app.add_role("jupyter-download:script", JupyterDownloadRole())
     app.add_transform(ExecuteJupyterCells)
-    app.add_post_transform(CellOutputsToNodes)
+    app.add_transform(CellOutputsToNodes)
 
     # For syntax highlighting
     app.add_lexer("ipythontb", IPythonTracebackLexer)
