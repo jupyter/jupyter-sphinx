@@ -271,7 +271,7 @@ def write_notebook_output(notebook, output_dir, notebook_name, location=None):
             "Notebook code has no file extension metadata, " "defaulting to `.txt`",
             location=location,
         )
-    contents = "\n\n".join(cell.source for cell in notebook.cells)
+    contents = "\n\n".join(cell.source for cell in notebook.cells if cell.cell_type == "code")
 
     notebook_file = notebook_name + ext
     output_dir = Path(output_dir)
