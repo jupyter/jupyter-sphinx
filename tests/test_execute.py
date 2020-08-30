@@ -59,7 +59,6 @@ def doctree():
         app.build()
 
         doctree = app.env.get_and_resolve_doctree("index", app.builder)
-
         if return_warnings:
             return doctree, warnings.getvalue()
         else:
