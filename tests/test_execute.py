@@ -2,6 +2,7 @@ import tempfile
 import shutil
 import os
 import sys
+import warnings
 from io import StringIO
 from unittest.mock import Mock
 from pathlib import Path
@@ -35,7 +36,7 @@ def doctree():
     def doctree(
         source,
         config=None,
-        return_warnings=False,
+        return_all=False,
         entrypoint="jupyter_sphinx",
         buildername='html'
     ):
@@ -59,8 +60,8 @@ def doctree():
         app.build()
 
         doctree = app.env.get_and_resolve_doctree("index", app.builder)
-        if return_warnings:
-            return doctree, warnings.getvalue()
+        if return_all:
+            return doctree, app, warnings.getvalue()
         else:
             return doctree
 
@@ -294,8 +295,6 @@ def test_emphasize_lines(doctree):
     """
     tree = doctree(source)
     cell0, cell1 = tree.traverse(JupyterCellNode)
-    (cellinput0, celloutput0) = cell0.children
-    (cellinput1, celloutput1) = cell1.children
 
     assert cell0.attributes["emphasize_lines"] == [1, 3, 4, 5]
     assert cell1.attributes["emphasize_lines"] == [2, 4]
@@ -313,9 +312,8 @@ def test_execution_environment_carries_over(doctree):
         a
     """
     tree = doctree(source)
-    cell0, cell1 = tree.traverse(JupyterCellNode)
-    (cellinput0, celloutput0) = cell0.children
-    (cellinput1, celloutput1) = cell1.children
+    _, cell1 = tree.traverse(JupyterCellNode)
+    (_, celloutput1) = cell1.children
     assert celloutput1.children[0].rawsource.strip() == "2"
 
 
@@ -335,9 +333,8 @@ def test_kernel_restart(doctree):
         a
     """
     tree = doctree(source)
-    cell0, cell1 = tree.traverse(JupyterCellNode)
-    (cellinput0, celloutput0) = cell0.children
-    (cellinput1, celloutput1) = cell1.children
+    _, cell1 = tree.traverse(JupyterCellNode)
+    (_, celloutput1) = cell1.children
     assert "NameError" in celloutput1.children[0].rawsource
 
 
@@ -358,7 +355,7 @@ def test_raises(doctree):
     """
     tree = doctree(source)
     (cell,) = tree.traverse(JupyterCellNode)
-    (cellinput, celloutput) = cell.children
+    (_, celloutput) = cell.children
     assert "ValueError" in celloutput.children[0].rawsource
 
     source = """
@@ -369,7 +366,7 @@ def test_raises(doctree):
     """
     tree = doctree(source)
     (cell,) = tree.traverse(JupyterCellNode)
-    (cellinput, celloutput) = cell.children
+    (_, celloutput) = cell.children
     assert "ValueError" in celloutput.children[0].rawsource
 
 
@@ -406,7 +403,7 @@ def test_stdout(doctree):
     """
     tree = doctree(source)
     (cell,) = tree.traverse(JupyterCellNode)
-    (cellinput, celloutput) = cell.children
+    (_, celloutput) = cell.children
     assert len(cell.children) == 2
     assert celloutput.children[0].rawsource.strip() == "hello world"
 
@@ -419,7 +416,7 @@ def test_stderr(doctree):
         print('hello world', file=sys.stderr)
     """
 
-    tree, warnings = doctree(source, return_warnings=True)
+    tree, _, warnings = doctree(source, return_all=True)
     assert "hello world" in warnings
     (cell,) = tree.traverse(JupyterCellNode)
     (_, celloutput) = cell.children
@@ -555,7 +552,7 @@ def test_latex(doctree):
     for start, end in delimiter_pairs:
         tree = doctree(source.format(start, end))
         (cell,) = tree.traverse(JupyterCellNode)
-        (cellinput, celloutput) = cell.children
+        (_, celloutput) = cell.children
         assert celloutput.children[0].astext() == r"\int"
 
 
@@ -618,3 +615,39 @@ def test_download_role(text, reftarget, caption, tmp_path):
     assert_node(ret[0][0], [literal, caption])
     assert msg == []
 
+
+def test_save_script(doctree):
+    source = """
+    .. jupyter-kernel:: python3
+      :id: test
+
+    .. jupyter-execute::
+
+      a = 1
+      print(a)
+    """
+    tree, app, _ = doctree(source, return_all=True)
+    outdir = Path(app.outdir)
+    saved_text = (outdir / '../jupyter_execute/test.py').read_text()
+    assert saved_text.startswith('#!/usr/bin/env python')
+    assert 'print(a)' in saved_text
+
+
+def test_bash_kernel(doctree):
+    pytest.importorskip('bash_kernel')
+    source = """
+    .. jupyter-kernel:: bash
+      :id: test
+
+    .. jupyter-execute::
+
+      echo "foo"
+    """
+    with warnings.catch_warnings():
+        # See https://github.com/takluyver/bash_kernel/issues/105
+        warnings.simplefilter('ignore', DeprecationWarning)
+        _, app, _ = doctree(source, return_all=True)
+
+    outdir = Path(app.outdir)
+    saved_text = (outdir / '../jupyter_execute/test.sh').read_text()
+    assert 'echo "foo"' in saved_text

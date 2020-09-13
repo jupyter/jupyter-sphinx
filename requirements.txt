@@ -7,3 +7,6 @@ nbformat
 # For documentation building and testing
 matplotlib
 pytest
+
+# A non-standard kernel
+bash_kernel
