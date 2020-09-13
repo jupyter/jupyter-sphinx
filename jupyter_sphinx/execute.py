@@ -1,6 +1,7 @@
 """Execution and managing kernels."""
 
 import os
+import warnings
 from pathlib import Path
 from logging import Logger
 
@@ -18,6 +19,22 @@ if nbconvert.version_info < (6,):
      from nbconvert.preprocessors.execute import executenb
 else:
      from nbclient.client import execute as executenb
+
+import traitlets
+# Workaround of https://github.com/ipython/traitlets/issues/606
+if traitlets.version_info < (5, 1):
+    class LoggerAdapterWrapper(Logger):
+        """Wrap a logger adapter, while pretending to be a logger."""
+        def __init__(self, wrapped):
+            self._wrapped = wrapped
+
+        def __getattribute__(self, attr):
+            if attr == "_wrapped":
+                return object.__getattribute__(self, attr)
+            return self._wrapped.__getattribute__(attr)
+else:
+    def LoggerAdapterWrapper(logger_adapter):
+        return logger_adapter
 
 import nbformat
 
@@ -39,20 +56,6 @@ from .ast import (
     attach_outputs,
     get_widgets,
 )
-
-
-class LoggerAdapterWrapper(Logger):
-    """Wrap a logger adapter, while pretending to be a logger.
-
-    Workaround of https://github.com/ipython/traitlets/issues/606
-    """
-    def __init__(self, wrapped):
-        self._wrapped = wrapped
-
-    def __getattribute__(self, attr):
-        if attr == "_wrapped":
-            return object.__getattribute__(self, attr)
-        return self._wrapped.__getattribute__(attr)
 
 
 class JupyterKernel(Directive):
@@ -278,10 +281,13 @@ def write_notebook_output(notebook, output_dir, notebook_name, location=None):
         os.path.join(output_dir, notebook_name + ".ipynb"),
     )
 
-    # Write a script too. Due to https://github.com/ipython/traitlets/issues/606
-    # we're using a wrapper to make a LoggerAdapter look like a wrapper.
-    exporter = nbconvert.exporters.ScriptExporter(log=LoggerAdapterWrapper(js.logger))
-    contents, resources = exporter.from_notebook_node(notebook)
+    exporter = nbconvert.exporters.ScriptExporter(
+        log=LoggerAdapterWrapper(js.logger)
+    )
+    with warnings.catch_warnings():
+        # See https://github.com/jupyter/nbconvert/issues/1388
+        warnings.simplefilter('ignore', DeprecationWarning)
+        contents, resources = exporter.from_notebook_node(notebook)
 
     notebook_file = notebook_name + resources['output_extension']
     output_dir = Path(output_dir)
