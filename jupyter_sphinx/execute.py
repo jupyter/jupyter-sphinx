@@ -1,7 +1,9 @@
 """Execution and managing kernels."""
 
 import os
+import warnings
 from pathlib import Path
+from logging import Logger
 
 from sphinx.transforms import SphinxTransform
 from sphinx.errors import ExtensionError
@@ -17,6 +19,22 @@ if nbconvert.version_info < (6,):
      from nbconvert.preprocessors.execute import executenb
 else:
      from nbclient.client import execute as executenb
+
+import traitlets
+# Workaround of https://github.com/ipython/traitlets/issues/606
+if traitlets.version_info < (5, 1):
+    class LoggerAdapterWrapper(Logger):
+        """Wrap a logger adapter, while pretending to be a logger."""
+        def __init__(self, wrapped):
+            self._wrapped = wrapped
+
+        def __getattribute__(self, attr):
+            if attr == "_wrapped":
+                return object.__getattribute__(self, attr)
+            return self._wrapped.__getattribute__(attr)
+else:
+    def LoggerAdapterWrapper(logger_adapter):
+        return logger_adapter
 
 import nbformat
 
@@ -262,20 +280,19 @@ def write_notebook_output(notebook, output_dir, notebook_name, location=None):
         resources,
         os.path.join(output_dir, notebook_name + ".ipynb"),
     )
-    # Write a script too.  Note that utf-8 is the de facto
-    # standard encoding for notebooks. 
-    ext = notebook.metadata.get("language_info", {}).get("file_extension", None)
-    if ext is None:
-        ext = ".txt"
-        js.logger.warning(
-            "Notebook code has no file extension metadata, " "defaulting to `.txt`",
-            location=location,
-        )
-    contents = "\n\n".join(cell.source for cell in notebook.cells)
 
-    notebook_file = notebook_name + ext
+    exporter = nbconvert.exporters.ScriptExporter(
+        log=LoggerAdapterWrapper(js.logger)
+    )
+    with warnings.catch_warnings():
+        # See https://github.com/jupyter/nbconvert/issues/1388
+        warnings.simplefilter('ignore', DeprecationWarning)
+        contents, resources = exporter.from_notebook_node(notebook)
+
+    notebook_file = notebook_name + resources['output_extension']
     output_dir = Path(output_dir)
-    (output_dir / notebook_file).write_text(contents, encoding = "utf8")
+    # utf-8 is the de-facto standard encoding for notebooks.
+    (output_dir / notebook_file).write_text(contents, encoding="utf8")
 
 
 def contains_widgets(notebook):
