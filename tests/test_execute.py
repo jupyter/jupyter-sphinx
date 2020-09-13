@@ -635,6 +635,9 @@ def test_save_script(doctree):
 
 def test_bash_kernel(doctree):
     pytest.importorskip('bash_kernel')
+    if sys.platform == 'win32':
+        pytest.skip("Not trying bash on windows.")
+
     source = """
     .. jupyter-kernel:: bash
       :id: test
