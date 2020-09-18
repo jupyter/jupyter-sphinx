@@ -149,7 +149,7 @@ class ExecuteJupyterCells(SphinxTransform):
 
             notebook = execute_cells(
                 kernel_name,
-                [nbformat.v4.new_code_cell(node.astext()) for node in nodes],
+                [nbformat.v4.new_code_cell(node.astext() if node["execute"] else "") for node in nodes],
                 self.config.jupyter_execute_kwargs,
             )
 
@@ -184,6 +184,15 @@ class ExecuteJupyterCells(SphinxTransform):
                     js.logger.warning(
                         "Cell printed to stderr:\n{}".format(stderr[0]["text"])
                     )
+
+            for node, cell in zip(nodes, notebook.cells):
+                if not node["execute"]:
+                    cell.source = node.children[0].astext()
+                    if len(node.children) == 2:
+                        output = nbformat.v4.new_output("stream")
+                        output.text = node.children[1].astext()
+                        cell.outputs = [output]
+                        node.children.pop()
 
             try:
                 lexer = notebook.metadata.language_info.pygments_lexer

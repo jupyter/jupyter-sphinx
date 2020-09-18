@@ -1,5 +1,4 @@
 """Inserting interactive links with Thebelab."""
-import os
 import json
 import docutils
 from docutils.parsers.rst import Directive
