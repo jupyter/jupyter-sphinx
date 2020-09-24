@@ -13,9 +13,9 @@ from pathlib import Path
 from .ast import (
     JupyterCell,
     JupyterCellNode,
-    InputCell,
+    CellInput,
     CellInputNode,
-    OutputCell,
+    CellOutput,
     CellOutputNode,
     CellOutputBundleNode,
     JupyterKernelNode,
@@ -269,8 +269,8 @@ def setup(app):
 
     app.add_directive("jupyter-execute", JupyterCell)
     app.add_directive("jupyter-kernel", JupyterKernel)
-    app.add_directive("jupyter-input", InputCell)
-    app.add_directive("jupyter-output", OutputCell)
+    app.add_directive("jupyter-input", CellInput)
+    app.add_directive("jupyter-output", CellOutput)
     app.add_directive("thebe-button", ThebeButton)
     app.add_role("jupyter-download:notebook", JupyterDownloadRole())
     app.add_role("jupyter-download:nb", JupyterDownloadRole())

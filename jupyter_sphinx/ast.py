@@ -163,7 +163,7 @@ class JupyterCell(Directive):
         cell_node += cell_input
         return [cell_node]
 
-class InputCell(Directive):
+class CellInput(Directive):
     """Define a code cell to be included verbatim but not executed.
 
     Arguments
@@ -233,7 +233,7 @@ class InputCell(Directive):
         cell_node += cell_input
         return [cell_node]
 
-class OutputCell(Directive):
+class CellOutput(Directive):
     """Define an output cell to be included verbatim.
 
     Arguments
