@@ -46,14 +46,15 @@ from .utils import (
     output_directory,
     split_on,
     blank_nb,
+    sphinx_abs_dir,
 )
 from .ast import (
     JupyterCellNode,
-    CellOutputBundleNode,
+    CellOutputNode,
     JupyterKernelNode,
     cell_output_to_nodes,
     JupyterWidgetStateNode,
-    attach_outputs,
+    apply_styling,
     get_widgets,
 )
 
@@ -99,13 +100,14 @@ class JupyterKernel(Directive):
 class ExecuteJupyterCells(SphinxTransform):
     """Execute code cells in Jupyter kernels.
 
-   Traverses the doctree to find JupyterKernel and JupyterCell nodes,
-   then executes the code in the JupyterCell nodes in sequence, starting
-   a new kernel every time a JupyterKernel node is encountered. The output
-   from each code cell is inserted into the doctree.
-   """
+    Traverses the doctree to find JupyterKernel and JupyterCell nodes,
+    then executes the code in the JupyterCell nodes in sequence, starting
+    a new kernel every time a JupyterKernel node is encountered. The output
+    from each code cell is inserted into the doctree.
+    """
 
-    default_priority = 180  # An early transform, idk
+    # Beginning of main transforms. Not 100% sure it's the correct time.
+    default_priority = 400
 
     def apply(self):
         doctree = self.document
@@ -253,7 +255,17 @@ class ExecuteJupyterCells(SphinxTransform):
 
             # Add doctree nodes for cell outputs.
             for node, cell in zip(nodes, notebook.cells):
-                node += CellOutputBundleNode(cell.outputs)
+                # Add the outputs as children
+                output = CellOutputNode(classes=["cell_output"])
+                output.children = cell_output_to_nodes(
+                    cell.outputs,
+                    bool(node.attributes["stderr"]),
+                    sphinx_abs_dir(self.env),
+                    thebe_config,
+                )
+                node += output
+
+                apply_styling(node, thebe_config)
 
             if contains_widgets(notebook):
                 doctree.append(JupyterWidgetStateNode(state=get_widgets(notebook)))
