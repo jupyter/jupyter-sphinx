@@ -40,7 +40,7 @@ To enable the extension, add ``jupyter_sphinx`` to your enabled extensions in
 
 .. note::
 
-   Since `0.3.03, ``jupyter_sphinx.execute`` is deprecated. Simply use ``jupyter_sphinx`` instead.
+   Since `0.2.4, ``jupyter_sphinx.execute`` is deprecated. Simply use ``jupyter_sphinx`` instead.
 
 Basic Usage
 -----------
