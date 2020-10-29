@@ -27,8 +27,20 @@ or conda:
 
 Enabling the extension
 ----------------------
-To enable the extension, add ``jupyter_sphinx.execute`` to your enabled extensions in
-``conf.py``.
+
+To enable the extension, add ``jupyter_sphinx`` to your enabled extensions in
+``conf.py``:
+
+.. code-block:: python
+
+   extensions = [
+      'jupyter_sphinx',
+   ]
+      
+
+.. note::
+
+   Since `0.3.03, ``jupyter_sphinx.execute`` is deprecated. Simply use ``jupyter_sphinx`` instead.
 
 Basic Usage
 -----------
