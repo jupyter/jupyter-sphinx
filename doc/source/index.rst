@@ -317,8 +317,8 @@ produces:
 
     print("hello, world!", file=sys.stderr)
 
-Advanced usage: manually forming Jupyter cells
-----------------------------------------------
+Manually forming Jupyter cells
+------------------------------
 
 When showing code samples that are computationally expensive, access restricted resources, or have non-deterministic output, it can be preferable to not have them run every time you build. You can simply embed input code without executing it using the ``jupyter-input`` directive expected output with ``jupyter-output``::
 
