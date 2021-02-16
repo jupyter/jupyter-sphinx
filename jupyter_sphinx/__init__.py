@@ -23,6 +23,7 @@ from .ast import (
     JupyterWidgetStateNode,
     WIDGET_VIEW_MIMETYPE,
     JupyterDownloadRole,
+    CombineCellInputOutput,
     CellOutputsToNodes,
 )
 from .execute import JupyterKernel, ExecuteJupyterCells
@@ -275,6 +276,7 @@ def setup(app):
     app.add_role("jupyter-download:notebook", JupyterDownloadRole())
     app.add_role("jupyter-download:nb", JupyterDownloadRole())
     app.add_role("jupyter-download:script", JupyterDownloadRole())
+    app.add_transform(CombineCellInputOutput)
     app.add_transform(ExecuteJupyterCells)
     app.add_transform(CellOutputsToNodes)
 

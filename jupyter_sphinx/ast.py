@@ -12,6 +12,7 @@ from sphinx.util.docutils import ReferenceRole
 from sphinx.addnodes import download_reference
 from sphinx.transforms import SphinxTransform
 from sphinx.environment.collectors.asset import ImageCollector
+from sphinx.errors import ExtensionError
 
 import ipywidgets.embed
 import nbconvert
@@ -271,7 +272,6 @@ class CellOutput(Directive):
             emphasize_lines=[],
             raises=False,
             stderr=False,
-            classes=["jupyter_cell"],
         )
 
         # Add a blank input and the given output to the cell
@@ -572,6 +572,39 @@ def get_widgets(notebook):
         # Don't catch KeyError, as it's a bug if 'widgets' does
         # not contain 'WIDGET_STATE_MIMETYPE'
         return None
+
+
+class CombineCellInputOutput(SphinxTransform):
+    """Merge nodes from CellOutput with the preceding CellInput node."""
+
+    default_priority = 120
+
+    def apply(self):
+        moved_outputs = set()
+
+        for cell_node in self.document.traverse(JupyterCellNode):
+            if cell_node.attributes["execute"] == False:
+                if cell_node.attributes["hide_code"] == False:
+                    # Cell came from jupyter-input
+                    sibling = cell_node.next_node(descend=False, siblings=True)
+                    if (
+                        isinstance(sibling, JupyterCellNode)
+                        and sibling.attributes["execute"] == False
+                        and sibling.attributes["hide_code"] == True
+                    ):
+                        # Sibling came from jupyter-output, so we merge
+                        cell_node += sibling.children[1]
+                        cell_node.attributes["hide_output"] = False
+                        moved_outputs.update({sibling})
+                else:
+                    # Call came from jupyter-output
+                    if cell_node not in moved_outputs:
+                        raise ExtensionError(
+                            "Found a jupyter-output node without a preceding jupyter-input"
+                        )
+
+        for output_node in moved_outputs:
+            output_node.replace_self([])
 
 
 class CellOutputsToNodes(SphinxTransform):
