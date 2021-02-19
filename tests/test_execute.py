@@ -663,9 +663,11 @@ def test_input_cell(doctree):
     """
     tree = doctree(source)
     (cell,) = tree.traverse(JupyterCellNode)
-    (cellinput, _) = cell.children
+    (cellinput, empty) = cell.children
+    assert cell.attributes["hide_output"] is True
     assert cellinput.children[0].attributes["linenos"] is False
     assert cellinput.children[0].rawsource.strip() == "2 + 2"
+    assert len(empty.children) == 0
 
 def test_input_cell_linenos(doctree):
     source = """
@@ -676,9 +678,11 @@ def test_input_cell_linenos(doctree):
     """
     tree = doctree(source)
     (cell,) = tree.traverse(JupyterCellNode)
-    (cellinput, _) = cell.children
+    (cellinput, empty) = cell.children
+    assert cell.attributes["hide_output"] is True
     assert cellinput.children[0].attributes["linenos"] is True
     assert cellinput.children[0].rawsource.strip() == "2 + 2"
+    assert len(empty.children) == 0
 
 def test_output_cell(doctree):
     source = """
