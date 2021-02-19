@@ -317,6 +317,43 @@ produces:
 
     print("hello, world!", file=sys.stderr)
 
+Manually forming Jupyter cells
+------------------------------
+
+When showing code samples that are computationally expensive, access restricted resources, or have non-deterministic output, it can be preferable to not have them run every time you build. You can simply embed input code without executing it using the ``jupyter-input`` directive expected output with ``jupyter-output``::
+
+  .. jupyter-input::
+      :linenos:
+
+      import time
+
+      def slow_print(str):
+          time.sleep(4000)    # Simulate an expensive process
+          print(str)
+    
+      slow_print("hello, world!")
+
+  .. jupyter-output::
+
+      hello, world!
+
+produces:
+
+.. jupyter-input::
+    :linenos:
+
+    import time
+
+    def slow_print(str):
+        time.sleep(4000)    # Simulate an expensive process
+        print(str)
+
+    slow_print("hello, world!")
+
+.. jupyter-output::
+
+    hello, world!
+
 Controlling the execution environment
 -------------------------------------
 The execution environment can be controlled by using the ``jupyter-kernel`` directive. This directive takes

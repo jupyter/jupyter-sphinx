@@ -13,7 +13,9 @@ from pathlib import Path
 from .ast import (
     JupyterCell,
     JupyterCellNode,
+    CellInput,
     CellInputNode,
+    CellOutput,
     CellOutputNode,
     CellOutputBundleNode,
     JupyterKernelNode,
@@ -21,6 +23,7 @@ from .ast import (
     JupyterWidgetStateNode,
     WIDGET_VIEW_MIMETYPE,
     JupyterDownloadRole,
+    CombineCellInputOutput,
     CellOutputsToNodes,
 )
 from .execute import JupyterKernel, ExecuteJupyterCells
@@ -267,10 +270,13 @@ def setup(app):
 
     app.add_directive("jupyter-execute", JupyterCell)
     app.add_directive("jupyter-kernel", JupyterKernel)
+    app.add_directive("jupyter-input", CellInput)
+    app.add_directive("jupyter-output", CellOutput)
     app.add_directive("thebe-button", ThebeButton)
     app.add_role("jupyter-download:notebook", JupyterDownloadRole())
     app.add_role("jupyter-download:nb", JupyterDownloadRole())
     app.add_role("jupyter-download:script", JupyterDownloadRole())
+    app.add_transform(CombineCellInputOutput)
     app.add_transform(ExecuteJupyterCells)
     app.add_transform(CellOutputsToNodes)
 

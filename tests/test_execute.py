@@ -654,3 +654,80 @@ def test_bash_kernel(doctree):
     outdir = Path(app.outdir)
     saved_text = (outdir / '../jupyter_execute/test.sh').read_text()
     assert 'echo "foo"' in saved_text
+
+def test_input_cell(doctree):
+    source = """
+    .. jupyter-input::
+
+        2 + 2
+    """
+    tree = doctree(source)
+    (cell,) = tree.traverse(JupyterCellNode)
+    (cellinput, empty) = cell.children
+    assert cell.attributes["hide_output"] is True
+    assert cellinput.children[0].attributes["linenos"] is False
+    assert cellinput.children[0].rawsource.strip() == "2 + 2"
+    assert len(empty.children) == 0
+
+def test_input_cell_linenos(doctree):
+    source = """
+    .. jupyter-input::
+        :linenos:
+
+        2 + 2
+    """
+    tree = doctree(source)
+    (cell,) = tree.traverse(JupyterCellNode)
+    (cellinput, empty) = cell.children
+    assert cell.attributes["hide_output"] is True
+    assert cellinput.children[0].attributes["linenos"] is True
+    assert cellinput.children[0].rawsource.strip() == "2 + 2"
+    assert len(empty.children) == 0
+
+def test_output_cell(doctree):
+    source = """
+    .. jupyter-input::
+
+        3 + 2
+
+    .. jupyter-output::
+
+        4
+    """
+    tree = doctree(source)
+    (cell,) = tree.traverse(JupyterCellNode)
+    (cellinput, celloutput,) = cell.children
+    assert cellinput.children[0].rawsource.strip() == "3 + 2"
+    assert celloutput.children[0].rawsource.strip() == "4"
+
+def test_output_only_error(doctree):
+    source = """
+    .. jupyter-output::
+
+        4
+    """
+    with pytest.raises(ExtensionError):
+        tree = doctree(source)
+
+def test_multiple_directives(doctree):
+    source = """
+    .. jupyter-execute::
+
+        2 + 2
+    
+    .. jupyter-input::
+    
+        3 + 3
+    
+    .. jupyter-output::
+
+        5
+    """
+    tree = doctree(source)
+    (ex, jin) = tree.traverse(JupyterCellNode)
+    (ex_in, ex_out) = ex.children
+    (jin_in, jin_out) = jin.children
+    assert ex_in.children[0].rawsource.strip() == "2 + 2"
+    assert ex_out.children[0].rawsource.strip() == "4"
+    assert jin_in.children[0].rawsource.strip() == "3 + 3"
+    assert jin_out.children[0].rawsource.strip() == "5"

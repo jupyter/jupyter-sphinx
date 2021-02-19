@@ -12,6 +12,7 @@ from sphinx.util.docutils import ReferenceRole
 from sphinx.addnodes import download_reference
 from sphinx.transforms import SphinxTransform
 from sphinx.environment.collectors.asset import ImageCollector
+from sphinx.errors import ExtensionError
 
 import ipywidgets.embed
 import nbconvert
@@ -25,6 +26,51 @@ WIDGET_STATE_MIMETYPE = "application/vnd.jupyter.widget-state+json"
 
 def csv_option(s):
     return [p.strip() for p in s.split(",")] if s else []
+
+
+def load_content(cell, location, logger):
+    if cell.arguments:
+        # As per 'sphinx.directives.code.LiteralInclude'
+        env = cell.state.document.settings.env
+        rel_filename, filename = env.relfn2path(cell.arguments[0])
+        env.note_dependency(rel_filename)
+        if cell.content:
+            logger.warning(
+                'Ignoring inline code in Jupyter cell included from "{}"'.format(
+                    rel_filename
+                ),
+                location=location,
+            )
+        try:
+            with Path(filename).open() as f:
+                content = [line.rstrip() for line in f.readlines()]
+        except (IOError, OSError):
+            raise IOError("File {} not found or reading it failed".format(filename))
+    else:
+        cell.assert_has_content()
+        content = cell.content
+    return content
+
+
+def get_highlights(cell, content, location, logger):
+    # The code fragment is taken from CodeBlock directive almost unchanged:
+    # https://github.com/sphinx-doc/sphinx/blob/0319faf8f1503453b6ce19020819a8cf44e39f13/sphinx/directives/code.py#L134-L148
+
+    emphasize_linespec = cell.options.get("emphasize-lines")
+    if emphasize_linespec:
+        nlines = len(content)
+        hl_lines = parselinenos(emphasize_linespec, nlines)
+        if any(i >= nlines for i in hl_lines):
+            logger.warning(
+                "Line number spec is out of range(1-{}): {}".format(
+                    nlines, emphasize_linespec
+                ),
+                location=location,
+            )
+        hl_lines = [i + 1 for i in hl_lines if i < nlines]
+    else:
+        hl_lines = []
+    return hl_lines
 
 
 class JupyterCell(Directive):
@@ -89,50 +135,16 @@ class JupyterCell(Directive):
 
         location = self.state_machine.get_source_and_line(self.lineno)
 
-        if self.arguments:
-            # As per 'sphinx.directives.code.LiteralInclude'
-            env = self.state.document.settings.env
-            rel_filename, filename = env.relfn2path(self.arguments[0])
-            env.note_dependency(rel_filename)
-            if self.content:
-                logger.warning(
-                    'Ignoring inline code in Jupyter cell included from "{}"'.format(
-                        rel_filename
-                    ),
-                    location=location,
-                )
-            try:
-                with Path(filename).open() as f:
-                    content = [line.rstrip() for line in f.readlines()]
-            except (IOError, OSError):
-                raise IOError("File {} not found or reading it failed".format(filename))
-        else:
-            self.assert_has_content()
-            content = self.content
+        content = load_content(self, location, logger)
 
-        # The code fragment is taken from CodeBlock directive almost unchanged:
-        # https://github.com/sphinx-doc/sphinx/blob/0319faf8f1503453b6ce19020819a8cf44e39f13/sphinx/directives/code.py#L134-L148
-
-        emphasize_linespec = self.options.get("emphasize-lines")
-        if emphasize_linespec:
-            try:
-                nlines = len(content)
-                hl_lines = parselinenos(emphasize_linespec, nlines)
-                if any(i >= nlines for i in hl_lines):
-                    logger.warning(
-                        "Line number spec is out of range(1-{}): {}".format(
-                            nlines, emphasize_linespec
-                        ),
-                        location=location,
-                    )
-                hl_lines = [i + 1 for i in hl_lines if i < nlines]
-            except ValueError as err:
-                return [self.state.document.reporter.warning(err, line=self.lineno)]
-        else:
-            hl_lines = []
+        try:
+            hl_lines = get_highlights(self, content, location, logger)
+        except ValueError as err:
+            return [self.state.document.reporter.warning(err, line=self.lineno)]
 
         # A top-level placeholder for our cell
         cell_node = JupyterCellNode(
+            execute=True,
             hide_code=("hide-code" in self.options),
             hide_output=("hide-output" in self.options),
             code_below=("code-below" in self.options),
@@ -150,6 +162,135 @@ class JupyterCell(Directive):
             linenostart=(self.options.get("lineno-start")),
         )
         cell_node += cell_input
+        return [cell_node]
+
+class CellInput(Directive):
+    """Define a code cell to be included verbatim but not executed.
+
+    Arguments
+    ---------
+    filename : str (optional)
+        If provided, a path to a file containing code.
+
+    Options
+    -------
+    linenos : bool
+        If provided, the code will be shown with line numbering.
+    lineno-start: nonnegative int
+        If provided, the code will be show with line numbering beginning from
+        specified line.
+    emphasize-lines : comma separated list of line numbers
+        If provided, the specified lines will be highlighted.
+    
+    Content
+    -------
+    code : str
+        A code cell.
+    """
+
+    required_arguments = 0
+    optional_arguments = 1
+    final_argument_whitespace = True
+    has_content = True
+
+    option_spec = {
+        "linenos": directives.flag,
+        "lineno-start": directives.nonnegative_int,
+        "emphasize-lines": directives.unchanged_required,
+    }
+
+    def run(self):
+        # This only works lazily because the logger is inited by Sphinx
+        from . import logger
+
+        location = self.state_machine.get_source_and_line(self.lineno)
+
+        content = load_content(self, location, logger)
+
+        try:
+            hl_lines = get_highlights(self, content, location, logger)
+        except ValueError as err:
+            return [self.state.document.reporter.warning(err, line=self.lineno)]
+
+        # A top-level placeholder for our cell
+        cell_node = JupyterCellNode(
+            execute=False,
+            hide_code=False,
+            hide_output=True,
+            code_below=False,
+            emphasize_lines=hl_lines,
+            raises=False,
+            stderr=False,
+            classes=["jupyter_cell"],
+        )
+
+        # Add the input section of the cell, we'll add output when jupyter-execute cells are run
+        cell_input = CellInputNode(classes=["cell_input"])
+        cell_input += docutils.nodes.literal_block(
+            text="\n".join(content),
+            linenos=("linenos" in self.options),
+            linenostart=(self.options.get("lineno-start")),
+        )
+        cell_node += cell_input
+        return [cell_node]
+
+class CellOutput(Directive):
+    """Define an output cell to be included verbatim.
+
+    Arguments
+    ---------
+    filename : str (optional)
+        If provided, a path to a file containing output.
+
+    Content
+    -------
+    code : str
+        An output cell.
+    """
+
+    required_arguments = 0
+    optional_arguments = 1
+    final_argument_whitespace = True
+    has_content = True
+
+    option_spec = {}
+
+    def run(self):
+        # This only works lazily because the logger is inited by Sphinx
+        from . import logger
+
+        location = self.state_machine.get_source_and_line(self.lineno)
+
+        content = load_content(self, location, logger)
+
+        # A top-level placeholder for our cell
+        cell_node = JupyterCellNode(
+            execute=False,
+            hide_code=True,
+            hide_output=False,
+            code_below=False,
+            emphasize_lines=[],
+            raises=False,
+            stderr=False,
+        )
+
+        # Add a blank input and the given output to the cell
+        cell_input = CellInputNode(classes=["cell_input"])
+        cell_input += docutils.nodes.literal_block(
+            text="",
+            linenos=False,
+            linenostart=None,
+        )
+        cell_node += cell_input
+        content_str = "\n".join(content)
+        cell_output = CellOutputNode(classes=["cell_output"])
+        cell_output += docutils.nodes.literal_block(
+            text=content_str,
+            rawsource=content_str,
+            language="none",
+            classes=["output", "stream"],
+        )
+        cell_node += cell_output
         return [cell_node]
 
 
@@ -431,6 +572,39 @@ def get_widgets(notebook):
         # Don't catch KeyError, as it's a bug if 'widgets' does
         # not contain 'WIDGET_STATE_MIMETYPE'
         return None
+
+
+class CombineCellInputOutput(SphinxTransform):
+    """Merge nodes from CellOutput with the preceding CellInput node."""
+
+    default_priority = 120
+
+    def apply(self):
+        moved_outputs = set()
+
+        for cell_node in self.document.traverse(JupyterCellNode):
+            if cell_node.attributes["execute"] == False:
+                if cell_node.attributes["hide_code"] == False:
+                    # Cell came from jupyter-input
+                    sibling = cell_node.next_node(descend=False, siblings=True)
+                    if (
+                        isinstance(sibling, JupyterCellNode)
+                        and sibling.attributes["execute"] == False
+                        and sibling.attributes["hide_code"] == True
+                    ):
+                        # Sibling came from jupyter-output, so we merge
+                        cell_node += sibling.children[1]
+                        cell_node.attributes["hide_output"] = False
+                        moved_outputs.update({sibling})
+                else:
+                    # Call came from jupyter-output
+                    if cell_node not in moved_outputs:
+                        raise ExtensionError(
+                            "Found a jupyter-output node without a preceding jupyter-input"
+                        )
+
+        for output_node in moved_outputs:
+            output_node.replace_self([])
 
 
 class CellOutputsToNodes(SphinxTransform):
