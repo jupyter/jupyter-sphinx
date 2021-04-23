@@ -282,7 +282,7 @@ def setup(app):
 
     # For syntax highlighting
     app.add_lexer("ipythontb", IPythonTracebackLexer)
-    app.add_lexer("ipython", IPython3Lexer)
+    app.add_lexer("ipython3", IPython3Lexer)
 
     app.connect("builder-inited", builder_inited)
     app.connect("build-finished", build_finished)

@@ -204,7 +204,7 @@ class ExecuteJupyterCells(SphinxTransform):
 
             # Highlight the code cells now that we know what language they are
             for node in nodes:
-                source = node.children[0]
+                source = node.children[0].children[0]
                 source.attributes["language"] = lexer
 
             # Add line numbering
