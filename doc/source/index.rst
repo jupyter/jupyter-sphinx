@@ -187,7 +187,7 @@ You may also display the code *below* the output with ``:code-below:``::
   .. jupyter-execute::
       :code-below:
 
-      print('this output is above the code')
+      print('this code is below the output')
 
 produces:
 
@@ -298,7 +298,7 @@ produces:
   a['jello']
 
 Additionally, any output sent to the ``stderr`` stream of a cell will result in jupyter-sphinx
-raising an exception. This behaviour can be suppressed (and the ``stderr`` stream printed as regular
+producing a warning. This behaviour can be suppressed (and the ``stderr`` stream printed as regular
 output) by providing the ``stderr`` option::
 
   .. jupyter-execute::
