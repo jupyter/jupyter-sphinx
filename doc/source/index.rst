@@ -36,11 +36,6 @@ To enable the extension, add ``jupyter_sphinx`` to your enabled extensions in
    extensions = [
       'jupyter_sphinx',
    ]
-      
-
-.. note::
-
-   Since `0.2.4, ``jupyter_sphinx.execute`` is deprecated. Simply use ``jupyter_sphinx`` instead.
 
 Basic Usage
 -----------
@@ -473,6 +468,7 @@ Release 0.4.0
 
 - Allow adding inputs and outputs that are not executed using ``jupyter-input`` and ``jupyter-output`` directives.
 - Improve script handling by using ``nbconvert`` directly.
+- Remove deprecated enabling of the extension as ``jupyter_sphinx.execute``.
 
 Release 0.3.0
 ~~~~~~~~~~~~~
