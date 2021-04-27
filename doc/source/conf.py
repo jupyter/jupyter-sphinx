@@ -34,3 +34,5 @@ html_theme_options = {
 }
 
 jupyter_sphinx_thebelab_config = {"binderOptions": {"repo": "jupyter/jupyter-sphinx"}}
+
+latex_engine = 'xelatex'

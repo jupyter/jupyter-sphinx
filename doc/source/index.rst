@@ -95,7 +95,7 @@ LaTeX output:
 .. jupyter-execute::
 
   from IPython.display import Latex
-  Latex('∫_{-∞}^∞ e^{-x²}dx = \sqrt{π}')
+  Latex('\int_{-\infty}^\infty e^{-x²}dx = \sqrt{\pi}')
 
 or even full-blown javascript widgets:
 
