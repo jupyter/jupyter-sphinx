@@ -468,6 +468,12 @@ jupyter_sphinx_continue_linenos
 Changelog
 ---------
 
+Release 0.4.0
+~~~~~~~~~~~~~
+
+- Allow adding inputs and outputs that are not executed using ``jupyter-input`` and ``jupyter-output`` directives.
+- Improve script handling by using ``nbconvert`` directly.
+
 Release 0.3.0
 ~~~~~~~~~~~~~
 
