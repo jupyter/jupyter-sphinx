@@ -556,7 +556,7 @@ def test_cell_output_to_nodes(doctree):
         cell = from_dict(cell)
         output_node, = cell_output_to_nodes(cell["outputs"], True, output_dir, None)
         image_node, = output_node.traverse(image)
-        assert output_node[0].attributes['uri'] == img_locs[index]
+        assert image_node.attributes['uri'] == img_locs[index]
 
     # Testing inline functionality
     outputs = [
@@ -609,7 +609,7 @@ def test_save_script(doctree):
       a = 1
       print(a)
     """
-    tree, app, _ = doctree(source, return_all=True)
+    _, app, _ = doctree(source, return_all=True)
     outdir = Path(app.outdir)
     saved_text = (outdir / '../jupyter_execute/test.py').read_text()
     assert saved_text.startswith('#!/usr/bin/env python')
@@ -690,7 +690,7 @@ def test_output_only_error(doctree):
         4
     """
     with pytest.raises(ExtensionError):
-        tree = doctree(source)
+        doctree(source)
 
 def test_multiple_directives(doctree):
     source = """
@@ -714,3 +714,21 @@ def test_multiple_directives(doctree):
     assert ex_out.children[0].astext().strip() == "4"
     assert jin_in.children[0].astext().strip() == "3 + 3"
     assert jin_out.children[0].astext().strip() == "5"
+
+
+def test_builder_priority(doctree):
+    source = """
+    .. jupyter-execute::
+
+        display({"text/plain": "I am html output", "text/latex": "I am latex"})
+    """
+    config = (
+        "render_priority_html = ['text/plain', 'text/latex']\n"
+        "render_priority_latex = ['text/latex', 'text/plain']"
+    )
+    _, app, _ = doctree(source, config=config, return_all=True, buildername="html")
+    html = (Path(app.outdir) / "index.html").read_text()
+    assert "I am html output" in html
+    _, app, _ = doctree(source, config=config, return_all=True, buildername="latex")
+    latex = (Path(app.outdir) / "python.tex").read_text()
+    assert "I am latex" in latex
