@@ -437,13 +437,20 @@ jupyter_execute_default_kernel
     The default is ``python3``.
 
 
-jupyter_execute_data_priority
+render_priority_html
 
-    The display priority of different output mimetypes. Mimetypes earlier in the data priority
+    The priority of different output mimetypes for displaying in HTML output. Mimetypes earlier in the data priority
     list are preferred over later ones. This is relevant if a code cell produces an output
     that has several possible representations (e.g. description text or an image).
+    Please open an issue if you find a mimetype that isn't supported, but should be.
     The default is
     ``['application/vnd.jupyter.widget-view+json', 'text/html', 'image/svg+xml', 'image/png', 'image/jpeg', 'text/latex', 'text/plain']``.
+
+
+render_priority_latex
+
+    Same, as ``render_priority_html``, but for latex. The default is
+    ``['image/svg+xml', 'image/png', 'image/jpeg', 'text/latex', 'text/plain']``.
 
 
 jupyter_execute_kwargs
@@ -469,6 +476,7 @@ Release 0.4.0
 - Allow adding inputs and outputs that are not executed using ``jupyter-input`` and ``jupyter-output`` directives.
 - Improve script handling by using ``nbconvert`` directly.
 - Remove deprecated enabling of the extension as ``jupyter_sphinx.execute``.
+- Implement different output priorities in HTML and LaTeX builders. In practice this allows to provide a better fallback in PDF output.
 
 Release 0.3.0
 ~~~~~~~~~~~~~

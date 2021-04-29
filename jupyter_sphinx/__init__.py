@@ -17,14 +17,13 @@ from .ast import (
     CellInputNode,
     CellOutput,
     CellOutputNode,
-    CellOutputBundleNode,
+    MimeBundleNode,
     JupyterKernelNode,
     JupyterWidgetViewNode,
     JupyterWidgetStateNode,
     WIDGET_VIEW_MIMETYPE,
     JupyterDownloadRole,
     CombineCellInputOutput,
-    CellOutputsToNodes,
 )
 from .execute import JupyterKernel, ExecuteJupyterCells
 from .thebelab import ThebeButton, ThebeButtonNode, ThebeOutputNode, ThebeSourceNode
@@ -152,11 +151,22 @@ def setup(app):
     )
     app.add_config_value("jupyter_execute_default_kernel", "python3", "env")
     app.add_config_value(
-        "jupyter_execute_data_priority",
+        "render_priority_html",
         [
             WIDGET_VIEW_MIMETYPE,
             "application/javascript",
             "text/html",
+            "image/svg+xml",
+            "image/png",
+            "image/jpeg",
+            "text/latex",
+            "text/plain",
+        ],
+        "env",
+    )
+    app.add_config_value(
+        "render_priority_latex",
+        [
             "image/svg+xml",
             "image/png",
             "image/jpeg",
@@ -190,7 +200,7 @@ def setup(app):
     )
 
     # Register our container nodes, these should behave just like a regular container
-    for node in [JupyterCellNode, CellInputNode, CellOutputNode]:
+    for node in [JupyterCellNode, CellInputNode, CellOutputNode, MimeBundleNode]:
         app.add_node(
             node,
             override=True,
@@ -200,18 +210,6 @@ def setup(app):
             text=(render_container),
             man=(render_container),
         )
-
-    # Register the output bundle node.
-    # No translators should touch this node because we'll replace it in a post-transform
-    app.add_node(
-        CellOutputBundleNode,
-        override=True,
-        html=(halt, None),
-        latex=(halt, None),
-        textinfo=(halt, None),
-        text=(halt, None),
-        man=(halt, None),
-    )
 
     # JupyterWidgetViewNode holds widget view JSON,
     # but is only rendered properly in HTML documents.
@@ -278,7 +276,6 @@ def setup(app):
     app.add_role("jupyter-download:script", JupyterDownloadRole())
     app.add_transform(CombineCellInputOutput)
     app.add_transform(ExecuteJupyterCells)
-    app.add_transform(CellOutputsToNodes)
 
     # For syntax highlighting
     app.add_lexer("ipythontb", IPythonTracebackLexer)

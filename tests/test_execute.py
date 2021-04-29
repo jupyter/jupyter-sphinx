@@ -10,7 +10,7 @@ from pathlib import Path
 from sphinx.addnodes import download_reference
 from sphinx.testing.util import assert_node, SphinxTestApp, path
 from sphinx.errors import ExtensionError
-from docutils.nodes import raw, literal, literal_block, container
+from docutils.nodes import raw, literal, literal_block, container, math_block, image
 from nbformat import from_dict
 
 import pytest
@@ -88,8 +88,8 @@ def test_basic(doctree, buildername):
     assert not cell.attributes["hide_code"]
     assert not cell.attributes["hide_output"]
     assert not cellinput.children[0]["linenos"]
-    assert cellinput.children[0].rawsource.strip() == "2 + 2"
-    assert celloutput.children[0].rawsource.strip() == "4"
+    assert cellinput.children[0].astext().strip() == "2 + 2"
+    assert celloutput.children[0].astext().strip() == "4"
 
 
 def test_hide_output(doctree):
@@ -104,7 +104,7 @@ def test_hide_output(doctree):
     (cellinput, celloutput) = cell.children
     assert cell.attributes["hide_output"]
     assert len(celloutput.children) == 0
-    assert cellinput.children[0].rawsource.strip() == "2 + 2"
+    assert cellinput.children[0].astext().strip() == "2 + 2"
 
 
 def test_hide_code(doctree):
@@ -119,7 +119,7 @@ def test_hide_code(doctree):
     (celloutput,) = cell.children
     assert cell.attributes["hide_code"]
     assert len(cell.children) == 1
-    assert celloutput.children[0].rawsource.strip() == "4"
+    assert celloutput.children[0].astext().strip() == "4"
 
 
 def test_code_below(doctree):
@@ -133,8 +133,8 @@ def test_code_below(doctree):
     (cell,) = tree.traverse(JupyterCellNode)
     (celloutput, cellinput) = cell.children
     assert cell.attributes["code_below"]
-    assert cellinput.children[0].rawsource.strip() == "2 + 2"
-    assert celloutput.children[0].rawsource.strip() == "4"
+    assert cellinput.children[0].astext().strip() == "2 + 2"
+    assert celloutput.children[0].astext().strip() == "4"
 
 
 def test_linenos(doctree):
@@ -149,8 +149,8 @@ def test_linenos(doctree):
     (cellinput, celloutput) = cell.children
     assert cellinput.children[0]["linenos"]
     assert len(cell.children) == 2
-    assert cellinput.children[0].rawsource.strip() == "2 + 2"
-    assert celloutput.children[0].rawsource.strip() == "4"
+    assert cellinput.children[0].astext().strip() == "2 + 2"
+    assert celloutput.children[0].astext().strip() == "4"
     source = """
     .. jupyter-execute::
         :linenos:
@@ -175,8 +175,8 @@ def test_linenos_conf_option(doctree):
     (cellinput, celloutput) = cell.children
     assert cellinput.children[0].attributes["linenos"]
     assert "highlight_args" not in cellinput.children[0].attributes
-    assert cellinput.children[0].rawsource.strip() == "2 + 2"
-    assert celloutput.children[0].rawsource.strip() == "4"
+    assert cellinput.children[0].astext().strip() == "2 + 2"
+    assert celloutput.children[0].astext().strip() == "4"
 
 
 def test_continue_linenos_conf_option(doctree):
@@ -192,8 +192,8 @@ def test_continue_linenos_conf_option(doctree):
     (cell,) = tree.traverse(JupyterCellNode)
     (cellinput, celloutput) = cell.children
     assert not cellinput.children[0].attributes["linenos"]
-    assert cellinput.children[0].rawsource.strip() == "2 + 2"
-    assert celloutput.children[0].rawsource.strip() == "4"
+    assert cellinput.children[0].astext().strip() == "2 + 2"
+    assert celloutput.children[0].astext().strip() == "4"
 
     # Test continuous line numbering
     source = """
@@ -217,13 +217,13 @@ def test_continue_linenos_conf_option(doctree):
     (cellinput0, celloutput0) = cell0.children
     (cellinput1, celloutput1) = cell1.children
     assert cellinput0.children[0].attributes["linenos"]
-    assert cellinput0.children[0].rawsource.strip() == "2 + 2"
-    assert celloutput0.children[0].rawsource.strip() == "4"
+    assert cellinput0.children[0].astext().strip() == "2 + 2"
+    assert celloutput0.children[0].astext().strip() == "4"
 
     assert cellinput1.children[0].attributes["linenos"]
     assert cellinput1.children[0].attributes["highlight_args"]["linenostart"] == 2
-    assert cellinput1.children[0].rawsource.strip() == "3 + 3"
-    assert celloutput1.children[0].rawsource.strip() == "6"
+    assert cellinput1.children[0].astext().strip() == "3 + 3"
+    assert celloutput1.children[0].astext().strip() == "6"
 
     # Line number should continue after lineno-start option
 
@@ -247,13 +247,13 @@ def test_continue_linenos_conf_option(doctree):
     (cellinput0, celloutput0) = cell0.children
     (cellinput1, celloutput1) = cell1.children
     assert cellinput0.children[0].attributes["highlight_args"]["linenostart"] == 7
-    assert cellinput0.children[0].rawsource.strip() == "2 + 2"
-    assert celloutput0.children[0].rawsource.strip() == "4"
+    assert cellinput0.children[0].astext().strip() == "2 + 2"
+    assert celloutput0.children[0].astext().strip() == "4"
 
     assert cellinput1.children[0].attributes["linenos"]
     assert cellinput1.children[0].attributes["highlight_args"]["linenostart"] == 8
-    assert cellinput1.children[0].rawsource.strip() == "3 + 3"
-    assert celloutput1.children[0].rawsource.strip() == "6"
+    assert cellinput1.children[0].astext().strip() == "3 + 3"
+    assert celloutput1.children[0].astext().strip() == "6"
 
 
 def test_emphasize_lines(doctree):
@@ -297,7 +297,7 @@ def test_execution_environment_carries_over(doctree):
     tree = doctree(source)
     _, cell1 = tree.traverse(JupyterCellNode)
     (_, celloutput1) = cell1.children
-    assert celloutput1.children[0].rawsource.strip() == "2"
+    assert celloutput1.children[0].astext().strip() == "2"
 
 
 def test_kernel_restart(doctree):
@@ -318,7 +318,7 @@ def test_kernel_restart(doctree):
     tree = doctree(source)
     _, cell1 = tree.traverse(JupyterCellNode)
     (_, celloutput1) = cell1.children
-    assert "NameError" in celloutput1.children[0].rawsource
+    assert "NameError" in celloutput1.children[0].astext()
 
 
 def test_raises(doctree):
@@ -339,7 +339,7 @@ def test_raises(doctree):
     tree = doctree(source)
     (cell,) = tree.traverse(JupyterCellNode)
     (_, celloutput) = cell.children
-    assert "ValueError" in celloutput.children[0].rawsource
+    assert "ValueError" in celloutput.children[0].astext()
 
     source = """
     .. jupyter-execute::
@@ -350,7 +350,7 @@ def test_raises(doctree):
     tree = doctree(source)
     (cell,) = tree.traverse(JupyterCellNode)
     (_, celloutput) = cell.children
-    assert "ValueError" in celloutput.children[0].rawsource
+    assert "ValueError" in celloutput.children[0].astext()
 
 
 def test_widgets(doctree):
@@ -388,7 +388,7 @@ def test_stdout(doctree):
     (cell,) = tree.traverse(JupyterCellNode)
     (_, celloutput) = cell.children
     assert len(cell.children) == 2
-    assert celloutput.children[0].rawsource.strip() == "hello world"
+    assert celloutput.children[0].astext().strip() == "hello world"
 
 
 def test_stderr(doctree):
@@ -439,7 +439,7 @@ def test_thebe_hide_output(doctree):
     source = cellinput.children[0]
     assert type(source) == ThebeSourceNode
     assert len(source.children) == 1
-    assert source.children[0].rawsource.strip() == "2 + 2"
+    assert source.children[0].astext().strip() == "2 + 2"
 
 
 def test_thebe_hide_code(doctree):
@@ -459,12 +459,12 @@ def test_thebe_hide_code(doctree):
     assert type(source) == ThebeSourceNode
     assert source.attributes["hide_code"]
     assert len(source.children) == 1
-    assert source.children[0].rawsource.strip() == "2 + 2"
+    assert source.children[0].astext().strip() == "2 + 2"
 
     output = celloutput.children[0]
     assert type(output) == ThebeOutputNode
     assert len(output.children) == 1
-    assert output.children[0].rawsource.strip() == "4"
+    assert output.children[0].astext().strip() == "4"
 
 
 def test_thebe_code_below(doctree):
@@ -482,12 +482,12 @@ def test_thebe_code_below(doctree):
     output = cellinput.children[0]
     assert type(output) is ThebeOutputNode
     assert len(output.children) == 1
-    assert output.children[0].rawsource.strip() == "4"
+    assert output.children[0].astext().strip() == "4"
 
     source = celloutput.children[0]
     assert type(source) is ThebeSourceNode
     assert len(source.children) == 1
-    assert source.children[0].rawsource.strip() == "2 + 2"
+    assert source.children[0].astext().strip() == "2 + 2"
     assert source.attributes["code_below"]
 
 
@@ -536,12 +536,11 @@ def test_latex(doctree):
         tree = doctree(source.format(start, end))
         (cell,) = tree.traverse(JupyterCellNode)
         (_, celloutput) = cell.children
-        assert celloutput.children[0].astext() == r"\int"
+        assert next(iter(celloutput.traverse(math_block))).astext() == r"\int"
 
 
 def test_cell_output_to_nodes(doctree):
     # tests the image uri paths on conversion to docutils image nodes
-    priority =  ['image/png', 'image/jpeg', 'text/latex', 'text/plain']
     output_dir = '/_build/jupyter_execute'
     img_locs = ['/_build/jupyter_execute/docs/image_1.png','/_build/jupyter_execute/image_2.png']
 
@@ -555,19 +554,20 @@ def test_cell_output_to_nodes(doctree):
 
     for index, cell in enumerate(cells):
         cell = from_dict(cell)
-        output_node = cell_output_to_nodes(cell["outputs"], priority, True, output_dir, None)
-        assert output_node[0].attributes['uri'] == img_locs[index]
+        output_node, = cell_output_to_nodes(cell["outputs"], True, output_dir, None)
+        image_node, = output_node.traverse(image)
+        assert image_node.attributes['uri'] == img_locs[index]
 
     # Testing inline functionality
     outputs = [
         {"name": "stdout", "output_type": "stream", "text": ["hi\n"]},
         {"name": "stderr", "output_type": "stream", "text": ["hi\n"]},
     ]
-    output_nodes = cell_output_to_nodes(outputs, priority, True, output_dir, None)
+    output_nodes = cell_output_to_nodes(outputs, True, output_dir, None)
     for output, kind in zip(output_nodes, [literal_block, container]):
         assert isinstance(output, kind)
 
-    output_nodes = cell_output_to_nodes(outputs, priority, True, output_dir, None, inline=True)
+    output_nodes = cell_output_to_nodes(outputs, True, output_dir, None, inline=True)
     for output, kind in zip(output_nodes, [literal, literal]):
         assert isinstance(output, kind)
 
@@ -609,7 +609,7 @@ def test_save_script(doctree):
       a = 1
       print(a)
     """
-    tree, app, _ = doctree(source, return_all=True)
+    _, app, _ = doctree(source, return_all=True)
     outdir = Path(app.outdir)
     saved_text = (outdir / '../jupyter_execute/test.py').read_text()
     assert saved_text.startswith('#!/usr/bin/env python')
@@ -621,12 +621,16 @@ def test_bash_kernel(doctree):
     if sys.platform == 'win32':
         pytest.skip("Not trying bash on windows.")
 
+    # we set enable-bracketed-paste off
+    # to avoid bash_kernel accidentally raising errors
+    # (related to https://github.com/takluyver/bash_kernel/issues/107)
     source = """
     .. jupyter-kernel:: bash
       :id: test
 
     .. jupyter-execute::
 
+      bind 'set enable-bracketed-paste off'
       echo "foo"
     """
     with warnings.catch_warnings():
@@ -649,7 +653,7 @@ def test_input_cell(doctree):
     (cellinput, empty) = cell.children
     assert cell.attributes["hide_output"] is True
     assert cellinput.children[0].attributes["linenos"] is False
-    assert cellinput.children[0].rawsource.strip() == "2 + 2"
+    assert cellinput.children[0].astext().strip() == "2 + 2"
     assert len(empty.children) == 0
 
 def test_input_cell_linenos(doctree):
@@ -664,7 +668,7 @@ def test_input_cell_linenos(doctree):
     (cellinput, empty) = cell.children
     assert cell.attributes["hide_output"] is True
     assert cellinput.children[0].attributes["linenos"] is True
-    assert cellinput.children[0].rawsource.strip() == "2 + 2"
+    assert cellinput.children[0].astext().strip() == "2 + 2"
     assert len(empty.children) == 0
 
 def test_output_cell(doctree):
@@ -680,8 +684,8 @@ def test_output_cell(doctree):
     tree = doctree(source)
     (cell,) = tree.traverse(JupyterCellNode)
     (cellinput, celloutput,) = cell.children
-    assert cellinput.children[0].rawsource.strip() == "3 + 2"
-    assert celloutput.children[0].rawsource.strip() == "4"
+    assert cellinput.children[0].astext().strip() == "3 + 2"
+    assert celloutput.children[0].astext().strip() == "4"
 
 def test_output_only_error(doctree):
     source = """
@@ -690,7 +694,7 @@ def test_output_only_error(doctree):
         4
     """
     with pytest.raises(ExtensionError):
-        tree = doctree(source)
+        doctree(source)
 
 def test_multiple_directives(doctree):
     source = """
@@ -710,7 +714,25 @@ def test_multiple_directives(doctree):
     (ex, jin) = tree.traverse(JupyterCellNode)
     (ex_in, ex_out) = ex.children
     (jin_in, jin_out) = jin.children
-    assert ex_in.children[0].rawsource.strip() == "2 + 2"
-    assert ex_out.children[0].rawsource.strip() == "4"
-    assert jin_in.children[0].rawsource.strip() == "3 + 3"
-    assert jin_out.children[0].rawsource.strip() == "5"
+    assert ex_in.children[0].astext().strip() == "2 + 2"
+    assert ex_out.children[0].astext().strip() == "4"
+    assert jin_in.children[0].astext().strip() == "3 + 3"
+    assert jin_out.children[0].astext().strip() == "5"
+
+
+def test_builder_priority(doctree):
+    source = """
+    .. jupyter-execute::
+
+        display({"text/plain": "I am html output", "text/latex": "I am latex"})
+    """
+    config = (
+        "render_priority_html = ['text/plain', 'text/latex']\n"
+        "render_priority_latex = ['text/latex', 'text/plain']"
+    )
+    _, app, _ = doctree(source, config=config, return_all=True, buildername="html")
+    html = (Path(app.outdir) / "index.html").read_text()
+    assert "I am html output" in html
+    _, app, _ = doctree(source, config=config, return_all=True, buildername="latex")
+    latex = (Path(app.outdir) / "python.tex").read_text()
+    assert "I am latex" in latex
