@@ -621,12 +621,16 @@ def test_bash_kernel(doctree):
     if sys.platform == 'win32':
         pytest.skip("Not trying bash on windows.")
 
+    # we set enable-bracketed-paste off
+    # to avoid bash_kernel accidentally raising errors
+    # (related to https://github.com/takluyver/bash_kernel/issues/107)
     source = """
     .. jupyter-kernel:: bash
       :id: test
 
     .. jupyter-execute::
 
+      bind 'set enable-bracketed-paste off'
       echo "foo"
     """
     with warnings.catch_warnings():
