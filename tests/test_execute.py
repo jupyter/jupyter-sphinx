@@ -92,23 +92,6 @@ def test_basic(doctree, buildername):
     assert celloutput.children[0].rawsource.strip() == "4"
 
 
-def test_basic_old_entrypoint(doctree):
-    source = """
-    .. jupyter-execute::
-
-        2 + 2
-    """
-    tree = doctree(source, entrypoint="jupyter_sphinx.execute")
-    (cell,) = tree.traverse(JupyterCellNode)
-    (cellinput, celloutput) = cell.children
-    assert not cell.attributes["code_below"]
-    assert not cell.attributes["hide_code"]
-    assert not cell.attributes["hide_output"]
-    assert not cellinput.children[0]["linenos"]
-    assert cellinput.children[0].rawsource.strip() == "2 + 2"
-    assert celloutput.children[0].rawsource.strip() == "4"
-
-
 def test_hide_output(doctree):
     source = """
     .. jupyter-execute::
