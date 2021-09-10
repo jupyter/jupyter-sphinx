@@ -388,13 +388,15 @@ class JupyterWidgetStateNode(docutils.nodes.Element):
         super().__init__("", state=attributes["state"])
 
     def html(self):
+        
+        # escape </script> to avoid early closing of the tag in the html page 
+        json_data = json.dumps(self["state"]).replace("</script>", r"<\/script>")
+        
         # TODO: render into a separate file if 'html-manager' starts fully
         #       parsing script tags, and not just grabbing their innerHTML
         # https://github.com/jupyter-widgets/ipywidgets/blob/master/packages/html-manager/src/libembed.ts#L36
         return ipywidgets.embed.snippet_template.format(
-            load="", 
-            widget_views="", 
-            json_data=json.dumps(self["state"]).replace("</script>", r"<\/script>")
+            load="", widget_views="", json_data=json_data
         )
 
 def cell_output_to_nodes(outputs, write_stderr, out_dir,
