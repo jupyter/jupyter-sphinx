@@ -392,9 +392,11 @@ class JupyterWidgetStateNode(docutils.nodes.Element):
         #       parsing script tags, and not just grabbing their innerHTML
         # https://github.com/jupyter-widgets/ipywidgets/blob/master/packages/html-manager/src/libembed.ts#L36
         return ipywidgets.embed.snippet_template.format(
-            load="", widget_views="", json_data=json.dumps(self["state"])
+            load="", 
+            widget_views="", 
+            json_data=json.dumps(self["state"]).replace("</script>", "&lt/script>")
         )
-
+    
 
 def cell_output_to_nodes(outputs, write_stderr, out_dir,
                          thebe_config, inline=False):
