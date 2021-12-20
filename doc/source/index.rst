@@ -23,7 +23,7 @@ or conda:
 
 .. code-block:: bash
 
-  conda install jupyter_sphinx
+  conda install jupyter_sphinx -c conda-forge
 
 Enabling the extension
 ----------------------
