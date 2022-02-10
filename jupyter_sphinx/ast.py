@@ -607,8 +607,6 @@ def get_widgets(notebook):
     try:
         return notebook.metadata.widgets[WIDGET_STATE_MIMETYPE]
     except (AttributeError, KeyError):
-        # Don't catch KeyError because it's a bug if 'widgets' does
-        # not contain 'WIDGET_STATE_MIMETYPE'
         return None
 
 
