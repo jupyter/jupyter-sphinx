@@ -606,7 +606,13 @@ class JupyterDownloadRole(ReferenceRole):
 def get_widgets(notebook):
     try:
         return notebook.metadata.widgets[WIDGET_STATE_MIMETYPE]
-    except (AttributeError, KeyError):
+    except KeyError:
+        from . import logger
+        logger.warning(
+                'Unable to get widget state in current notebook - are you sure that pywidgets rendered correctly in all your notebooks ?'
+        )
+        return None
+    except AttributeError:
         return None
 
 
