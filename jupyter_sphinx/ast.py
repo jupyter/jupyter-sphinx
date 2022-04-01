@@ -103,7 +103,7 @@ class JupyterCell(Directive):
         If provided, the specified lines will be highlighted.
     raises : comma separated list of exception types
         If provided, a comma-separated list of exception type names that
-        the cell may raise. If one of the listed execption types is raised
+        the cell may raise. If one of the listed exception types is raised
         then the traceback is printed in place of the cell output. If an
         exception of another type is raised then we raise a RuntimeError
         when executing.
@@ -438,7 +438,7 @@ def cell_output_to_nodes(outputs, write_stderr, out_dir,
                     # Adds a "stderr" class that can be customized by the user for both
                     # the container and the literal_block.
                     #
-                    # Not setting "rawsource" disables Pygment hightlighting, which
+                    # Not setting "rawsource" disables Pygment highlighting, which
                     # would otherwise add a <div class="highlight">.
 
                     literal = literal_node(
