@@ -168,7 +168,7 @@ class ExecuteJupyterCells(SphinxTransform):
                 raises_provided = node.attributes["raises"] is not None
                 if (
                     raises_provided and not allowed_errors
-                ):  # empty 'raises': supress all errors
+                ):  # empty 'raises': suppress all errors
                     pass
                 elif errors and not any(e["ename"] in allowed_errors for e in errors):
                     raise ExtensionError(

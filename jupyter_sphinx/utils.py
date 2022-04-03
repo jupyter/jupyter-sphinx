@@ -57,7 +57,7 @@ def strip_latex_delimiters(source):
 
 
 def default_notebook_names(basename):
-    """Return an interator yielding notebook names based off 'basename'"""
+    """Return an iterator yielding notebook names based off 'basename'"""
     yield basename
     for i in count(1):
         yield "_".join((basename, str(i)))
