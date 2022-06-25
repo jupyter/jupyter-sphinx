@@ -271,9 +271,13 @@ def setup(app):
     app.add_directive("jupyter-input", CellInput)
     app.add_directive("jupyter-output", CellOutput)
     app.add_directive("thebe-button", ThebeButton)
-    app.add_role("jupyter-download:notebook", JupyterDownloadRole())
-    app.add_role("jupyter-download:nb", JupyterDownloadRole())
-    app.add_role("jupyter-download:script", JupyterDownloadRole())
+    for sep in [":", "-"]:
+        # Since Sphinx 4.0.0 using ":" inside of a role/directive does not work.
+        # Therefore, we add "-" as separator to get e.g., jupyter-download-notebook
+        # We leave the ":" syntax for backward compatibility reasons.
+        app.add_role(f"jupyter-download{sep}notebook", JupyterDownloadRole())
+        app.add_role(f"jupyter-download{sep}nb", JupyterDownloadRole())
+        app.add_role(f"jupyter-download{sep}script", JupyterDownloadRole())
     app.add_transform(CombineCellInputOutput)
     app.add_transform(ExecuteJupyterCells)
 
