@@ -1,6 +1,7 @@
 """Manipulating the Sphinx AST with Jupyter objects"""
 
 import json
+import warnings
 from pathlib import Path
 
 import docutils
@@ -588,7 +589,13 @@ def apply_styling(node, thebe_config):
 class JupyterDownloadRole(ReferenceRole):
     def run(self):
         sep = ":" if ":" in self.name else "-"
-        _, filetype = self.name.rsplit(sep, maxsplit=1)
+        name, filetype = self.name.rsplit(sep, maxsplit=1)
+        if sep == ":":
+            warnings.warn(
+                f"The {self.name} syntax is deprecated and "
+                f"will be removed in 0.5.0, please use {name}-{filetype}",
+                category=DeprecationWarning,
+            )
 
         assert filetype in ("notebook", "nb", "script")
         ext = ".ipynb" if filetype in ("notebook", "nb") else ".py"
