@@ -113,25 +113,30 @@ def builder_inited(app):
         app.add_js_file(embed_url)
 
 
+def copy_file(src, dst):
+    if not (dst / src.name).exists():
+        copy_asset(str(src), str(dst))
+
+
 def build_finished(app, env):
     if app.builder.format != "html":
         return
 
     module_dir = Path(__file__).parent
-    outdir = Path(app.outdir)
+    static = Path(app.outdir) / "_static"
 
     # Copy stylesheet
-    src = module_dir / "css"
-    dst = outdir / "_static"
-    copy_asset(src, dst)
+    src = module_dir / "css" / "jupyter-sphinx.css"
+    copy_file(src, static)
 
     thebe_config = app.config.jupyter_sphinx_thebelab_config
     if not thebe_config:
         return
 
     # Copy all thebelab related assets
-    src = module_dir / "thebelab"
-    copy_asset(src, dst)
+    src_dir = module_dir / "thebelab"
+    for fname in ["thebelab-helper.js", "thebelab.css"]:
+        copy_file(src_dir / fname, static)
 
 
 ##############################################################################
