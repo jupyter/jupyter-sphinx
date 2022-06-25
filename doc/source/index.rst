@@ -478,6 +478,7 @@ Release 0.4.0
 - Remove deprecated enabling of the extension as ``jupyter_sphinx.execute``.
 - Implement different output priorities in HTML and LaTeX builders. In practice this allows to provide a better fallback in PDF output.
 - Introduce new ``jupyter-download`` syntax compatible with Sphinx≥4, ``jupyter-download-nb``, ``jupyter-download-notebook``, and ``jupyter-download-script``
+- Do not overwrite CSS and JS if files already exist in _static/, this allows to customize the CSS and JS file.
 
 Release 0.3.0
 ~~~~~~~~~~~~~
