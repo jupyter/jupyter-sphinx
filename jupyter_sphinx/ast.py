@@ -587,7 +587,8 @@ def apply_styling(node, thebe_config):
 
 class JupyterDownloadRole(ReferenceRole):
     def run(self):
-        _, filetype = self.name.split(":")
+        sep = ":" if ":" in self.name else "-"
+        _, filetype = self.name.rsplit(sep, maxsplit=1)
 
         assert filetype in ("notebook", "nb", "script")
         ext = ".ipynb" if filetype in ("notebook", "nb") else ".py"

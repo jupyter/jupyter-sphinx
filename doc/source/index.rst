@@ -372,16 +372,16 @@ Downloading the code as a script
 --------------------------------
 
 Jupyter Sphinx includes 2 roles that can be used to download the code embedded in a document:
-``:jupyter-download:script:`` (for a raw script file) and ``:jupyter-download:notebook:`` or ``:jupyter-download:nb:`` (for
+``:jupyter-download-script:`` (for a raw script file) and ``:jupyter-download-notebook:`` or ``:jupyter-download-nb:`` (for
 a Jupyter notebook).
 
 These roles are equivalent to the standard sphinx `download role <https://www.sphinx-doc.org/en/master/usage/restructuredtext/roles.html#role-download>`__, **except** the extension of the file should not be given.
 For example, to download all the code from this document as a script we
 would use::
 
-    :jupyter-download:script:`click to download <index>`
+    :jupyter-download-script:`click to download <index>`
 
-Which produces a link like this: :jupyter-download:script:`click to download <index>`. The target that the role is
+Which produces a link like this: :jupyter-download-nb:`click to download <index>`. The target that the role is
 applied to (``index`` in this case) is the name of the document for which you wish to download
 the code. If a document contains ``jupyter-kernel`` directives with ``:id:`` specified, then
 the name provided to ``:id:`` can be used to get the code for the cells belonging to the
