@@ -1,10 +1,11 @@
 """Utility functions and helpers."""
 import os
-from itertools import groupby, count
-from sphinx.errors import ExtensionError
-import nbformat
-from jupyter_client.kernelspec import get_kernel_spec, NoSuchKernel
+from itertools import count, groupby
 from pathlib import Path
+
+import nbformat
+from jupyter_client.kernelspec import NoSuchKernel, get_kernel_spec
+from sphinx.errors import ExtensionError
 
 
 def blank_nb(kernel_name):
@@ -40,7 +41,7 @@ def split_on(pred, it):
 
 
 def strip_latex_delimiters(source):
-    """Remove LaTeX math delimiters that would be rendered by the math block.
+    r"""Remove LaTeX math delimiters that would be rendered by the math block.
 
     These are: ``\(…\)``, ``\[…\]``, ``$…$``, and ``$$…$$``.
     This is necessary because sphinx does not have a dedicated role for
@@ -75,8 +76,10 @@ def sphinx_abs_dir(env, *paths):
     # output_directory / jupyter_execute / path relative to source directory
     # Sphinx expects download links relative to source file or relative to
     # source dir and prepended with '/'. We use the latter option.
-    out_path = (output_directory(env) /  Path(env.docname).parent / Path(*paths)).resolve()
-      
+    out_path = (
+        output_directory(env) / Path(env.docname).parent / Path(*paths)
+    ).resolve()
+
     if os.name == "nt":
         # Can't get relative path between drives on Windows
         return out_path.as_posix()

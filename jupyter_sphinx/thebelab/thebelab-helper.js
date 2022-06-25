@@ -4,7 +4,7 @@ function initThebelab() {
         return;
     }
 
-    // Place all outputs below the source where this was not the case 
+    // Place all outputs below the source where this was not the case
     // to make them recognizable by thebelab
     let codeBelows = document.getElementsByClassName('thebelab-below');
     for(var i = 0; i < codeBelows.length; i++) {
@@ -20,5 +20,5 @@ function initThebelab() {
 
 function swapSibling(node1, node2) {
     node1.parentNode.replaceChild(node1, node2);
-    node1.parentNode.insertBefore(node2, node1); 
+    node1.parentNode.insertBefore(node2, node1);
 }

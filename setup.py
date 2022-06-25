@@ -1,5 +1,6 @@
-from setuptools import setup
 import os
+
+from setuptools import setup
 
 here = os.path.abspath(os.path.dirname(__file__))
 name = "jupyter_sphinx"
@@ -18,7 +19,7 @@ setup(
     author_email="jupyter@googlegroups.com",
     description="Jupyter Sphinx Extensions",
     long_description=description,
-    long_description_content_type='text/markdown',
+    long_description_content_type="text/markdown",
     url="https://github.com/jupyter/jupyter-sphinx/",
     project_urls={
         "Bug Tracker": "https://github.com/jupyter/jupyter-sphinx/issues/",

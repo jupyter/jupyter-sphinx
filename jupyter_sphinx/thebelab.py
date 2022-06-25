@@ -1,8 +1,9 @@
 """Inserting interactive links with Thebelab."""
 import json
+from pathlib import Path
+
 import docutils
 from docutils.parsers.rst import Directive
-from pathlib import Path
 
 import jupyter_sphinx as js
 
@@ -53,7 +54,8 @@ class ThebeButtonNode(docutils.nodes.Element):
     def html(self):
         text = self["text"]
         return (
-            '<button title="{text}" class="thebelab-button" id="thebelab-activate-button" '
+            '<button title="{text}" class="thebelab-button" '
+            'id="thebelab-activate-button" '
             'onclick="initThebelab()">{text}</button>'.format(text=text)
         )
 
@@ -105,7 +107,8 @@ def add_thebelab_library(doctree, env):
             return
     else:
         js.logger.warning(
-            "The supplied thebelab configuration should be either a filename or a dictionary."
+            "The supplied thebelab configuration should be either"
+            " a filename or a dictionary."
         )
         return
 

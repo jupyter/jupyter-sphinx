@@ -1,31 +1,31 @@
 """Simple sphinx extension that executes code in jupyter and inserts output."""
 
-from ._version import version_info, __version__
-from sphinx.util import logging
-import docutils
-import ipywidgets
-import os
-from sphinx.util.fileutil import copy_asset
-from sphinx.errors import ExtensionError
-from IPython.lib.lexers import IPythonTracebackLexer, IPython3Lexer
 from pathlib import Path
 
+import docutils
+import ipywidgets
+from IPython.lib.lexers import IPython3Lexer, IPythonTracebackLexer
+from sphinx.errors import ExtensionError
+from sphinx.util import logging
+from sphinx.util.fileutil import copy_asset
+
+from ._version import __version__
 from .ast import (
-    JupyterCell,
-    JupyterCellNode,
+    WIDGET_VIEW_MIMETYPE,
     CellInput,
     CellInputNode,
     CellOutput,
     CellOutputNode,
-    MimeBundleNode,
-    JupyterKernelNode,
-    JupyterWidgetViewNode,
-    JupyterWidgetStateNode,
-    WIDGET_VIEW_MIMETYPE,
-    JupyterDownloadRole,
     CombineCellInputOutput,
+    JupyterCell,
+    JupyterCellNode,
+    JupyterDownloadRole,
+    JupyterKernelNode,
+    JupyterWidgetStateNode,
+    JupyterWidgetViewNode,
+    MimeBundleNode,
 )
-from .execute import JupyterKernel, ExecuteJupyterCells
+from .execute import ExecuteJupyterCells, JupyterKernel
 from .thebelab import ThebeButton, ThebeButtonNode, ThebeOutputNode, ThebeSourceNode
 
 REQUIRE_URL_DEFAULT = (
@@ -35,10 +35,11 @@ THEBELAB_URL_DEFAULT = "https://unpkg.com/thebelab@^0.4.0"
 
 logger = logging.getLogger(__name__)
 
-##############################################################################
 # Constants and functions we'll use later
 
 # Used for nodes that do not need to be rendered
+
+
 def skip(self, node):
     raise docutils.nodes.SkipNode
 
@@ -46,10 +47,8 @@ def skip(self, node):
 # Used for nodes that should be gone by rendering time (OutputMimeBundleNode)
 def halt(self, node):
     raise ExtensionError(
-        (
-            "Rendering encountered a node type that should "
-            "have been removed before rendering: %s" % type(node)
-        )
+        "Rendering encountered a node type that should "
+        "have been removed before rendering: %s" % type(node)
     )
 
 
@@ -58,6 +57,7 @@ render_container = (
     lambda self, node: self.visit_container(node),
     lambda self, node: self.depart_container(node),
 )
+
 
 # Used to render the container and its children as HTML
 def visit_container_html(self, node):
@@ -89,7 +89,7 @@ render_thebe_source = (
     lambda self, node: self.depart_container(node),
 )
 
-##############################################################################
+
 # Sphinx callback functions
 def builder_inited(app):
     """
