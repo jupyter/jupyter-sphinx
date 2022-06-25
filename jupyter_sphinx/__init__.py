@@ -1,10 +1,18 @@
 """Simple sphinx extension that executes code in jupyter and inserts output."""
 
+<<<<<<< HEAD
 import os
 
 import docutils
 import ipywidgets
 from IPython.lib.lexers import IPython3Lexer, IPythonTracebackLexer
+=======
+from pathlib import Path
+from ._version import  __version__
+from sphinx.util import logging
+import docutils
+import ipywidgets
+>>>>>>> 9c636ea (use Path for static_path)
 from sphinx.errors import ExtensionError
 from sphinx.util import logging
 
@@ -113,8 +121,8 @@ def builder_inited(app):
 
 
 def set_static_path(app):
-    static_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "_static"))
-    app.config.html_static_path.insert(0, static_path)
+    static_path = Path(__file__).parent / "_static"
+    app.config.html_static_path.insert(0, str(static_path.resolve()))
 
 
 ##############################################################################
