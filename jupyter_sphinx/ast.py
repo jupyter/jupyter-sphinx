@@ -618,14 +618,14 @@ class CombineCellInputOutput(SphinxTransform):
         moved_outputs = set()
 
         for cell_node in self.document.traverse(JupyterCellNode):
-            if cell_node.attributes["execute"] == False:
-                if cell_node.attributes["hide_code"] == False:
+            if not cell_node.attributes["execute"]:
+                if not cell_node.attributes["hide_code"]:
                     # Cell came from jupyter-input
                     sibling = cell_node.next_node(descend=False, siblings=True)
                     if (
                         isinstance(sibling, JupyterCellNode)
-                        and sibling.attributes["execute"] == False
-                        and sibling.attributes["hide_code"] == True
+                        and not sibling.attributes["execute"]
+                        and sibling.attributes["hide_code"]
                     ):
                         # Sibling came from jupyter-output, so we merge
                         cell_node += sibling.children[1]

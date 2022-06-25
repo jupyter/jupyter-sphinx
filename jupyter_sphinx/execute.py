@@ -43,12 +43,23 @@ import nbformat
 
 import jupyter_sphinx as js
 
-from .ast import (CellOutputNode, JupyterCellNode, JupyterKernelNode,
-                  JupyterWidgetStateNode, apply_styling, cell_output_to_nodes,
-                  get_widgets)
+from .ast import (
+    CellOutputNode,
+    JupyterCellNode,
+    JupyterKernelNode,
+    JupyterWidgetStateNode,
+    apply_styling,
+    cell_output_to_nodes,
+    get_widgets,
+)
 from .thebelab import ThebeButtonNode, add_thebelab_library
-from .utils import (blank_nb, default_notebook_names, output_directory,
-                    sphinx_abs_dir, split_on)
+from .utils import (
+    blank_nb,
+    default_notebook_names,
+    output_directory,
+    sphinx_abs_dir,
+    split_on,
+)
 
 
 class JupyterKernel(Directive):
@@ -88,7 +99,7 @@ class JupyterKernel(Directive):
         ]
 
 
-### Doctree transformations
+# Doctree transformations
 class ExecuteJupyterCells(SphinxTransform):
     """Execute code cells in Jupyter kernels.
 
@@ -141,8 +152,9 @@ class ExecuteJupyterCells(SphinxTransform):
                 kernel_name = default_kernel
                 file_name = next(default_names)
 
-            # Add empty placeholder cells for non-executed nodes so nodes and cells can be zipped
-            # and the provided input/output can be inserted later
+            # Add empty placeholder cells for non-executed nodes so nodes
+            # and cells can be zipped and the provided input/output
+            # can be inserted later
             notebook = execute_cells(
                 kernel_name,
                 [
@@ -268,7 +280,7 @@ class ExecuteJupyterCells(SphinxTransform):
                 doctree.append(JupyterWidgetStateNode(state=get_widgets(notebook)))
 
 
-### Roles
+# Roles
 
 
 def execute_cells(kernel_name, cells, execute_kwargs):

@@ -8,18 +8,20 @@ from pathlib import Path
 from unittest.mock import Mock
 
 import pytest
-from docutils.nodes import (container, image, literal, literal_block,
-                            math_block, raw)
+from docutils.nodes import container, image, literal, literal_block, math_block, raw
 from nbformat import from_dict
 from sphinx.addnodes import download_reference
 from sphinx.errors import ExtensionError
 from sphinx.testing.util import SphinxTestApp, assert_node, path
 
-from jupyter_sphinx.ast import (CellInputNode, CellOutputNode, JupyterCellNode,
-                                JupyterDownloadRole, JupyterWidgetStateNode,
-                                JupyterWidgetViewNode, cell_output_to_nodes)
-from jupyter_sphinx.thebelab import (ThebeButtonNode, ThebeOutputNode,
-                                     ThebeSourceNode)
+from jupyter_sphinx.ast import (
+    JupyterCellNode,
+    JupyterDownloadRole,
+    JupyterWidgetStateNode,
+    JupyterWidgetViewNode,
+    cell_output_to_nodes,
+)
+from jupyter_sphinx.thebelab import ThebeButtonNode, ThebeOutputNode, ThebeSourceNode
 
 
 @pytest.fixture()

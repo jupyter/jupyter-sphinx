@@ -10,14 +10,23 @@ from sphinx.util import logging
 from sphinx.util.fileutil import copy_asset
 
 from ._version import __version__
-from .ast import (WIDGET_VIEW_MIMETYPE, CellInput, CellInputNode, CellOutput,
-                  CellOutputNode, CombineCellInputOutput, JupyterCell,
-                  JupyterCellNode, JupyterDownloadRole, JupyterKernelNode,
-                  JupyterWidgetStateNode, JupyterWidgetViewNode,
-                  MimeBundleNode)
+from .ast import (
+    WIDGET_VIEW_MIMETYPE,
+    CellInput,
+    CellInputNode,
+    CellOutput,
+    CellOutputNode,
+    CombineCellInputOutput,
+    JupyterCell,
+    JupyterCellNode,
+    JupyterDownloadRole,
+    JupyterKernelNode,
+    JupyterWidgetStateNode,
+    JupyterWidgetViewNode,
+    MimeBundleNode,
+)
 from .execute import ExecuteJupyterCells, JupyterKernel
-from .thebelab import (ThebeButton, ThebeButtonNode, ThebeOutputNode,
-                       ThebeSourceNode)
+from .thebelab import ThebeButton, ThebeButtonNode, ThebeOutputNode, ThebeSourceNode
 
 REQUIRE_URL_DEFAULT = (
     "https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"
@@ -26,10 +35,11 @@ THEBELAB_URL_DEFAULT = "https://unpkg.com/thebelab@^0.4.0"
 
 logger = logging.getLogger(__name__)
 
-##############################################################################
 # Constants and functions we'll use later
 
 # Used for nodes that do not need to be rendered
+
+
 def skip(self, node):
     raise docutils.nodes.SkipNode
 
@@ -47,6 +57,7 @@ render_container = (
     lambda self, node: self.visit_container(node),
     lambda self, node: self.depart_container(node),
 )
+
 
 # Used to render the container and its children as HTML
 def visit_container_html(self, node):
@@ -78,7 +89,7 @@ render_thebe_source = (
     lambda self, node: self.depart_container(node),
 )
 
-##############################################################################
+
 # Sphinx callback functions
 def builder_inited(app):
     """

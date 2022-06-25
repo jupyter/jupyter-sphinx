@@ -10,7 +10,7 @@ import sys
 
 sys.path.insert(0, os.path.abspath("../.."))
 
-import jupyter_sphinx
+import jupyter_sphinx  # noqa: E402
 
 project = "Jupyter Sphinx"
 copyright = "2019, Jupyter Development Team"

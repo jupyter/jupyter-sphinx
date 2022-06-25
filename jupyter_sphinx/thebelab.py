@@ -54,7 +54,8 @@ class ThebeButtonNode(docutils.nodes.Element):
     def html(self):
         text = self["text"]
         return (
-            '<button title="{text}" class="thebelab-button" id="thebelab-activate-button" '
+            '<button title="{text}" class="thebelab-button" '
+            'id="thebelab-activate-button" '
             'onclick="initThebelab()">{text}</button>'.format(text=text)
         )
 
@@ -106,7 +107,8 @@ def add_thebelab_library(doctree, env):
             return
     else:
         js.logger.warning(
-            "The supplied thebelab configuration should be either a filename or a dictionary."
+            "The supplied thebelab configuration should be either"
+            " a filename or a dictionary."
         )
         return
 
