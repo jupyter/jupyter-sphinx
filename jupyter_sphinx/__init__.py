@@ -1,18 +1,10 @@
 """Simple sphinx extension that executes code in jupyter and inserts output."""
 
-<<<<<<< HEAD
-import os
+from pathlib import Path
 
 import docutils
 import ipywidgets
 from IPython.lib.lexers import IPython3Lexer, IPythonTracebackLexer
-=======
-from pathlib import Path
-from ._version import  __version__
-from sphinx.util import logging
-import docutils
-import ipywidgets
->>>>>>> 9c636ea (use Path for static_path)
 from sphinx.errors import ExtensionError
 from sphinx.util import logging
 
