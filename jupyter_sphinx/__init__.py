@@ -1,13 +1,12 @@
 """Simple sphinx extension that executes code in jupyter and inserts output."""
 
-from pathlib import Path
+import os
 
 import docutils
 import ipywidgets
 from IPython.lib.lexers import IPython3Lexer, IPythonTracebackLexer
 from sphinx.errors import ExtensionError
 from sphinx.util import logging
-from sphinx.util.fileutil import copy_asset
 
 from ._version import __version__
 from .ast import (
@@ -113,25 +112,9 @@ def builder_inited(app):
         app.add_js_file(embed_url)
 
 
-def build_finished(app, env):
-    if app.builder.format != "html":
-        return
-
-    module_dir = Path(__file__).parent
-    outdir = Path(app.outdir)
-
-    # Copy stylesheet
-    src = module_dir / "css"
-    dst = outdir / "_static"
-    copy_asset(src, dst)
-
-    thebe_config = app.config.jupyter_sphinx_thebelab_config
-    if not thebe_config:
-        return
-
-    # Copy all thebelab related assets
-    src = module_dir / "thebelab"
-    copy_asset(src, dst)
+def set_static_path(app):
+    static_path = os.path.abspath(os.path.join(os.path.dirname(__file__), "_static"))
+    app.config.html_static_path.insert(0, static_path)
 
 
 ##############################################################################
@@ -142,8 +125,10 @@ def setup(app):
     This should be removed and converted into `setup` after a deprecation
     cycle.
     """
-    # Configuration
+    # Add our static path
+    app.connect("builder-inited", set_static_path)
 
+    # Configuration
     app.add_config_value(
         "jupyter_execute_kwargs",
         dict(timeout=-1, allow_errors=True, store_widget_state=True),
@@ -286,7 +271,6 @@ def setup(app):
     app.add_lexer("ipython3", IPython3Lexer)
 
     app.connect("builder-inited", builder_inited)
-    app.connect("build-finished", build_finished)
 
     # add jupyter-sphinx and thebelab js and css
     app.add_css_file("jupyter-sphinx.css")
