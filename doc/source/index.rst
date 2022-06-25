@@ -325,7 +325,7 @@ When showing code samples that are computationally expensive, access restricted 
       def slow_print(str):
           time.sleep(4000)    # Simulate an expensive process
           print(str)
-    
+
       slow_print("hello, world!")
 
   .. jupyter-output::
@@ -373,7 +373,7 @@ Downloading the code as a script
 
 Jupyter Sphinx includes 2 roles that can be used to download the code embedded in a document:
 ``:jupyter-download:script:`` (for a raw script file) and ``:jupyter-download:notebook:`` or ``:jupyter-download:nb:`` (for
-a Jupyter notebook). 
+a Jupyter notebook).
 
 These roles are equivalent to the standard sphinx `download role <https://www.sphinx-doc.org/en/master/usage/restructuredtext/roles.html#role-download>`__, **except** the extension of the file should not be given.
 For example, to download all the code from this document as a script we

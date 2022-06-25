@@ -1,30 +1,25 @@
-import tempfile
-import shutil
 import os
+import shutil
 import sys
+import tempfile
 import warnings
 from io import StringIO
-from unittest.mock import Mock
 from pathlib import Path
-
-from sphinx.addnodes import download_reference
-from sphinx.testing.util import assert_node, SphinxTestApp, path
-from sphinx.errors import ExtensionError
-from docutils.nodes import raw, literal, literal_block, container, math_block, image
-from nbformat import from_dict
+from unittest.mock import Mock
 
 import pytest
+from docutils.nodes import (container, image, literal, literal_block,
+                            math_block, raw)
+from nbformat import from_dict
+from sphinx.addnodes import download_reference
+from sphinx.errors import ExtensionError
+from sphinx.testing.util import SphinxTestApp, assert_node, path
 
-from jupyter_sphinx.ast import (
-    JupyterCellNode,
-    CellInputNode,
-    CellOutputNode,
-    JupyterWidgetViewNode,
-    JupyterWidgetStateNode,
-    cell_output_to_nodes,
-    JupyterDownloadRole,
-)
-from jupyter_sphinx.thebelab import ThebeSourceNode, ThebeOutputNode, ThebeButtonNode
+from jupyter_sphinx.ast import (CellInputNode, CellOutputNode, JupyterCellNode,
+                                JupyterDownloadRole, JupyterWidgetStateNode,
+                                JupyterWidgetViewNode, cell_output_to_nodes)
+from jupyter_sphinx.thebelab import (ThebeButtonNode, ThebeOutputNode,
+                                     ThebeSourceNode)
 
 
 @pytest.fixture()
@@ -38,7 +33,7 @@ def doctree():
         config=None,
         return_all=False,
         entrypoint="jupyter_sphinx",
-        buildername='html'
+        buildername="html",
     ):
         src_dir = Path(tempfile.mkdtemp())
         source_trees.append(src_dir)
@@ -46,15 +41,15 @@ def doctree():
         conf_contents = "extensions = ['%s']" % entrypoint
         if config is not None:
             conf_contents += "\n" + config
-        (src_dir / "conf.py").write_text(conf_contents, encoding = "utf8")
-        (src_dir / "index.rst").write_text(source, encoding = "utf8")
-        
+        (src_dir / "conf.py").write_text(conf_contents, encoding="utf8")
+        (src_dir / "index.rst").write_text(source, encoding="utf8")
+
         warnings = StringIO()
         app = SphinxTestApp(
             srcdir=path(src_dir.as_posix()),
             status=StringIO(),
             warning=warnings,
-            buildername=buildername
+            buildername=buildername,
         )
         apps.append(app)
         app.build()
@@ -74,7 +69,7 @@ def doctree():
         shutil.rmtree(tree)
 
 
-@pytest.mark.parametrize('buildername', ['html', 'singlehtml'])
+@pytest.mark.parametrize("buildername", ["html", "singlehtml"])
 def test_basic(doctree, buildername):
     source = """
     .. jupyter-execute::
@@ -541,22 +536,44 @@ def test_latex(doctree):
 
 def test_cell_output_to_nodes(doctree):
     # tests the image uri paths on conversion to docutils image nodes
-    output_dir = '/_build/jupyter_execute'
-    img_locs = ['/_build/jupyter_execute/docs/image_1.png','/_build/jupyter_execute/image_2.png']
+    output_dir = "/_build/jupyter_execute"
+    img_locs = [
+        "/_build/jupyter_execute/docs/image_1.png",
+        "/_build/jupyter_execute/image_2.png",
+    ]
 
     cells = [
-        {'outputs':
-            [{'data': {'image/png': 'Vxb6L1wAAAABJRU5ErkJggg==\n', 'text/plain': '<Figure size 432x288 with 1 Axes>'}, 'metadata': {'filenames': {'image/png': img_locs[0]}}, 'output_type': 'display_data'}]
+        {
+            "outputs": [
+                {
+                    "data": {
+                        "image/png": "Vxb6L1wAAAABJRU5ErkJggg==\n",
+                        "text/plain": "<Figure size 432x288 with 1 Axes>",
+                    },
+                    "metadata": {"filenames": {"image/png": img_locs[0]}},
+                    "output_type": "display_data",
+                }
+            ]
         },
-        {'outputs':
-            [{'data': {'image/png': 'iVBOJggg==\n', 'text/plain': '<Figure size 432x288 with 1 Axes>'}, 'metadata': {'filenames': {'image/png': img_locs[1]}}, 'output_type': 'display_data'}]
-        }]
+        {
+            "outputs": [
+                {
+                    "data": {
+                        "image/png": "iVBOJggg==\n",
+                        "text/plain": "<Figure size 432x288 with 1 Axes>",
+                    },
+                    "metadata": {"filenames": {"image/png": img_locs[1]}},
+                    "output_type": "display_data",
+                }
+            ]
+        },
+    ]
 
     for index, cell in enumerate(cells):
         cell = from_dict(cell)
-        output_node, = cell_output_to_nodes(cell["outputs"], True, output_dir, None)
-        image_node, = output_node.traverse(image)
-        assert image_node.attributes['uri'] == img_locs[index]
+        (output_node,) = cell_output_to_nodes(cell["outputs"], True, output_dir, None)
+        (image_node,) = output_node.traverse(image)
+        assert image_node.attributes["uri"] == img_locs[index]
 
     # Testing inline functionality
     outputs = [
@@ -572,23 +589,26 @@ def test_cell_output_to_nodes(doctree):
         assert isinstance(output, kind)
 
 
-@pytest.mark.parametrize('text,reftarget,caption', (
-    ('nb_name', '/../jupyter_execute/path/to/nb_name.ipynb', 'nb_name.ipynb'),
-    ('../nb_name', '/../jupyter_execute/path/nb_name.ipynb', '../nb_name.ipynb'),
-    ('text <nb_name>', '/../jupyter_execute/path/to/nb_name.ipynb', 'text'),
-))
+@pytest.mark.parametrize(
+    "text,reftarget,caption",
+    (
+        ("nb_name", "/../jupyter_execute/path/to/nb_name.ipynb", "nb_name.ipynb"),
+        ("../nb_name", "/../jupyter_execute/path/nb_name.ipynb", "../nb_name.ipynb"),
+        ("text <nb_name>", "/../jupyter_execute/path/to/nb_name.ipynb", "text"),
+    ),
+)
 def test_download_role(text, reftarget, caption, tmp_path):
     role = JupyterDownloadRole()
     mock_inliner = Mock()
     config = {
-        'document.settings.env.app.outdir': str(tmp_path),
-        'document.settings.env.docname': 'path/to/docname',
-        'document.settings.env.srcdir': str(tmp_path),
-        'document.settings.env.app.srcdir': str(tmp_path),
-        'reporter.get_source_and_line': lambda l: ('source', l)
+        "document.settings.env.app.outdir": str(tmp_path),
+        "document.settings.env.docname": "path/to/docname",
+        "document.settings.env.srcdir": str(tmp_path),
+        "document.settings.env.app.srcdir": str(tmp_path),
+        "reporter.get_source_and_line": lambda l: ("source", l),
     }
     mock_inliner.configure_mock(**config)
-    ret, msg = role('jupyter-download:notebook', text, text, 0, mock_inliner)
+    ret, msg = role("jupyter-download:notebook", text, text, 0, mock_inliner)
 
     if os.name == "nt":
         # Get equivalent abs path for Windows
@@ -611,14 +631,14 @@ def test_save_script(doctree):
     """
     _, app, _ = doctree(source, return_all=True)
     outdir = Path(app.outdir)
-    saved_text = (outdir / '../jupyter_execute/test.py').read_text()
-    assert saved_text.startswith('#!/usr/bin/env python')
-    assert 'print(a)' in saved_text
+    saved_text = (outdir / "../jupyter_execute/test.py").read_text()
+    assert saved_text.startswith("#!/usr/bin/env python")
+    assert "print(a)" in saved_text
 
 
 def test_bash_kernel(doctree):
-    pytest.importorskip('bash_kernel')
-    if sys.platform == 'win32':
+    pytest.importorskip("bash_kernel")
+    if sys.platform == "win32":
         pytest.skip("Not trying bash on windows.")
 
     # we set enable-bracketed-paste off
@@ -635,12 +655,13 @@ def test_bash_kernel(doctree):
     """
     with warnings.catch_warnings():
         # See https://github.com/takluyver/bash_kernel/issues/105
-        warnings.simplefilter('ignore', DeprecationWarning)
+        warnings.simplefilter("ignore", DeprecationWarning)
         _, app, _ = doctree(source, return_all=True)
 
     outdir = Path(app.outdir)
-    saved_text = (outdir / '../jupyter_execute/test.sh').read_text()
+    saved_text = (outdir / "../jupyter_execute/test.sh").read_text()
     assert 'echo "foo"' in saved_text
+
 
 def test_input_cell(doctree):
     source = """
@@ -655,6 +676,7 @@ def test_input_cell(doctree):
     assert cellinput.children[0].attributes["linenos"] is False
     assert cellinput.children[0].astext().strip() == "2 + 2"
     assert len(empty.children) == 0
+
 
 def test_input_cell_linenos(doctree):
     source = """
@@ -671,6 +693,7 @@ def test_input_cell_linenos(doctree):
     assert cellinput.children[0].astext().strip() == "2 + 2"
     assert len(empty.children) == 0
 
+
 def test_output_cell(doctree):
     source = """
     .. jupyter-input::
@@ -683,9 +706,13 @@ def test_output_cell(doctree):
     """
     tree = doctree(source)
     (cell,) = tree.traverse(JupyterCellNode)
-    (cellinput, celloutput,) = cell.children
+    (
+        cellinput,
+        celloutput,
+    ) = cell.children
     assert cellinput.children[0].astext().strip() == "3 + 2"
     assert celloutput.children[0].astext().strip() == "4"
+
 
 def test_output_only_error(doctree):
     source = """
@@ -696,16 +723,17 @@ def test_output_only_error(doctree):
     with pytest.raises(ExtensionError):
         doctree(source)
 
+
 def test_multiple_directives(doctree):
     source = """
     .. jupyter-execute::
 
         2 + 2
-    
+
     .. jupyter-input::
-    
+
         3 + 3
-    
+
     .. jupyter-output::
 
         5

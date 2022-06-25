@@ -1,25 +1,21 @@
 """Manipulating the Sphinx AST with Jupyter objects"""
 
-import os
 import json
-import contextlib
 from pathlib import Path
 
 import docutils
-from docutils.parsers.rst import Directive, directives
-from docutils.nodes import math_block, image, literal
-from sphinx.util import parselinenos
-from sphinx.util.docutils import ReferenceRole
-from sphinx.addnodes import download_reference
-from sphinx.transforms import SphinxTransform
-from sphinx.environment.collectors.asset import ImageCollector
-from sphinx.errors import ExtensionError
-
 import ipywidgets.embed
 import nbconvert
+from docutils.nodes import literal, math_block
+from docutils.parsers.rst import Directive, directives
+from sphinx.addnodes import download_reference
+from sphinx.errors import ExtensionError
+from sphinx.transforms import SphinxTransform
+from sphinx.util import parselinenos
+from sphinx.util.docutils import ReferenceRole
 
-from .utils import strip_latex_delimiters, sphinx_abs_dir
-from .thebelab import ThebeSourceNode, ThebeOutputNode
+from .thebelab import ThebeOutputNode, ThebeSourceNode
+from .utils import sphinx_abs_dir, strip_latex_delimiters
 
 WIDGET_VIEW_MIMETYPE = "application/vnd.jupyter.widget-view+json"
 WIDGET_STATE_MIMETYPE = "application/vnd.jupyter.widget-state+json"
@@ -45,8 +41,8 @@ def load_content(cell, location, logger):
         try:
             with Path(filename).open() as f:
                 content = [line.rstrip() for line in f.readlines()]
-        except (IOError, OSError):
-            raise IOError("File {} not found or reading it failed".format(filename))
+        except OSError:
+            raise OSError(f"File {filename} not found or reading it failed")
     else:
         cell.assert_has_content()
         content = cell.content
@@ -165,6 +161,7 @@ class JupyterCell(Directive):
         cell_node += cell_input
         return [cell_node]
 
+
 class CellInput(Directive):
     """Define a code cell to be included verbatim but not executed.
 
@@ -182,7 +179,7 @@ class CellInput(Directive):
         specified line.
     emphasize-lines : comma separated list of line numbers
         If provided, the specified lines will be highlighted.
-    
+
     Content
     -------
     code : str
@@ -234,6 +231,7 @@ class CellInput(Directive):
         )
         cell_node += cell_input
         return [cell_node]
+
 
 class CellOutput(Directive):
     """Define an output cell to be included verbatim.
@@ -328,14 +326,14 @@ class MimeBundleNode(docutils.nodes.container):
         try:
             # Or should we go to config via the node?
             priority = visitor.builder.env.app.config[
-                'render_priority_' + visitor.builder.format
+                "render_priority_" + visitor.builder.format
             ]
         except (AttributeError, KeyError):
             # Not sure what do to, act as a container and show everything just in case.
             return super()
         for mimetype in priority:
             try:
-                return self.children[self.attributes['mimetypes'].index(mimetype)]
+                return self.children[self.attributes["mimetypes"].index(mimetype)]
             except ValueError:
                 pass
         # Same
@@ -388,10 +386,10 @@ class JupyterWidgetStateNode(docutils.nodes.Element):
         super().__init__("", state=attributes["state"])
 
     def html(self):
-        
-        # escape </script> to avoid early closing of the tag in the html page 
+
+        # escape </script> to avoid early closing of the tag in the html page
         json_data = json.dumps(self["state"]).replace("</script>", r"<\/script>")
-        
+
         # TODO: render into a separate file if 'html-manager' starts fully
         #       parsing script tags, and not just grabbing their innerHTML
         # https://github.com/jupyter-widgets/ipywidgets/blob/master/packages/html-manager/src/libembed.ts#L36
@@ -399,8 +397,8 @@ class JupyterWidgetStateNode(docutils.nodes.Element):
             load="", widget_views="", json_data=json_data
         )
 
-def cell_output_to_nodes(outputs, write_stderr, out_dir,
-                         thebe_config, inline=False):
+
+def cell_output_to_nodes(outputs, write_stderr, out_dir, thebe_config, inline=False):
     """Convert a jupyter cell with outputs and filenames to doctree nodes.
 
     Parameters
@@ -476,11 +474,8 @@ def cell_output_to_nodes(outputs, write_stderr, out_dir,
             )
         elif output_type in ("display_data", "execute_result"):
             children_by_mimetype = {
-                mime_type: output2sphinx(
-                    data, mime_type, output["metadata"], out_dir
-                )
+                mime_type: output2sphinx(data, mime_type, output["metadata"], out_dir)
                 for mime_type, data in output["data"].items()
-
             }
             # Filter out unknown mimetypes
             # TODO: rewrite this using walrus once we depend on Python 3.8
@@ -489,11 +484,13 @@ def cell_output_to_nodes(outputs, write_stderr, out_dir,
                 for mime_type, node in children_by_mimetype.items()
                 if node is not None
             }
-            to_add.append(MimeBundleNode(
-                "",
-                *list(children_by_mimetype.values()),
-                mimetypes=list(children_by_mimetype.keys())
-            ))
+            to_add.append(
+                MimeBundleNode(
+                    "",
+                    *list(children_by_mimetype.values()),
+                    mimetypes=list(children_by_mimetype.keys()),
+                )
+            )
 
     return to_add
 
@@ -552,7 +549,7 @@ def output2sphinx(data, mime_type, metadata, out_dir, inline=False):
         uri = (out_dir / filename).as_posix()
         return docutils.nodes.image(uri=uri)
     else:
-        logger.debug(f'Unknown mime type in cell output: {mime_type}')
+        logger.debug(f"Unknown mime type in cell output: {mime_type}")
 
 
 def apply_styling(node, thebe_config):

@@ -1,32 +1,23 @@
 """Simple sphinx extension that executes code in jupyter and inserts output."""
 
-from ._version import version_info, __version__
-from sphinx.util import logging
-import docutils
-import ipywidgets
-import os
-from sphinx.util.fileutil import copy_asset
-from sphinx.errors import ExtensionError
-from IPython.lib.lexers import IPythonTracebackLexer, IPython3Lexer
 from pathlib import Path
 
-from .ast import (
-    JupyterCell,
-    JupyterCellNode,
-    CellInput,
-    CellInputNode,
-    CellOutput,
-    CellOutputNode,
-    MimeBundleNode,
-    JupyterKernelNode,
-    JupyterWidgetViewNode,
-    JupyterWidgetStateNode,
-    WIDGET_VIEW_MIMETYPE,
-    JupyterDownloadRole,
-    CombineCellInputOutput,
-)
-from .execute import JupyterKernel, ExecuteJupyterCells
-from .thebelab import ThebeButton, ThebeButtonNode, ThebeOutputNode, ThebeSourceNode
+import docutils
+import ipywidgets
+from IPython.lib.lexers import IPython3Lexer, IPythonTracebackLexer
+from sphinx.errors import ExtensionError
+from sphinx.util import logging
+from sphinx.util.fileutil import copy_asset
+
+from ._version import __version__
+from .ast import (WIDGET_VIEW_MIMETYPE, CellInput, CellInputNode, CellOutput,
+                  CellOutputNode, CombineCellInputOutput, JupyterCell,
+                  JupyterCellNode, JupyterDownloadRole, JupyterKernelNode,
+                  JupyterWidgetStateNode, JupyterWidgetViewNode,
+                  MimeBundleNode)
+from .execute import ExecuteJupyterCells, JupyterKernel
+from .thebelab import (ThebeButton, ThebeButtonNode, ThebeOutputNode,
+                       ThebeSourceNode)
 
 REQUIRE_URL_DEFAULT = (
     "https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"
@@ -46,10 +37,8 @@ def skip(self, node):
 # Used for nodes that should be gone by rendering time (OutputMimeBundleNode)
 def halt(self, node):
     raise ExtensionError(
-        (
-            "Rendering encountered a node type that should "
-            "have been removed before rendering: %s" % type(node)
-        )
+        "Rendering encountered a node type that should "
+        "have been removed before rendering: %s" % type(node)
     )
 
 

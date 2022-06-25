@@ -2,29 +2,29 @@
 
 import os
 import warnings
-from pathlib import Path
 from logging import Logger
-
-from sphinx.transforms import SphinxTransform
-from sphinx.errors import ExtensionError
-
-import docutils
-from docutils.parsers.rst import Directive, directives
+from pathlib import Path
 
 import nbconvert
+from docutils.parsers.rst import Directive, directives
 from nbconvert.preprocessors import ExtractOutputPreprocessor
 from nbconvert.writers import FilesWriter
+from sphinx.errors import ExtensionError
+from sphinx.transforms import SphinxTransform
 
 if nbconvert.version_info < (6,):
-     from nbconvert.preprocessors.execute import executenb
+    from nbconvert.preprocessors.execute import executenb
 else:
-     from nbclient.client import execute as executenb
+    from nbclient.client import execute as executenb
 
 import traitlets
+
 # Workaround of https://github.com/ipython/traitlets/issues/606
 if traitlets.version_info < (5, 1):
+
     class LoggerAdapterWrapper(Logger):
         """Wrap a logger adapter, while pretending to be a logger."""
+
         def __init__(self, wrapped):
             self._wrapped = wrapped
 
@@ -32,31 +32,23 @@ if traitlets.version_info < (5, 1):
             if attr == "_wrapped":
                 return object.__getattribute__(self, attr)
             return self._wrapped.__getattribute__(attr)
+
 else:
+
     def LoggerAdapterWrapper(logger_adapter):
         return logger_adapter
+
 
 import nbformat
 
 import jupyter_sphinx as js
+
+from .ast import (CellOutputNode, JupyterCellNode, JupyterKernelNode,
+                  JupyterWidgetStateNode, apply_styling, cell_output_to_nodes,
+                  get_widgets)
 from .thebelab import ThebeButtonNode, add_thebelab_library
-from ._version import __version__
-from .utils import (
-    default_notebook_names,
-    output_directory,
-    split_on,
-    blank_nb,
-    sphinx_abs_dir,
-)
-from .ast import (
-    JupyterCellNode,
-    CellOutputNode,
-    JupyterKernelNode,
-    cell_output_to_nodes,
-    JupyterWidgetStateNode,
-    apply_styling,
-    get_widgets,
-)
+from .utils import (blank_nb, default_notebook_names, output_directory,
+                    sphinx_abs_dir, split_on)
 
 
 class JupyterKernel(Directive):
@@ -130,7 +122,7 @@ class ExecuteJupyterCells(SphinxTransform):
 
             add_thebelab_library(doctree, self.env)
 
-        js.logger.info("executing {}".format(docname))
+        js.logger.info(f"executing {docname}")
         output_dir = Path(output_directory(self.env)) / doc_dir_relpath
 
         # Start new notebook whenever a JupyterKernelNode is encountered
@@ -153,7 +145,10 @@ class ExecuteJupyterCells(SphinxTransform):
             # and the provided input/output can be inserted later
             notebook = execute_cells(
                 kernel_name,
-                [nbformat.v4.new_code_cell(node.astext() if node["execute"] else "") for node in nodes],
+                [
+                    nbformat.v4.new_code_cell(node.astext() if node["execute"] else "")
+                    for node in nodes
+                ],
                 self.config.jupyter_execute_kwargs,
             )
 
@@ -244,7 +239,9 @@ class ExecuteJupyterCells(SphinxTransform):
             # Write certain cell outputs (e.g. images) to separate files, and
             # modify the metadata of the associated cells in 'notebook' to
             # include the path to the output file.
-            write_notebook_output(notebook, str(output_dir), file_name, self.env.docname)
+            write_notebook_output(
+                notebook, str(output_dir), file_name, self.env.docname
+            )
 
             try:
                 cm_language = notebook.metadata.language_info.codemirror_mode.name
@@ -305,15 +302,13 @@ def write_notebook_output(notebook, output_dir, notebook_name, location=None):
         os.path.join(output_dir, notebook_name + ".ipynb"),
     )
 
-    exporter = nbconvert.exporters.ScriptExporter(
-        log=LoggerAdapterWrapper(js.logger)
-    )
+    exporter = nbconvert.exporters.ScriptExporter(log=LoggerAdapterWrapper(js.logger))
     with warnings.catch_warnings():
         # See https://github.com/jupyter/nbconvert/issues/1388
-        warnings.simplefilter('ignore', DeprecationWarning)
+        warnings.simplefilter("ignore", DeprecationWarning)
         contents, resources = exporter.from_notebook_node(notebook)
 
-    notebook_file = notebook_name + resources['output_extension']
+    notebook_file = notebook_name + resources["output_extension"]
     output_dir = Path(output_dir)
     # utf-8 is the de-facto standard encoding for notebooks.
     (output_dir / notebook_file).write_text(contents, encoding="utf8")

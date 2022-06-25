@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 #
 # Configuration file for the Sphinx documentation builder.
 #
@@ -35,4 +34,4 @@ html_theme_options = {
 
 jupyter_sphinx_thebelab_config = {"binderOptions": {"repo": "jupyter/jupyter-sphinx"}}
 
-latex_engine = 'xelatex'
+latex_engine = "xelatex"
