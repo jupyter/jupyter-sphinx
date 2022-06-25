@@ -413,6 +413,10 @@ Here is a sample ``custom.css`` file overriding the ``stderr`` background color:
   }
 
 
+Alternatively, you can also completely overwrite the CSS and JS files that are added by Jupyter Sphinx by providing a full copy of a ``jupyter-sphinx.css`` (which can be empty) file in your ``_static`` folder.
+This is also possible with the thebelab CSS and JS that is added.
+
+
 Configuration options
 ---------------------
 
