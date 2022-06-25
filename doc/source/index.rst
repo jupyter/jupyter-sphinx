@@ -413,6 +413,10 @@ Here is a sample ``custom.css`` file overriding the ``stderr`` background color:
   }
 
 
+Alternatively, you can also completely overwrite the CSS and JS files that are added by Jupyter Sphinx by providing a full copy of a ``jupyter-sphinx.css`` (which can be empty) file in your ``_static`` folder.
+This is also possible with the thebelab CSS and JS that is added.
+
+
 Configuration options
 ---------------------
 
@@ -478,6 +482,7 @@ Release 0.4.0
 - Remove deprecated enabling of the extension as ``jupyter_sphinx.execute``.
 - Implement different output priorities in HTML and LaTeX builders. In practice this allows to provide a better fallback in PDF output.
 - Introduce new ``jupyter-download`` syntax compatible with Sphinx≥4, ``jupyter-download-nb``, ``jupyter-download-notebook``, and ``jupyter-download-script``
+- Do not overwrite CSS and JS if files already exist in _static/, this allows to customize the CSS and JS file.
 
 Release 0.3.0
 ~~~~~~~~~~~~~
