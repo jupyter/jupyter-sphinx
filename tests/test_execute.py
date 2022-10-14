@@ -772,6 +772,18 @@ def test_pre_notebook_cell(doctree):
     source = """
     .. jupyter-execute::
 
-        sys.executable
+        bool(sys.executable)
     """
-    doctree(source, config="jupyter_execute_pre_notebook = 'import sys'")
+    tree = doctree(source, config="jupyter_execute_pre_notebook = 'import sys'")
+    (cell,) = tree.traverse(JupyterCellNode)
+    (cellinput, celloutput) = cell.children
+    assert not cell.attributes["code_below"]
+    assert not cell.attributes["hide_code"]
+    assert not cell.attributes["hide_output"]
+    assert not cellinput.children[0]["linenos"]
+    assert cellinput.children[0].astext().strip() == "bool(sys.executable)"
+    assert celloutput.children[0].astext().strip() == "True"
+
+
+if __name__ == "__main__":
+    pytest.main(["tests/test_execute.py::test_pre_notebook_cell", "-s"])

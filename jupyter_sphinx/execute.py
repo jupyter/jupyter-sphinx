@@ -168,6 +168,8 @@ class ExecuteJupyterCells(SphinxTransform):
                 code_cells,
                 self.config.jupyter_execute_kwargs,
             )
+            if self.config.jupyter_execute_pre_notebook:
+                notebook.cells = notebook.cells[1:]
 
             # Raise error if cells raised exceptions and were not marked as doing so
             for node, cell in zip(nodes, notebook.cells):

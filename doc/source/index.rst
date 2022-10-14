@@ -471,6 +471,10 @@ jupyter_sphinx_continue_linenos
     Whether to continue line numbering from previous cell in all ``jupyter-execute``
     sources.
 
+jupyter_execute_pre_notebook
+
+    `\\n` delimited block of code that is inserted to the front of any executed notebooks. Defaults to `None`
+
 Changelog
 ---------
 
