@@ -766,3 +766,12 @@ def test_builder_priority(doctree):
     _, app, _ = doctree(source, config=config, return_all=True, buildername="latex")
     latex = (Path(app.outdir) / "python.tex").read_text()
     assert "I am latex" in latex
+
+
+def test_pre_notebook_cell(doctree):
+    source = """
+    .. jupyter-execute::
+
+        sys.executable
+    """
+    doctree(source, config="jupyter_execute_pre_notebook = 'import sys'")
