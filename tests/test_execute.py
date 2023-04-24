@@ -24,6 +24,8 @@ from jupyter_sphinx.ast import (
 from jupyter_sphinx.thebelab import ThebeButtonNode, ThebeOutputNode, ThebeSourceNode
 
 
+EXEC_DIRECTORY = tempfile.mkdtemp()
+
 @pytest.fixture()
 def doctree():
     source_trees = []
@@ -37,7 +39,7 @@ def doctree():
         entrypoint="jupyter_sphinx",
         buildername="html",
     ):
-        src_dir = Path(tempfile.mkdtemp())
+        src_dir = Path(EXEC_DIRECTORY)
         source_trees.append(src_dir)
 
         conf_contents = "extensions = ['%s']" % entrypoint
@@ -766,3 +768,43 @@ def test_builder_priority(doctree):
     _, app, _ = doctree(source, config=config, return_all=True, buildername="latex")
     latex = (Path(app.outdir) / "python.tex").read_text()
     assert "I am latex" in latex
+
+
+def test_input_file(doctree):
+    with open(os.path.join(EXEC_DIRECTORY, "myscript.py"), "w") as fid:
+        fid.write("2 + 2")
+
+    source = """
+    .. jupyter-execute:: myscript.py
+
+    """
+    tree = doctree(source)
+    (cell,) = tree.traverse(JupyterCellNode)
+    (cellinput, celloutput) = cell.children
+    assert not cell.attributes["code_below"]
+    assert not cell.attributes["hide_code"]
+    assert not cell.attributes["hide_output"]
+    assert not cellinput.children[0]["linenos"]
+    assert cellinput.children[0].astext().strip() == "2 + 2"
+    assert celloutput.children[0].astext().strip() == "4"
+
+def test_relative_input_file(doctree):
+    path =  Path(EXEC_DIRECTORY)
+    script_path = path.parents[1]
+
+    with open(os.path.join(script_path, "myscript.py"), "w") as fid:
+        fid.write("2 + 3")
+
+    source = """
+    .. jupyter-execute:: ../../myscript.py
+
+    """
+    tree = doctree(source)
+    (cell,) = tree.traverse(JupyterCellNode)
+    (cellinput, celloutput) = cell.children
+    assert not cell.attributes["code_below"]
+    assert not cell.attributes["hide_code"]
+    assert not cell.attributes["hide_output"]
+    assert not cellinput.children[0]["linenos"]
+    assert cellinput.children[0].astext().strip() == "2 + 3"
+    assert celloutput.children[0].astext().strip() == "5"
