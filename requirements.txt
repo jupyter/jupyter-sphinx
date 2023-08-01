@@ -1,4 +1,5 @@
 sphinx>=2.4.4
+ipykernel>=4.5.1
 ipywidgets>=7.0.0
 IPython
 nbconvert>=5.4
