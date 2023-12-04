@@ -30,6 +30,7 @@ setup(
     packages=["jupyter_sphinx"],
     install_requires=[
         "Sphinx>=2",
+        "ipykernel>=4.5.1",
         "ipywidgets>=7.0.0",
         "IPython",
         "nbconvert>=5.5",
