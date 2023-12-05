@@ -36,6 +36,6 @@ setup(
         "nbconvert>=5.5",
         "nbformat",
     ],
-    python_requires=">= 3.7",
+    python_requires=">= 3.8",
     package_data={"jupyter_sphinx": ["thebelab/*", "css/*"]},
 )
