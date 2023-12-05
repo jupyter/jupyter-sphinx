@@ -13,6 +13,7 @@ from nbformat import from_dict
 from sphinx.addnodes import download_reference
 from sphinx.errors import ExtensionError
 from sphinx.testing.util import SphinxTestApp, assert_node
+
 try:
     from sphinx.testing.util import path
 except ImportError:
