@@ -29,7 +29,7 @@ setup(
     license="BSD",
     packages=["jupyter_sphinx"],
     install_requires=[
-        "Sphinx>=2",
+        "Sphinx>=7.2",
         "ipykernel>=4.5.1",
         "ipywidgets>=7.0.0",
         "IPython",
