@@ -12,7 +12,13 @@ from docutils.nodes import container, image, literal, literal_block, math_block,
 from nbformat import from_dict
 from sphinx.addnodes import download_reference
 from sphinx.errors import ExtensionError
-from sphinx.testing.util import SphinxTestApp, assert_node, path
+from sphinx.testing.util import SphinxTestApp, assert_node
+
+try:
+    from sphinx.testing.util import path
+except ImportError:
+    path = None
+
 
 from jupyter_sphinx.ast import (
     JupyterCellNode,
@@ -47,8 +53,10 @@ def doctree():
         (src_dir / "index.rst").write_text(source, encoding="utf8")
 
         warnings = StringIO()
+        if path is not None:
+            src_dir = path(src_dir.as_posix())
         app = SphinxTestApp(
-            srcdir=path(src_dir.as_posix()),
+            srcdir=src_dir,
             status=StringIO(),
             warning=warnings,
             buildername=buildername,
