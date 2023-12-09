@@ -74,6 +74,8 @@ addopts = [
 testpaths = ["tests/"]
 filterwarnings = [
   "error",
+  # https://github.com/dateutil/dateutil/issues/1314
+  "module:datetime.datetime.utc:DeprecationWarning"
 ]
 
 [tool.repo-review]
