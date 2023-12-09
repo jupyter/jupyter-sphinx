@@ -87,7 +87,7 @@ def test_basic(doctree, buildername):
         2 + 2
     """
     tree = doctree(source, buildername=buildername)
-    (cell,) = tree.traverse(JupyterCellNode)
+    (cell,) = tree.findall(JupyterCellNode)
     (cellinput, celloutput) = cell.children
     assert not cell.attributes["code_below"]
     assert not cell.attributes["hide_code"]
@@ -105,7 +105,7 @@ def test_hide_output(doctree):
         2 + 2
     """
     tree = doctree(source)
-    (cell,) = tree.traverse(JupyterCellNode)
+    (cell,) = tree.findall(JupyterCellNode)
     (cellinput, celloutput) = cell.children
     assert cell.attributes["hide_output"]
     assert len(celloutput.children) == 0
@@ -120,7 +120,7 @@ def test_hide_code(doctree):
         2 + 2
     """
     tree = doctree(source)
-    (cell,) = tree.traverse(JupyterCellNode)
+    (cell,) = tree.findall(JupyterCellNode)
     (celloutput,) = cell.children
     assert cell.attributes["hide_code"]
     assert len(cell.children) == 1
@@ -135,7 +135,7 @@ def test_code_below(doctree):
         2 + 2
     """
     tree = doctree(source)
-    (cell,) = tree.traverse(JupyterCellNode)
+    (cell,) = tree.findall(JupyterCellNode)
     (celloutput, cellinput) = cell.children
     assert cell.attributes["code_below"]
     assert cellinput.children[0].astext().strip() == "2 + 2"
@@ -150,7 +150,7 @@ def test_linenos(doctree):
         2 + 2
     """
     tree = doctree(source)
-    (cell,) = tree.traverse(JupyterCellNode)
+    (cell,) = tree.findall(JupyterCellNode)
     (cellinput, celloutput) = cell.children
     assert cellinput.children[0]["linenos"]
     assert len(cell.children) == 2
@@ -164,7 +164,7 @@ def test_linenos(doctree):
         2 + 2
     """
     tree = doctree(source)
-    (cell,) = tree.traverse(JupyterCellNode)
+    (cell,) = tree.findall(JupyterCellNode)
     (celloutput, cellinput) = cell.children
     assert cellinput.children[0]["linenos"]
 
@@ -176,7 +176,7 @@ def test_linenos_conf_option(doctree):
         2 + 2
     """
     tree = doctree(source, config="jupyter_sphinx_linenos = True")
-    (cell,) = tree.traverse(JupyterCellNode)
+    (cell,) = tree.findall(JupyterCellNode)
     (cellinput, celloutput) = cell.children
     assert cellinput.children[0].attributes["linenos"]
     assert "highlight_args" not in cellinput.children[0].attributes
@@ -194,7 +194,7 @@ def test_continue_linenos_conf_option(doctree):
     """
 
     tree = doctree(source, config="jupyter_sphinx_continue_linenos = True")
-    (cell,) = tree.traverse(JupyterCellNode)
+    (cell,) = tree.findall(JupyterCellNode)
     (cellinput, celloutput) = cell.children
     assert not cellinput.children[0].attributes["linenos"]
     assert cellinput.children[0].astext().strip() == "2 + 2"
@@ -218,7 +218,7 @@ def test_continue_linenos_conf_option(doctree):
         "jupyter_sphinx_continue_linenos = True",
     )
 
-    cell0, cell1 = tree.traverse(JupyterCellNode)
+    cell0, cell1 = tree.findall(JupyterCellNode)
     (cellinput0, celloutput0) = cell0.children
     (cellinput1, celloutput1) = cell1.children
     assert cellinput0.children[0].attributes["linenos"]
@@ -248,7 +248,7 @@ def test_continue_linenos_conf_option(doctree):
         config="jupyter_sphinx_linenos = True\n"
         "jupyter_sphinx_continue_linenos = True",
     )
-    cell0, cell1 = tree.traverse(JupyterCellNode)
+    cell0, cell1 = tree.findall(JupyterCellNode)
     (cellinput0, celloutput0) = cell0.children
     (cellinput1, celloutput1) = cell1.children
     assert cellinput0.children[0].attributes["highlight_args"]["linenostart"] == 7
@@ -282,7 +282,7 @@ def test_emphasize_lines(doctree):
         5 + 5
     """
     tree = doctree(source)
-    cell0, cell1 = tree.traverse(JupyterCellNode)
+    cell0, cell1 = tree.findall(JupyterCellNode)
 
     assert cell0.attributes["emphasize_lines"] == [1, 3, 4, 5]
     assert cell1.attributes["emphasize_lines"] == [2, 4]
@@ -300,7 +300,7 @@ def test_execution_environment_carries_over(doctree):
         a
     """
     tree = doctree(source)
-    _, cell1 = tree.traverse(JupyterCellNode)
+    _, cell1 = tree.findall(JupyterCellNode)
     (_, celloutput1) = cell1.children
     assert celloutput1.children[0].astext().strip() == "2"
 
@@ -321,7 +321,7 @@ def test_kernel_restart(doctree):
         a
     """
     tree = doctree(source)
-    _, cell1 = tree.traverse(JupyterCellNode)
+    _, cell1 = tree.findall(JupyterCellNode)
     (_, celloutput1) = cell1.children
     assert "NameError" in celloutput1.children[0].astext()
 
@@ -342,7 +342,7 @@ def test_raises(doctree):
         raise ValueError()
     """
     tree = doctree(source)
-    (cell,) = tree.traverse(JupyterCellNode)
+    (cell,) = tree.findall(JupyterCellNode)
     (_, celloutput) = cell.children
     assert "ValueError" in celloutput.children[0].astext()
 
@@ -353,7 +353,7 @@ def test_raises(doctree):
         raise ValueError()
     """
     tree = doctree(source)
-    (cell,) = tree.traverse(JupyterCellNode)
+    (cell,) = tree.findall(JupyterCellNode)
     (_, celloutput) = cell.children
     assert "ValueError" in celloutput.children[0].astext()
 
@@ -366,8 +366,8 @@ def test_widgets(doctree):
         ipywidgets.Button()
     """
     tree = doctree(source)
-    assert len(list(tree.traverse(JupyterWidgetViewNode))) == 1
-    assert len(list(tree.traverse(JupyterWidgetStateNode))) == 1
+    assert len(list(tree.findall(JupyterWidgetViewNode))) == 1
+    assert len(list(tree.findall(JupyterWidgetStateNode))) == 1
 
 
 def test_javascript(doctree):
@@ -378,7 +378,7 @@ def test_javascript(doctree):
         Javascript('window.alert("Hello world!")')
     """
     tree = doctree(source)
-    (node,) = list(tree.traverse(raw))
+    (node,) = list(tree.findall(raw))
     (text,) = node.children
     assert "world" in text
 
@@ -390,7 +390,7 @@ def test_stdout(doctree):
         print('hello world')
     """
     tree = doctree(source)
-    (cell,) = tree.traverse(JupyterCellNode)
+    (cell,) = tree.findall(JupyterCellNode)
     (_, celloutput) = cell.children
     assert len(cell.children) == 2
     assert celloutput.children[0].astext().strip() == "hello world"
@@ -406,7 +406,7 @@ def test_stderr(doctree):
 
     tree, _, warnings = doctree(source, return_all=True)
     assert "hello world" in warnings
-    (cell,) = tree.traverse(JupyterCellNode)
+    (cell,) = tree.findall(JupyterCellNode)
     (_, celloutput) = cell.children
     assert len(celloutput) == 0  # no output
 
@@ -418,7 +418,7 @@ def test_stderr(doctree):
         print('hello world', file=sys.stderr)
     """
     tree = doctree(source)
-    (cell,) = tree.traverse(JupyterCellNode)
+    (cell,) = tree.findall(JupyterCellNode)
     (_, celloutput) = cell.children
     assert len(cell.children) == 2
     assert "stderr" in celloutput.children[0].attributes["classes"]
@@ -436,7 +436,7 @@ def test_thebe_hide_output(doctree):
         2 + 2
     """
     tree = doctree(source, thebe_config)
-    (cell,) = tree.traverse(JupyterCellNode)
+    (cell,) = tree.findall(JupyterCellNode)
     (cellinput, celloutput) = cell.children
     assert cell.attributes["hide_output"]
     assert len(celloutput.children) == 0
@@ -455,7 +455,7 @@ def test_thebe_hide_code(doctree):
         2 + 2
     """
     tree = doctree(source, thebe_config)
-    (cell,) = tree.traverse(JupyterCellNode)
+    (cell,) = tree.findall(JupyterCellNode)
     (cellinput, celloutput) = cell.children
     assert cell.attributes["hide_code"]
     assert len(cell.children) == 2
@@ -480,7 +480,7 @@ def test_thebe_code_below(doctree):
         2 + 2
     """
     tree = doctree(source, thebe_config)
-    (cell,) = tree.traverse(JupyterCellNode)
+    (cell,) = tree.findall(JupyterCellNode)
     (cellinput, celloutput) = cell.children
     assert cell.attributes["code_below"]
 
@@ -504,7 +504,7 @@ def test_thebe_button_auto(doctree):
         1 + 1
     """
     tree = doctree(source, config=config)
-    assert len(tree.traverse(ThebeButtonNode)) == 1
+    assert len(list(tree.findall(ThebeButtonNode))) == 1
 
 
 def test_thebe_button_manual(doctree):
@@ -517,14 +517,14 @@ def test_thebe_button_manual(doctree):
     .. thebe-button::
     """
     tree = doctree(source, config)
-    assert len(tree.traverse(ThebeButtonNode)) == 1
+    assert len(list(tree.findall(ThebeButtonNode))) == 1
 
 
 def test_thebe_button_none(doctree):
     config = 'jupyter_sphinx_thebelab_config = {"dummy": True}'
     source = "No Jupyter cells"
     tree = doctree(source, config)
-    assert len(tree.traverse(ThebeButtonNode)) == 0
+    assert len(list(tree.findall(ThebeButtonNode))) == 0
 
 
 def test_latex(doctree):
@@ -539,9 +539,9 @@ def test_latex(doctree):
 
     for start, end in delimiter_pairs:
         tree = doctree(source.format(start, end))
-        (cell,) = tree.traverse(JupyterCellNode)
+        (cell,) = tree.findall(JupyterCellNode)
         (_, celloutput) = cell.children
-        assert next(iter(celloutput.traverse(math_block))).astext() == r"\int"
+        assert next(iter(celloutput.findall(math_block))).astext() == r"\int"
 
 
 def test_cell_output_to_nodes(doctree):
@@ -582,7 +582,7 @@ def test_cell_output_to_nodes(doctree):
     for index, cell in enumerate(cells):
         cell = from_dict(cell)
         (output_node,) = cell_output_to_nodes(cell["outputs"], True, output_dir, None)
-        (image_node,) = output_node.traverse(image)
+        (image_node,) = output_node.findall(image)
         assert image_node.attributes["uri"] == img_locs[index]
 
     # Testing inline functionality
@@ -680,7 +680,7 @@ def test_input_cell(doctree):
         2 + 2
     """
     tree = doctree(source)
-    (cell,) = tree.traverse(JupyterCellNode)
+    (cell,) = tree.findall(JupyterCellNode)
     (cellinput, empty) = cell.children
     assert cell.attributes["hide_output"] is True
     assert cellinput.children[0].attributes["linenos"] is False
@@ -696,7 +696,7 @@ def test_input_cell_linenos(doctree):
         2 + 2
     """
     tree = doctree(source)
-    (cell,) = tree.traverse(JupyterCellNode)
+    (cell,) = tree.findall(JupyterCellNode)
     (cellinput, empty) = cell.children
     assert cell.attributes["hide_output"] is True
     assert cellinput.children[0].attributes["linenos"] is True
@@ -715,7 +715,7 @@ def test_output_cell(doctree):
         4
     """
     tree = doctree(source)
-    (cell,) = tree.traverse(JupyterCellNode)
+    (cell,) = tree.findall(JupyterCellNode)
     (
         cellinput,
         celloutput,
@@ -749,7 +749,7 @@ def test_multiple_directives(doctree):
         5
     """
     tree = doctree(source)
-    (ex, jin) = tree.traverse(JupyterCellNode)
+    (ex, jin) = tree.findall(JupyterCellNode)
     (ex_in, ex_out) = ex.children
     (jin_in, jin_out) = jin.children
     assert ex_in.children[0].astext().strip() == "2 + 2"

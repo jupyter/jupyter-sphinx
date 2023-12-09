@@ -123,12 +123,12 @@ class ExecuteJupyterCells(SphinxTransform):
         linenos_config = self.config.jupyter_sphinx_linenos
         continue_linenos = self.config.jupyter_sphinx_continue_linenos
         # Check if we have anything to execute.
-        if not doctree.traverse(JupyterCellNode):
+        if not doctree.findall(JupyterCellNode):
             return
 
         if thebe_config:
             # Add the button at the bottom if it is not present
-            if not doctree.traverse(ThebeButtonNode):
+            if not doctree.findall(ThebeButtonNode):
                 doctree.append(ThebeButtonNode())
 
             add_thebelab_library(doctree, self.env)
@@ -140,7 +140,7 @@ class ExecuteJupyterCells(SphinxTransform):
         jupyter_nodes = (JupyterCellNode, JupyterKernelNode)
         nodes_by_notebook = split_on(
             lambda n: isinstance(n, JupyterKernelNode),
-            doctree.traverse(lambda n: isinstance(n, jupyter_nodes)),
+            doctree.findall(lambda n: isinstance(n, jupyter_nodes)),
         )
 
         for first, *nodes in nodes_by_notebook:

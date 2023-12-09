@@ -37,7 +37,7 @@ doc = [
 ]
 
 [tool.hatch.version]
-path = "jupyter_sphinx/__init__.py"
+path = "jupyter_sphinx/_version.py"
 
 [tool.hatch.build.targets.sdist]
 include = [
@@ -61,7 +61,7 @@ build = "cd doc; make html-strict"
 [tool.hatch.envs.test]
 features = ["test"]
 [tool.hatch.envs.test.scripts]
-test = "python -m bash_kernel.install && python -m pytest -vv {args}"
+test = "python -m bash_kernel.install && JUPYTER_PLATFORM_DIRS=1 python -m pytest -vv {args}"
 nowarn = "test -W default {args}"
 
 [tool.pytest.ini_options]

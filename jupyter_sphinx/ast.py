@@ -624,7 +624,7 @@ class CombineCellInputOutput(SphinxTransform):
     def apply(self):
         moved_outputs = set()
 
-        for cell_node in self.document.traverse(JupyterCellNode):
+        for cell_node in self.document.findall(JupyterCellNode):
             if not cell_node.attributes["execute"]:
                 if not cell_node.attributes["hide_code"]:
                     # Cell came from jupyter-input

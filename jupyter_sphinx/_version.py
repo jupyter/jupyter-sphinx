@@ -1,12 +1,18 @@
-version_info = (0, 4, 0, "final")
+"""
+store the current version info of the project.
 
-_specifier_ = {"alpha": "a", "beta": "b", "candidate": "rc", "final": ""}
+"""
+import re
+from typing import List
 
-__version__ = "{}.{}.{}{}".format(
-    version_info[0],
-    version_info[1],
-    version_info[2],
-    ""
-    if version_info[3] == "final"
-    else _specifier_[version_info[3]] + str(version_info[4]),
-)
+# Version string must appear intact for automatic versioning
+__version__ = "0.4.0"
+
+# Build up version_info tuple for backwards compatibility
+pattern = r"(?P<major>\d+).(?P<minor>\d+).(?P<patch>\d+)(?P<rest>.*)"
+match = re.match(pattern, __version__)
+assert match is not None
+parts: List[object] = [int(match[part]) for part in ["major", "minor", "patch"]]
+if match["rest"]:
+    parts.append(match["rest"])
+version_info = tuple(parts)
