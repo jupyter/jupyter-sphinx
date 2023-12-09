@@ -615,7 +615,7 @@ def test_download_role(text, reftarget, caption, tmp_path):
         "document.settings.env.docname": "path/to/docname",
         "document.settings.env.srcdir": str(tmp_path),
         "document.settings.env.app.srcdir": str(tmp_path),
-        "reporter.get_source_and_line": lambda l: ("source", l),
+        "reporter.get_source_and_line": lambda line: ("source", line),
     }
     mock_inliner.configure_mock(**config)
     ret, msg = role("jupyter-download-notebook", text, text, 0, mock_inliner)

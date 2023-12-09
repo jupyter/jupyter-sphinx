@@ -295,7 +295,7 @@ class CellOutput(Directive):
 
 
 class JupyterCellNode(docutils.nodes.container):
-    """Inserted into doctree whever a JupyterCell directive is encountered.
+    """Inserted into doctree wherever a JupyterCell directive is encountered.
 
     Contains code that will be executed in a Jupyter kernel at a later
     doctree-transformation step.
@@ -387,7 +387,6 @@ class JupyterWidgetStateNode(docutils.nodes.Element):
         super().__init__("", state=attributes["state"])
 
     def html(self):
-
         # escape </script> to avoid early closing of the tag in the html page
         json_data = json.dumps(self["state"]).replace("</script>", r"<\/script>")
 

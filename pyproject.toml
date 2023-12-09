@@ -8,7 +8,7 @@ dynamic = ["version"]
 description = "Jupyter Sphinx Extensions"
 readme = "README.md"
 license = {file="LICENSE"}
-requires-python = ">= 3.8"
+requires-python = ">=3.8"
 authors = [
     { name = "Jupyter Development Team", email = "jupyter@googlegroups.com" },
 ]
@@ -77,4 +77,4 @@ filterwarnings = [
 ]
 
 [tool.repo-review]
-ignore = ["GH102", "MY100", "RF001", "PY007", "GH103"]
+ignore = ["GH102", "MY100", "RF001", "PY007", "GH103", "PC140"]

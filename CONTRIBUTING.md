@@ -24,11 +24,12 @@ The development version of the server requires
 Once you have installed the dependencies mentioned above, use the
 following steps:
 
-    pip install --upgrade pip
-    git clone https://github.com/jupyter/jupyter-sphinx
-    cd jupyter-server
-    pip install -e ".[test]"
-
+```
+pip install --upgrade pip
+git clone https://github.com/jupyter/jupyter-sphinx
+cd jupyter-server
+pip install -e ".[test]"
+```
 
 ## Code Styling and Quality Checks
 
@@ -40,11 +41,15 @@ when you run `pip install -e ".[test]"`
 
 To install `pre-commit` hook manually, run the following:
 
-    pre-commit install
+```
+pre-commit install
+```
 
 You can invoke the pre-commit hook by hand at any time with:
 
-    pre-commit run
+```
+pre-commit run
+```
 
 which should run any autoformatting on your code and tell you about any
 errors it couldn't fix automatically. You may also install [black
@@ -66,37 +71,51 @@ There are three hatch scripts that can be run locally as well:
 
 Install dependencies:
 
-    pip install -e .[test]
+```
+pip install -e .[test]
+```
 
 To run the Python tests, use:
 
-    pytest
+```
+pytest
+```
 
 You can also run the tests using `hatch` without installing test
 dependencies in your local environment:
 
-    pip install hatch
-    hatch run test:test
+```
+pip install hatch
+hatch run test:test
+```
 
 The command takes any argument that you can give to `pytest`, e.g.:
 
-    hatch run test:test -k name_of_method_to_test
+```
+hatch run test:test -k name_of_method_to_test
+```
 
 You can also drop into a shell in the test environment by running:
 
-    hatch -e test shell
+```
+hatch -e test shell
+```
 
 # Building the Docs
 
 Install the docs requirements using `pip`:
 
-    pip install .[doc]
+```
+pip install .[doc]
+```
 
 Once you have installed the required packages, you can build the docs
 with:
 
-    cd docs
-    make html
+```
+cd docs
+make html
+```
 
 You can also run the tests using `hatch` without installing test
 dependencies in your local environment.
@@ -108,7 +127,9 @@ hatch run docs:build
 
 You can also drop into a shell in the docs environment by running:
 
-    hatch -e docs shell
+```
+hatch -e docs shell
+```
 
 After that, the generated HTML files will be available at
 `build/html/index.html`. You may view the docs in your browser.
