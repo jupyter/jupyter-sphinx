@@ -60,8 +60,10 @@ build = "cd doc; make html-strict"
 
 [tool.hatch.envs.test]
 features = ["test"]
+[tool.hatch.envs.docs.env-vars]
+JUPYTER_PLATFORM_DIRS = 1
 [tool.hatch.envs.test.scripts]
-test = "python -m bash_kernel.install && JUPYTER_PLATFORM_DIRS=1 python -m pytest -vv {args}"
+test = ["python -m bash_kernel.install", "python -m pytest -vv {args}"]
 nowarn = "test -W default {args}"
 
 [tool.pytest.ini_options]
