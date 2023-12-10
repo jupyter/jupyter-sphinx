@@ -42,7 +42,7 @@ jobs:
           python -m pip install --upgrade pip hatch
 
       - name: Run tests
-        run: hatch run test:test
+        run: hatch run test:test -x
 
   docs:
     runs-on: ubuntu-latest
