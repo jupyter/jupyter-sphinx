@@ -31,8 +31,8 @@ from jupyter_sphinx.ast import (
 from jupyter_sphinx.thebelab import ThebeButtonNode, ThebeOutputNode, ThebeSourceNode
 
 
-if os.name == 'nt':
-    asyncio.set_event_loop_policy(WindowsSelectorEventLoopPolicy())
+if os.name == "nt":
+    asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
 
 
 @pytest.fixture()
