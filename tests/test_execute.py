@@ -1,3 +1,4 @@
+import asyncio
 import os
 import shutil
 import sys
@@ -28,6 +29,10 @@ from jupyter_sphinx.ast import (
     cell_output_to_nodes,
 )
 from jupyter_sphinx.thebelab import ThebeButtonNode, ThebeOutputNode, ThebeSourceNode
+
+
+if os.name == 'nt':
+    asyncio.set_event_loop_policy(WindowsSelectorEventLoopPolicy())
 
 
 @pytest.fixture()
