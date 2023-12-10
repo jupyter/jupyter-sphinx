@@ -55,7 +55,7 @@ build = [
 
 [tool.hatch.envs.doc]
 features = ["doc"]
-[tool.hatch.envs.dos.scripts]
+[tool.hatch.envs.doc.scripts]
 build = "cd doc; make html-strict"
 
 [tool.hatch.envs.test]
