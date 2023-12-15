@@ -546,7 +546,7 @@ def test_latex(doctree):
         tree = doctree(source.format(start, end))
         (cell,) = tree.findall(JupyterCellNode)
         (_, celloutput) = cell.children
-        assert next(iter(celloutput.findall(math_block))).astext() == r"\int"
+        assert next(celloutput.findall(math_block)).astext() == r"\int"
 
 
 def test_cell_output_to_nodes(doctree):

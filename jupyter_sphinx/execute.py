@@ -123,12 +123,12 @@ class ExecuteJupyterCells(SphinxTransform):
         linenos_config = self.config.jupyter_sphinx_linenos
         continue_linenos = self.config.jupyter_sphinx_continue_linenos
         # Check if we have anything to execute.
-        if not list(doctree.findall(JupyterCellNode)):
+        if not next(doctree.findall(JupyterCellNode), False):
             return
 
         if thebe_config:
             # Add the button at the bottom if it is not present
-            if not list(doctree.findall(ThebeButtonNode)):
+            if not next(doctree.findall(ThebeButtonNode), False):
                 doctree.append(ThebeButtonNode())
 
             add_thebelab_library(doctree, self.env)
