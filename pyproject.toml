@@ -24,7 +24,7 @@ dependencies = [
 [project.urls]
 "Bug Tracker" = "https://github.com/jupyter/jupyter-sphinx/issues/"
 Documentation = "https://jupyter-sphinx.readthedocs.io"
-Homepage = "https://github.com/jupyter/jupyter-sphinx/"
+Homepage = "https://jupyter.org"
 "Source Code" = "https://github.com/jupyter/jupyter-sphinx/"
 
 [project.optional-dependencies]
