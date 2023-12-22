@@ -295,7 +295,7 @@ class CellOutput(Directive):
 
 
 class JupyterCellNode(docutils.nodes.container):
-    """Inserted into doctree whever a JupyterCell directive is encountered.
+    """Inserted into doctree wherever a JupyterCell directive is encountered.
 
     Contains code that will be executed in a Jupyter kernel at a later
     doctree-transformation step.
@@ -387,7 +387,6 @@ class JupyterWidgetStateNode(docutils.nodes.Element):
         super().__init__("", state=attributes["state"])
 
     def html(self):
-
         # escape </script> to avoid early closing of the tag in the html page
         json_data = json.dumps(self["state"]).replace("</script>", r"<\/script>")
 
@@ -625,7 +624,7 @@ class CombineCellInputOutput(SphinxTransform):
     def apply(self):
         moved_outputs = set()
 
-        for cell_node in self.document.traverse(JupyterCellNode):
+        for cell_node in self.document.findall(JupyterCellNode):
             if not cell_node.attributes["execute"]:
                 if not cell_node.attributes["hide_code"]:
                     # Cell came from jupyter-input

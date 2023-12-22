@@ -1,4 +1,4 @@
-.tox/
+.venv
 *.py[cod]
 
 # Packages
