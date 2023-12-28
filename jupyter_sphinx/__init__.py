@@ -193,6 +193,13 @@ def setup(app):
     app.add_config_value("jupyter_sphinx_linenos", False, "env")
     app.add_config_value("jupyter_sphinx_continue_linenos", False, "env")
 
+    # pre-notebook setup cell
+    app.add_config_value(
+        "jupyter_execute_pre_notebook",
+        None,
+        "env",
+    )
+
     # JupyterKernelNode is just a doctree marker for the
     # ExecuteJupyterCells transform, so we don't actually render it.
     app.add_node(

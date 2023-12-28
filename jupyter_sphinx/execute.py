@@ -155,14 +155,21 @@ class ExecuteJupyterCells(SphinxTransform):
             # Add empty placeholder cells for non-executed nodes so nodes
             # and cells can be zipped and the provided input/output
             # can be inserted later
+            code_cells = [
+                nbformat.v4.new_code_cell(node.astext() if node["execute"] else "")
+                for node in nodes
+            ]
+            if self.config.jupyter_execute_pre_notebook:
+                code_cells = [
+                    nbformat.v4.new_code_cell(self.config.jupyter_execute_pre_notebook)
+                ] + code_cells
             notebook = execute_cells(
                 kernel_name,
-                [
-                    nbformat.v4.new_code_cell(node.astext() if node["execute"] else "")
-                    for node in nodes
-                ],
+                code_cells,
                 self.config.jupyter_execute_kwargs,
             )
+            if self.config.jupyter_execute_pre_notebook:
+                notebook.cells = notebook.cells[1:]
 
             # Raise error if cells raised exceptions and were not marked as doing so
             for node, cell in zip(nodes, notebook.cells):
