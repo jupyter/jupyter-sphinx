@@ -6,6 +6,7 @@ on:
   pull_request:
   schedule:
     - cron: "0 8 * * *"
+  workflow_call:
 
 jobs:
   pre-commit:
