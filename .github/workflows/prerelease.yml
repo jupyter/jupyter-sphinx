@@ -1,0 +1,46 @@
+name: Scheduled pre-release tests
+
+on:
+  # Run this workflow once a week (https://crontab.guru/#0_5_*_*_1)
+  schedule:
+    - cron: "0 5 * * 1"
+  workflow_dispatch:
+
+# env variable to force pip to install pre-released versions
+# in hatch envs
+env:
+  PIP_PRE: 1
+
+jobs:
+  tests:
+    strategy:
+      matrix:
+        python-version: ["3.8", "3.9", "3.10", "3.11", " 3.12"]
+        os: [ubuntu-latest]
+        include:
+          - os: windows-latest
+            python-version: "3.12"
+          - os: macos-latest
+            python-version: "3.12"
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Install dependencies
+        run: pip install hatch
+      - name: Run tests
+        run: hatch run test:test -x
+
+  docs:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+      - name: Install dependencies
+        run: pip install hatch
+
+      - name: Build docs
+        run: hatch run doc:build
