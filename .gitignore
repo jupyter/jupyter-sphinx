@@ -25,3 +25,6 @@ __pycache__
 
 # git
 *.orig
+
+# documentation
+docs/_build/
