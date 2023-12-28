@@ -1,0 +1,84 @@
+[build-system]
+requires = ["hatchling>=1.5"]
+build-backend = "hatchling.build"
+
+[project]
+name = "jupyter-sphinx"
+dynamic = ["version"]
+description = "Jupyter Sphinx Extensions"
+readme = "README.md"
+license = {file="LICENSE"}
+requires-python = ">=3.8"
+authors = [
+    { name = "Jupyter Development Team", email = "jupyter@googlegroups.com" },
+]
+dependencies = [
+    "ipykernel>=4.5.1",
+    "IPython",
+    "ipywidgets>=7.0.0",
+    "nbconvert>=5.5",
+    "nbformat",
+    "Sphinx>=7",
+]
+
+[project.urls]
+"Bug Tracker" = "https://github.com/jupyter/jupyter-sphinx/issues/"
+Documentation = "https://jupyter-sphinx.readthedocs.io"
+Homepage = "https://jupyter.org"
+"Source Code" = "https://github.com/jupyter/jupyter-sphinx/"
+
+[project.optional-dependencies]
+test = [
+    "pytest",
+    "bash_kernel"
+]
+doc = [
+    "matplotlib"
+]
+
+[tool.hatch.version]
+path = "jupyter_sphinx/_version.py"
+
+[tool.hatch.build.targets.sdist]
+include = [
+    "/jupyter_sphinx",
+]
+
+[tool.hatch.envs.lint]
+detached = true
+dependencies = ["pre-commit"]
+[tool.hatch.envs.lint.scripts]
+build = [
+  "pre-commit run --all-files ruff",
+  "pre-commit run --all-files ruff-format",
+]
+
+[tool.hatch.envs.doc]
+features = ["doc"]
+[tool.hatch.envs.doc.scripts]
+build = "cd doc; make html-strict"
+
+[tool.hatch.envs.test]
+features = ["test"]
+[tool.hatch.envs.test.env-vars]
+JUPYTER_PLATFORM_DIRS = "1"
+[tool.hatch.envs.test.scripts]
+test = ["python -m bash_kernel.install", "python -m pytest -vv {args}"]
+nowarn = "test -W default {args}"
+
+[tool.pytest.ini_options]
+minversion = "7.0"
+xfail_strict = true
+log_cli_level = "info"
+addopts = [
+  "-ra", "--durations=10", "--color=yes", "--strict-config", "--strict-markers"
+]
+testpaths = ["tests/"]
+filterwarnings = [
+  "error",
+  # https://github.com/dateutil/dateutil/issues/1314
+  "module:datetime.datetime.utc:DeprecationWarning"
+]
+
+[tool.repo-review]
+ignore = ["GH102", "MY100", "RF001", "PY007", "GH103", "PC140"]
