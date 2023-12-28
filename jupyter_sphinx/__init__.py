@@ -8,7 +8,6 @@ from IPython.lib.lexers import IPython3Lexer, IPythonTracebackLexer
 from sphinx.application import Sphinx
 from sphinx.errors import ExtensionError
 from sphinx.util import logging
-from sphinx.util.fileutil import copy_asset
 from sphinx.util.fileutil import copy_asset_file
 
 from ._version import __version__
