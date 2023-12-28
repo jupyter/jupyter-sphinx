@@ -36,7 +36,6 @@ name = "Jupyter Development Team"
 email = "jupyter@googlegroups.com"
 
 [project.license]
-text = "BSD"
 file = "LICENSE"
 
 [project.readme]
