@@ -23,6 +23,14 @@ extensions = ["sphinx.ext.mathjax", "jupyter_sphinx"]
 
 # -- Options for HTML output ---------------------------------------------------
 html_theme = "sphinx_book_theme"
+html_title = "jupyter-sphinx"
+html_theme_options = {
+    "repository_url": "https://github.com/jupyter/jupyter-sphinx",
+    "use_repository_button": True,
+    "repository_branch": "main",
+    "use_issues_button": True,
+    "use_fullscreen_button": False,
+}
 
 # -- Options for LaTeX output --------------------------------------------------
 latex_engine = "xelatex"
