@@ -19,7 +19,7 @@ author = "Jupyter Development Team"
 release = jupyter_sphinx.__version__
 
 # -- General configuration -----------------------------------------------------
-extensions = ["sphinx.ext.mathjax", "jupyter_sphinx"]
+extensions = ["sphinx.ext.mathjax", "jupyter_sphinx", "sphinx_design"]
 
 # -- Options for HTML output ---------------------------------------------------
 html_theme = "sphinx_book_theme"

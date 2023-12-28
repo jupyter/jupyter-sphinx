@@ -33,6 +33,7 @@ test = [
     "bash_kernel"
 ]
 doc = [
+    "sphinx-design",
     "sphinx-book-theme",
     "matplotlib"
 ]
