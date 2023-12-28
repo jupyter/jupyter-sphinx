@@ -58,7 +58,7 @@ build = [
 [tool.hatch.envs.doc]
 features = ["doc"]
 [tool.hatch.envs.doc.scripts]
-build = "cd doc; make html-strict"
+build = "sphinx-build -v -b html docs docs/_build/html"
 
 [tool.hatch.envs.test]
 features = ["test"]
