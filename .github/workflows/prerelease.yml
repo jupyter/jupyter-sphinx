@@ -3,7 +3,7 @@ name: Scheduled pre-release tests
 on:
   # Run this workflow once a week (https://crontab.guru/#0_5_*_*_1)
   schedule:
-    - cron: "0 5 * * 1,4"
+    - cron: "0 5 * * 1"
   workflow_dispatch:
 
 # env variable to force pip to install pre-released versions
