@@ -154,11 +154,16 @@ class ExecuteJupyterCells(SphinxTransform):
 
             # Save time when jupyter notebook execution is not necessary
             if not any(not "execute" in node or node["execute"] for node in nodes):
-                # mimics empty cell output for each node
+                notebook = blank_nb(kernel_name)
+                try:
+                    cm_language = notebook.metadata.language_info.codemirror_mode.name
+                except AttributeError:
+                    cm_language = notebook.metadata.kernelspec.language
+                # Mimics empty cell output for each node
                 for node in nodes:
                     source = node.children[0]
                     source.attributes["classes"].append("code_cell")
-                    node.attributes["cm_language"] = kernel_name
+                    node.attributes["cm_language"] = cm_language
                     node += CellOutputNode(classes=["cell_output"])
                     apply_styling(node, thebe_config)
                 continue
