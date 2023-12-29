@@ -51,7 +51,9 @@ Homepage = "https://jupyter.org"
 [project.optional-dependencies]
 test = [
     "pytest",
-    "bash_kernel"
+    "bash_kernel",
+    "pytest-regressions",
+    "beautifulsoup4",
 ]
 doc = [
     "matplotlib"

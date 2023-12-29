@@ -1,10 +1,6 @@
-import asyncio
 import os
-import shutil
 import sys
-import tempfile
 import warnings
-from io import StringIO
 from pathlib import Path
 from unittest.mock import Mock
 
@@ -13,12 +9,8 @@ from docutils.nodes import container, image, literal, literal_block, math_block,
 from nbformat import from_dict
 from sphinx.addnodes import download_reference
 from sphinx.errors import ExtensionError
-from sphinx.testing.util import SphinxTestApp, assert_node
-
-try:
-    from sphinx.testing.util import path
-except ImportError:
-    path = None
+from sphinx.testing.util import assert_node
+from bs4 import BeautifulSoup
 
 
 from jupyter_sphinx.ast import (
@@ -31,67 +23,10 @@ from jupyter_sphinx.ast import (
 from jupyter_sphinx.thebelab import ThebeButtonNode, ThebeOutputNode, ThebeSourceNode
 
 
-if os.name == "nt":
-    asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
-
-
-@pytest.fixture()
-def doctree():
-    source_trees = []
-    apps = []
-    syspath = sys.path[:]
-
-    def doctree(
-        source,
-        config=None,
-        return_all=False,
-        entrypoint="jupyter_sphinx",
-        buildername="html",
-    ):
-        src_dir = Path(tempfile.mkdtemp())
-        source_trees.append(src_dir)
-
-        conf_contents = "extensions = ['%s']" % entrypoint
-        if config is not None:
-            conf_contents += "\n" + config
-        (src_dir / "conf.py").write_text(conf_contents, encoding="utf8")
-        (src_dir / "index.rst").write_text(source, encoding="utf8")
-
-        warnings = StringIO()
-        if path is not None:
-            src_dir = path(src_dir.as_posix())
-        app = SphinxTestApp(
-            srcdir=src_dir,
-            status=StringIO(),
-            warning=warnings,
-            buildername=buildername,
-        )
-        apps.append(app)
-        app.build()
-
-        doctree = app.env.get_and_resolve_doctree("index", app.builder)
-        if return_all:
-            return doctree, app, warnings.getvalue()
-        else:
-            return doctree
-
-    yield doctree
-
-    sys.path[:] = syspath
-    for app in reversed(apps):
-        app.cleanup()
-    for tree in source_trees:
-        shutil.rmtree(tree)
-
-
 @pytest.mark.parametrize("buildername", ["html", "singlehtml"])
-def test_basic(doctree, buildername):
-    source = """
-    .. jupyter-execute::
-
-        2 + 2
-    """
-    tree = doctree(source, buildername=buildername)
+def test_basic(doctree, buildername, directive, file_regression):
+    source = directive("execute", ["2 + 2"])
+    (tree, app, warning) = doctree(source, buildername=buildername)
     (cell,) = tree.findall(JupyterCellNode)
     (cellinput, celloutput) = cell.children
     assert not cell.attributes["code_below"]
@@ -100,9 +35,13 @@ def test_basic(doctree, buildername):
     assert not cellinput.children[0]["linenos"]
     assert cellinput.children[0].astext().strip() == "2 + 2"
     assert celloutput.children[0].astext().strip() == "4"
+    filename = Path(app.outdir) / "index.html"
+    html = BeautifulSoup(filename.read_text("utf8"), "html.parser")
+    body = html.select("div.jupyter_cell")[0]
+    file_regression.check(body.prettify(), extension=".html")
 
 
-def test_hide_output(doctree):
+def test_hide_output(doctree, data_regression):
     source = """
     .. jupyter-execute::
         :hide-output:
@@ -115,6 +54,7 @@ def test_hide_output(doctree):
     assert cell.attributes["hide_output"]
     assert len(celloutput.children) == 0
     assert cellinput.children[0].astext().strip() == "2 + 2"
+    data_regression.check(cell.attlist())
 
 
 def test_hide_code(doctree):

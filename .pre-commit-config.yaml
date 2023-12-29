@@ -35,6 +35,8 @@ repos:
     hooks:
       - id: prettier
         types_or: [yaml, html, json]
+        # exclude the pytest-regressions folder tests/test_execute
+        exclude: tests/test_execute/
 
   - repo: https://github.com/adamchainz/blacken-docs
     rev: "1.16.0"
