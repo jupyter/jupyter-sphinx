@@ -7,7 +7,7 @@
 [![pypi version](https://img.shields.io/pypi/v/jupyter-sphinx?color=blue&logo=pypi&logoColor=white)](https://pypi.org/project/jupyter-sphinx/)
 [![conda-forge version badge](https://img.shields.io/conda/vn/conda-forge/jupyter-sphinx?logo=anaconda&logoColor=white&color=blue)](https://anaconda.org/conda-forge/jupyter-sphinx)
 [![tests](https://img.shields.io/github/actions/workflow/status/jupyter/jupyter-sphinx/tests.yml?logo=github&logoColor=white)](https://github.com/jupyter/jupyter-sphinx/actions/workflows/tests.yml)
-[![docs](https://img.shields.io/readthedocs/jupyter-sphinx?logo=readthedocs&logoColor=white)](https://pygadm.readthedocs.io/en/stable/)
+[![docs](https://img.shields.io/readthedocs/jupyter-sphinx?logo=readthedocs&logoColor=white)](https://jupyter-sphinx.readthedocs.io/)
 
 `jupyter-sphinx` enables running code embedded in Sphinx documentation and
 embedding output of that code into the resulting document. It has support
