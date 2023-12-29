@@ -103,5 +103,27 @@ filterwarnings = [
   "module:datetime.datetime.utc:DeprecationWarning"
 ]
 
-[tool.repo-review]
-ignore = ["GH102", "MY100", "RF001", "PY007", "GH103", "PC140"]
+[tool.ruff]
+ignore-init-module-imports = true
+fix = true
+select = ["E", "F", "W", "I", "D", "RUF"]
+ignore = [
+  "E501",  # line too long | Black take care of it
+  "W605",  # invalid escape sequence | we escape specific characters for sphinx
+  "D212", # Multi-line docstring | we use a different convention, too late
+  "D101", # Missing docstring in public class | we use a different convention, too late
+]
+
+[tool.ruff.flake8-quotes]
+docstring-quotes = "double"
+
+[tool.ruff.pydocstyle]
+convention = "google"
+
+[tool.black]
+line-length = 100
+
+[tool.doc8]
+ignore = [
+  "D001" # we follow a 1 line = 1 paragraph style
+]
