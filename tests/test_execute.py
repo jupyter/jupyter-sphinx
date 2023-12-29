@@ -1,710 +1,400 @@
 import os
-import sys
 import warnings
-from pathlib import Path
-from unittest.mock import Mock
+import json
+import re
 
 import pytest
-from docutils.nodes import container, image, literal, literal_block, math_block, raw
-from nbformat import from_dict
-from sphinx.addnodes import download_reference
 from sphinx.errors import ExtensionError
-from sphinx.testing.util import assert_node
-
-
-from jupyter_sphinx.ast import (
-    JupyterCellNode,
-    JupyterDownloadRole,
-    JupyterWidgetStateNode,
-    JupyterWidgetViewNode,
-    cell_output_to_nodes,
-)
-from jupyter_sphinx.thebelab import ThebeButtonNode, ThebeOutputNode, ThebeSourceNode
 
 
 @pytest.mark.parametrize("buildername", ["html", "singlehtml"])
 def test_basic(sphinx_build_factory, directive, file_regression, buildername):
     source = directive("execute", ["2 + 2"])
+
     sphinx_build = sphinx_build_factory(source, buildername=buildername).build()
-    body = sphinx_build.index_html.select("div.jupyter_cell")[0]
-    file_regression.check(body.prettify(), extension=".html")
+    html = sphinx_build.index_html.select("div.jupyter_cell")[0]
+    file_regression.check(html.prettify(), extension=".html")
 
 
-def test_hide_output(doctree, data_regression):
-    source = """
-    .. jupyter-execute::
-        :hide-output:
+def test_hide_output(sphinx_build_factory, directive, file_regression):
+    source = directive("execute", ["2 + 2"], ["hide-output"])
 
-        2 + 2
-    """
-    tree = doctree(source)
-    (cell,) = tree.findall(JupyterCellNode)
-    (cellinput, celloutput) = cell.children
-    assert cell.attributes["hide_output"]
-    assert len(celloutput.children) == 0
-    assert cellinput.children[0].astext().strip() == "2 + 2"
-    data_regression.check(cell.attlist())
+    sphinx_build = sphinx_build_factory(source).build()
+    html = sphinx_build.index_html.select("div.jupyter_cell")[0]
+    file_regression.check(html.prettify(), extension=".html")
 
 
-def test_hide_code(doctree):
-    source = """
-    .. jupyter-execute::
-        :hide-code:
+def test_hide_code(sphinx_build_factory, directive, file_regression):
+    source = directive("execute", ["2 + 2"], ["hide-code"])
 
-        2 + 2
-    """
-    tree = doctree(source)
-    (cell,) = tree.findall(JupyterCellNode)
-    (celloutput,) = cell.children
-    assert cell.attributes["hide_code"]
-    assert len(cell.children) == 1
-    assert celloutput.children[0].astext().strip() == "4"
+    sphinx_build = sphinx_build_factory(source).build()
+    html = sphinx_build.index_html.select("div.jupyter_cell")[0]
+    file_regression.check(html.prettify(), extension=".html")
 
 
-def test_code_below(doctree):
-    source = """
-    .. jupyter-execute::
-        :code-below:
+def test_code_below(sphinx_build_factory, directive, file_regression):
+    source = directive("execute", ["2 + 2"], ["code-below"])
 
-        2 + 2
-    """
-    tree = doctree(source)
-    (cell,) = tree.findall(JupyterCellNode)
-    (celloutput, cellinput) = cell.children
-    assert cell.attributes["code_below"]
-    assert cellinput.children[0].astext().strip() == "2 + 2"
-    assert celloutput.children[0].astext().strip() == "4"
+    sphinx_build = sphinx_build_factory(source).build()
+    html = sphinx_build.index_html.select("div.jupyter_cell")[0]
+    file_regression.check(html.prettify(), extension=".html")
 
 
-def test_linenos(doctree):
-    source = """
-    .. jupyter-execute::
-        :linenos:
+def test_linenos(sphinx_build_factory, directive, file_regression):
+    source = directive("execute", ["2 + 2"], ["linenos"])
 
-        2 + 2
-    """
-    tree = doctree(source)
-    (cell,) = tree.findall(JupyterCellNode)
-    (cellinput, celloutput) = cell.children
-    assert cellinput.children[0]["linenos"]
-    assert len(cell.children) == 2
-    assert cellinput.children[0].astext().strip() == "2 + 2"
-    assert celloutput.children[0].astext().strip() == "4"
-    source = """
-    .. jupyter-execute::
-        :linenos:
-        :code-below:
-
-        2 + 2
-    """
-    tree = doctree(source)
-    (cell,) = tree.findall(JupyterCellNode)
-    (celloutput, cellinput) = cell.children
-    assert cellinput.children[0]["linenos"]
+    sphinx_build = sphinx_build_factory(source).build()
+    html = sphinx_build.index_html.select("div.jupyter_cell")[0]
+    file_regression.check(html.prettify(), extension=".html")
 
 
-def test_linenos_conf_option(doctree):
-    source = """
-    .. jupyter-execute::
+def test_linenos_code_below(sphinx_build_factory, directive, file_regression):
+    source = directive("execute", ["2 + 2"], ["linenos", "code-below"])
 
-        2 + 2
-    """
-    tree = doctree(source, config="jupyter_sphinx_linenos = True")
-    (cell,) = tree.findall(JupyterCellNode)
-    (cellinput, celloutput) = cell.children
-    assert cellinput.children[0].attributes["linenos"]
-    assert "highlight_args" not in cellinput.children[0].attributes
-    assert cellinput.children[0].astext().strip() == "2 + 2"
-    assert celloutput.children[0].astext().strip() == "4"
+    sphinx_build = sphinx_build_factory(source).build()
+    html = sphinx_build.index_html.select("div.jupyter_cell")[0]
+    file_regression.check(html.prettify(), extension=".html")
 
 
-def test_continue_linenos_conf_option(doctree):
-    # Test no linenumbering without linenos config or lineno-start directive
-    source = """
-    .. jupyter-execute::
+def test_linenos_conf_option(sphinx_build_factory, directive, file_regression):
+    source = directive("execute", ["2 + 2"])
+    config = "jupyter_sphinx_linenos = True"
 
-        2 + 2
+    sphinx_build = sphinx_build_factory(source, config=config).build()
+    html = sphinx_build.index_html.select("div.jupyter_cell")[0]
+    file_regression.check(html.prettify(), extension=".html")
 
-    """
 
-    tree = doctree(source, config="jupyter_sphinx_continue_linenos = True")
-    (cell,) = tree.findall(JupyterCellNode)
-    (cellinput, celloutput) = cell.children
-    assert not cellinput.children[0].attributes["linenos"]
-    assert cellinput.children[0].astext().strip() == "2 + 2"
-    assert celloutput.children[0].astext().strip() == "4"
+def test_continue_linenos_not_automatic(
+    sphinx_build_factory, directive, file_regression
+):
+    source = directive("execute", ["2 + 2"])
+    config = "jupyter_sphinx_continue_linenos = True"
 
-    # Test continuous line numbering
-    source = """
-    .. jupyter-execute::
+    sphinx_build = sphinx_build_factory(source, config=config).build()
+    html = sphinx_build.index_html.select("div.jupyter_cell")[0]
+    file_regression.check(html.prettify(), extension=".html")
 
-        2 + 2
 
-    .. jupyter-execute::
+def test_continue_lineos_conf_option(sphinx_build_factory, directive, file_regression):
+    source = directive("execute", ["2 + 2"])
+    source += "\n" + directive("execute", ["3 + 3"])
 
-        3 + 3
+    config = "jupyter_sphinx_linenos = True"
+    config += "\n" + "jupyter_sphinx_continue_linenos = True"
 
-    """
+    sphinx_build = sphinx_build_factory(source, config=config).build()
+    htmls = sphinx_build.index_html.select("div.jupyter_cell")
+    file_regression.check("\n".join([e.prettify() for e in htmls]), extension=".html")
 
-    tree = doctree(
-        source,
-        config="jupyter_sphinx_linenos = True\n"
-        "jupyter_sphinx_continue_linenos = True",
+
+def test_continue_linenos_with_start(sphinx_build_factory, directive, file_regression):
+    source = directive("execute", ["2 + 2"], [("lineno-start", "7")])
+    source += "\n" + directive("execute", ["3 + 3"])
+
+    config = "jupyter_sphinx_linenos = True"
+    config += "\n" + "jupyter_sphinx_continue_linenos = True"
+
+    sphinx_build = sphinx_build_factory(source, config=config).build()
+    htmls = sphinx_build.index_html.select("div.jupyter_cell")
+    file_regression.check("\n".join([e.prettify() for e in htmls]), extension=".html")
+
+
+def test_emphasize_lines(sphinx_build_factory, directive, file_regression):
+    source = directive(
+        "execute", [f"{i} + {i}" for i in range(1, 6)], [("emphasize-lines", "2,4")]
     )
 
-    cell0, cell1 = tree.findall(JupyterCellNode)
-    (cellinput0, celloutput0) = cell0.children
-    (cellinput1, celloutput1) = cell1.children
-    assert cellinput0.children[0].attributes["linenos"]
-    assert cellinput0.children[0].astext().strip() == "2 + 2"
-    assert celloutput0.children[0].astext().strip() == "4"
+    sphinx_build = sphinx_build_factory(source).build()
+    html = sphinx_build.index_html.select("div.jupyter_cell")[0]
+    file_regression.check(html.prettify(), extension=".html")
 
-    assert cellinput1.children[0].attributes["linenos"]
-    assert cellinput1.children[0].attributes["highlight_args"]["linenostart"] == 2
-    assert cellinput1.children[0].astext().strip() == "3 + 3"
-    assert celloutput1.children[0].astext().strip() == "6"
 
-    # Line number should continue after lineno-start option
-
-    source = """
-    .. jupyter-execute::
-       :lineno-start: 7
-
-        2 + 2
-
-    .. jupyter-execute::
-
-        3 + 3
-
-    """
-    tree = doctree(
-        source,
-        config="jupyter_sphinx_linenos = True\n"
-        "jupyter_sphinx_continue_linenos = True",
+def test_emphasize_lines_with_dash(sphinx_build_factory, directive, file_regression):
+    source = directive(
+        "execute", [f"{i} + {i}" for i in range(1, 6)], [("emphasize-lines", "2,3-5")]
     )
-    cell0, cell1 = tree.findall(JupyterCellNode)
-    (cellinput0, celloutput0) = cell0.children
-    (cellinput1, celloutput1) = cell1.children
-    assert cellinput0.children[0].attributes["highlight_args"]["linenostart"] == 7
-    assert cellinput0.children[0].astext().strip() == "2 + 2"
-    assert celloutput0.children[0].astext().strip() == "4"
 
-    assert cellinput1.children[0].attributes["linenos"]
-    assert cellinput1.children[0].attributes["highlight_args"]["linenostart"] == 8
-    assert cellinput1.children[0].astext().strip() == "3 + 3"
-    assert celloutput1.children[0].astext().strip() == "6"
+    sphinx_build = sphinx_build_factory(source).build()
+    html = sphinx_build.index_html.select("div.jupyter_cell")[0]
+    file_regression.check(html.prettify(), extension=".html")
 
 
-def test_emphasize_lines(doctree):
-    source = """
-    .. jupyter-execute::
-        :emphasize-lines: 1,3-5
+def test_execution_environment_carries_over(
+    sphinx_build_factory, directive, file_regression
+):
+    source = directive("execute", ["a = 1"])
+    source += "\n" + directive("execute", ["a += 1", "a"])
 
-        1 + 1
-        2 + 2
-        3 + 3
-        4 + 4
-        5 + 5
-
-    .. jupyter-execute::
-        :emphasize-lines: 2, 4
-
-        1 + 1
-        2 + 2
-        3 + 3
-        4 + 4
-        5 + 5
-    """
-    tree = doctree(source)
-    cell0, cell1 = tree.findall(JupyterCellNode)
-
-    assert cell0.attributes["emphasize_lines"] == [1, 3, 4, 5]
-    assert cell1.attributes["emphasize_lines"] == [2, 4]
+    sphinx_build = sphinx_build_factory(source).build()
+    htmls = sphinx_build.index_html.select("div.jupyter_cell")
+    file_regression.check("\n".join([e.prettify() for e in htmls]), extension=".html")
 
 
-def test_execution_environment_carries_over(doctree):
-    source = """
-    .. jupyter-execute::
+def test_kernel_restart(sphinx_build_factory, directive, file_regression):
+    source = directive("execute", ["a = 1"])
+    source += "\n" + directive("kernel", [], [("id", "new-kernel")])
+    source += "\n" + directive("execute", ["a += 1", "a"], ["raises"])
 
-        a = 1
-
-    .. jupyter-execute::
-
-        a += 1
-        a
-    """
-    tree = doctree(source)
-    _, cell1 = tree.findall(JupyterCellNode)
-    (_, celloutput1) = cell1.children
-    assert celloutput1.children[0].astext().strip() == "2"
+    sphinx_build = sphinx_build_factory(source).build()
+    htmls = sphinx_build.index_html.select("div.jupyter_cell")
+    file_regression.check("\n".join([e.prettify() for e in htmls]), extension=".html")
 
 
-def test_kernel_restart(doctree):
-    source = """
-    .. jupyter-execute::
+def test_raises(sphinx_build_factory, directive):
+    source = directive("execute", ["raise ValueError()"])
 
-        a = 1
-
-    .. jupyter-kernel::
-        :id: new-kernel
-
-    .. jupyter-execute::
-        :raises:
-
-        a += 1
-        a
-    """
-    tree = doctree(source)
-    _, cell1 = tree.findall(JupyterCellNode)
-    (_, celloutput1) = cell1.children
-    assert "NameError" in celloutput1.children[0].astext()
-
-
-def test_raises(doctree):
-    source = """
-    .. jupyter-execute::
-
-        raise ValueError()
-    """
     with pytest.raises(ExtensionError):
-        doctree(source)
-
-    source = """
-    .. jupyter-execute::
-        :raises:
-
-        raise ValueError()
-    """
-    tree = doctree(source)
-    (cell,) = tree.findall(JupyterCellNode)
-    (_, celloutput) = cell.children
-    assert "ValueError" in celloutput.children[0].astext()
-
-    source = """
-    .. jupyter-execute::
-        :raises: KeyError, ValueError
-
-        raise ValueError()
-    """
-    tree = doctree(source)
-    (cell,) = tree.findall(JupyterCellNode)
-    (_, celloutput) = cell.children
-    assert "ValueError" in celloutput.children[0].astext()
+        sphinx_build_factory(source).build()
 
 
-def test_widgets(doctree):
-    source = """
-    .. jupyter-execute::
+def test_raises_incell(sphinx_build_factory, directive, file_regression):
+    source = directive("execute", ["raise ValueError()"], ["raises"])
 
-        import ipywidgets
-        ipywidgets.Button()
-    """
-    tree = doctree(source)
-    assert len(list(tree.findall(JupyterWidgetViewNode))) == 1
-    assert len(list(tree.findall(JupyterWidgetStateNode))) == 1
+    sphinx_build = sphinx_build_factory(source).build()
+    html = sphinx_build.index_html.select("div.jupyter_cell")[0]
+    file_regression.check(html.prettify(), extension=".html")
 
 
-def test_javascript(doctree):
-    source = """
-    .. jupyter-execute::
+def test_raises_specific_error_incell(sphinx_build_factory, directive, file_regression):
+    source = directive("execute", ["raise ValueError()"], [("raises", "ValueError")])
 
-        from IPython.display import display_javascript, Javascript
-        Javascript('window.alert("Hello world!")')
-    """
-    tree = doctree(source)
-    (node,) = list(tree.findall(raw))
-    (text,) = node.children
-    assert "world" in text
+    sphinx_build = sphinx_build_factory(source).build()
+    html = sphinx_build.index_html.select("div.jupyter_cell")[0]
+    file_regression.check(html.prettify(), extension=".html")
 
 
-def test_stdout(doctree):
-    source = """
-    .. jupyter-execute::
+def test_widgets(sphinx_build_factory, directive, file_regression):
+    source = directive("execute", ["import ipywidgets", "ipywidgets.Button()"])
 
-        print('hello world')
-    """
-    tree = doctree(source)
-    (cell,) = tree.findall(JupyterCellNode)
-    (_, celloutput) = cell.children
-    assert len(cell.children) == 2
-    assert celloutput.children[0].astext().strip() == "hello world"
+    sphinx_build = sphinx_build_factory(source).build()
+    html = sphinx_build.index_html.select("div.jupyter_cell")[0]
 
-
-def test_stderr(doctree):
-    source = """
-    .. jupyter-execute::
-
-        import sys
-        print('hello world', file=sys.stderr)
-    """
-
-    tree, _, warnings = doctree(source, return_all=True)
-    assert "hello world" in warnings
-    (cell,) = tree.findall(JupyterCellNode)
-    (_, celloutput) = cell.children
-    assert len(celloutput) == 0  # no output
-
-    source = """
-    .. jupyter-execute::
-        :stderr:
-
-        import sys
-        print('hello world', file=sys.stderr)
-    """
-    tree = doctree(source)
-    (cell,) = tree.findall(JupyterCellNode)
-    (_, celloutput) = cell.children
-    assert len(cell.children) == 2
-    assert "stderr" in celloutput.children[0].attributes["classes"]
-    assert celloutput.children[0].astext().strip() == "hello world"
+    # replace model_id value as it changes every time the test suit is run
+    script = json.loads(html.find("script").string)
+    script["model_id"] = "toto"
+    html.find("script").string = json.dumps(script)
+    file_regression.check(html.prettify(), extension=".html")
 
 
-thebe_config = 'jupyter_sphinx_thebelab_config = {"dummy": True}'
+def test_javascript(sphinx_build_factory, directive, file_regression):
+    source = directive(
+        "execute",
+        [
+            "from IPython.display import Javascript",
+            "Javascript('window.alert(\"Hello there!\")')",
+        ],
+    )
+
+    sphinx_build = sphinx_build_factory(source).build()
+    html = sphinx_build.index_html.select("div.jupyter_cell")[0]
+    file_regression.check(html.prettify(), extension=".html")
 
 
-def test_thebe_hide_output(doctree):
-    source = """
-    .. jupyter-execute::
-        :hide-output:
+def test_stdout(sphinx_build_factory, directive, file_regression):
+    source = directive("execute", ["print('Hello there!')"])
 
-        2 + 2
-    """
-    tree = doctree(source, thebe_config)
-    (cell,) = tree.findall(JupyterCellNode)
-    (cellinput, celloutput) = cell.children
-    assert cell.attributes["hide_output"]
-    assert len(celloutput.children) == 0
-
-    source = cellinput.children[0]
-    assert type(source) == ThebeSourceNode
-    assert len(source.children) == 1
-    assert source.children[0].astext().strip() == "2 + 2"
+    sphinx_build = sphinx_build_factory(source).build()
+    html = sphinx_build.index_html.select("div.jupyter_cell")[0]
+    file_regression.check(html.prettify(), extension=".html")
 
 
-def test_thebe_hide_code(doctree):
-    source = """
-    .. jupyter-execute::
-        :hide-code:
+def test_stderr_hidden(sphinx_build_factory, directive, file_regression):
+    source = directive(
+        "execute", ["import sys", "print('Hello there!', file=sys.stderr)"]
+    )
 
-        2 + 2
-    """
-    tree = doctree(source, thebe_config)
-    (cell,) = tree.findall(JupyterCellNode)
-    (cellinput, celloutput) = cell.children
-    assert cell.attributes["hide_code"]
-    assert len(cell.children) == 2
-
-    source = cellinput.children[0]
-    assert type(source) == ThebeSourceNode
-    assert source.attributes["hide_code"]
-    assert len(source.children) == 1
-    assert source.children[0].astext().strip() == "2 + 2"
-
-    output = celloutput.children[0]
-    assert type(output) == ThebeOutputNode
-    assert len(output.children) == 1
-    assert output.children[0].astext().strip() == "4"
+    sphinx_build = sphinx_build_factory(source).build()
+    html = sphinx_build.index_html.select("div.jupyter_cell")[0]
+    file_regression.check(html.prettify(), extension=".html")
 
 
-def test_thebe_code_below(doctree):
-    source = """
-    .. jupyter-execute::
-        :code-below:
+def test_stderr(sphinx_build_factory, directive, file_regression):
+    source = directive(
+        "execute", ["import sys", "print('Hello there!', file=sys.stderr)"], ["stderr"]
+    )
 
-        2 + 2
-    """
-    tree = doctree(source, thebe_config)
-    (cell,) = tree.findall(JupyterCellNode)
-    (cellinput, celloutput) = cell.children
-    assert cell.attributes["code_below"]
-
-    output = cellinput.children[0]
-    assert type(output) is ThebeOutputNode
-    assert len(output.children) == 1
-    assert output.children[0].astext().strip() == "4"
-
-    source = celloutput.children[0]
-    assert type(source) is ThebeSourceNode
-    assert len(source.children) == 1
-    assert source.children[0].astext().strip() == "2 + 2"
-    assert source.attributes["code_below"]
+    sphinx_build = sphinx_build_factory(source).build()
+    html = sphinx_build.index_html.select("div.jupyter_cell")[0]
+    file_regression.check(html.prettify(), extension=".html")
 
 
-def test_thebe_button_auto(doctree):
+def test_thebe_hide_output(sphinx_build_factory, directive, file_regression):
+    source = directive("execute", ["2 +2"], ["hide-output"])
     config = 'jupyter_sphinx_thebelab_config = {"dummy": True}'
-    source = """
-    .. jupyter-execute::
 
-        1 + 1
-    """
-    tree = doctree(source, config=config)
-    assert len(list(tree.findall(ThebeButtonNode))) == 1
+    sphinx_build = sphinx_build_factory(source, config=config).build()
+    html = sphinx_build.index_html.select("div.jupyter_cell")[0]
+    file_regression.check(html.prettify(), extension=".html")
 
 
-def test_thebe_button_manual(doctree):
+def test_thebe_hide_code(sphinx_build_factory, directive, file_regression):
+    source = directive("execute", ["2 + 2"], ["hide-code"])
     config = 'jupyter_sphinx_thebelab_config = {"dummy": True}'
-    source = """
-    .. jupyter-execute::
 
-        1 + 1
-
-    .. thebe-button::
-    """
-    tree = doctree(source, config)
-    assert len(list(tree.findall(ThebeButtonNode))) == 1
+    sphinx_build = sphinx_build_factory(source, config=config).build()
+    html = sphinx_build.index_html.select("div.jupyter_cell")[0]
+    file_regression.check(html.prettify(), extension=".html")
 
 
-def test_thebe_button_none(doctree):
+def test_thebe_code_below(sphinx_build_factory, directive, file_regression):
+    source = directive("execute", ["2 + 2"], ["code-below"])
     config = 'jupyter_sphinx_thebelab_config = {"dummy": True}'
+
+    sphinx_build = sphinx_build_factory(source, config=config).build()
+    html = sphinx_build.index_html.select("div.jupyter_cell")[0]
+    file_regression.check(html.prettify(), extension=".html")
+
+
+def test_thebe_button_auto(sphinx_build_factory, directive, file_regression):
+    source = directive("execute", ["1 + 1"])
+    config = 'jupyter_sphinx_thebelab_config = {"dummy": True}'
+
+    sphinx_build = sphinx_build_factory(source, config=config).build()
+    # the button should fall after the cell i.e. index == 1
+    html = sphinx_build.index_html.select("div.jupyter_cell,button.thebelab-button")[1]
+    file_regression.check(html.prettify(), extension=".html")
+
+
+def test_thebe_button_manual(sphinx_build_factory, directive, file_regression):
+    source = ".. thebe-button::"
+    source += "\n" + directive("execute", ["1 + 1"])
+    config = 'jupyter_sphinx_thebelab_config = {"dummy": True}'
+
+    sphinx_build = sphinx_build_factory(source, config=config).build()
+    # the button should fall before the cell i.e. index == 0
+    html = sphinx_build.index_html.select("div.jupyter_cell,button.thebelab-button")[0]
+    file_regression.check(html.prettify(), extension=".html")
+
+
+def test_thebe_button_none(sphinx_build_factory, directive):
     source = "No Jupyter cells"
-    tree = doctree(source, config)
-    assert len(list(tree.findall(ThebeButtonNode))) == 0
+    config = 'jupyter_sphinx_thebelab_config = {"dummy": True}'
+
+    sphinx_build = sphinx_build_factory(source, config=config).build()
+    html = sphinx_build.index_html.select("button.thebelab-button")
+    assert len(list(html)) == 0
 
 
-def test_latex(doctree):
-    source = r"""
-    .. jupyter-execute::
-
-        from IPython.display import Latex
-        Latex(r"{}\int{}")
-    """
-
-    delimiter_pairs = (pair.split() for pair in r"\( \),\[ \],$$ $$,$ $".split(","))
-
-    for start, end in delimiter_pairs:
-        tree = doctree(source.format(start, end))
-        (cell,) = tree.findall(JupyterCellNode)
-        (_, celloutput) = cell.children
-        assert next(celloutput.findall(math_block)).astext() == r"\int"
-
-
-def test_cell_output_to_nodes(doctree):
-    # tests the image uri paths on conversion to docutils image nodes
-    output_dir = "/_build/jupyter_execute"
-    img_locs = [
-        "/_build/jupyter_execute/docs/image_1.png",
-        "/_build/jupyter_execute/image_2.png",
-    ]
-
-    cells = [
-        {
-            "outputs": [
-                {
-                    "data": {
-                        "image/png": "Vxb6L1wAAAABJRU5ErkJggg==\n",
-                        "text/plain": "<Figure size 432x288 with 1 Axes>",
-                    },
-                    "metadata": {"filenames": {"image/png": img_locs[0]}},
-                    "output_type": "display_data",
-                }
-            ]
-        },
-        {
-            "outputs": [
-                {
-                    "data": {
-                        "image/png": "iVBOJggg==\n",
-                        "text/plain": "<Figure size 432x288 with 1 Axes>",
-                    },
-                    "metadata": {"filenames": {"image/png": img_locs[1]}},
-                    "output_type": "display_data",
-                }
-            ]
-        },
-    ]
-
-    for index, cell in enumerate(cells):
-        cell = from_dict(cell)
-        (output_node,) = cell_output_to_nodes(cell["outputs"], True, output_dir, None)
-        (image_node,) = output_node.findall(image)
-        assert image_node.attributes["uri"] == img_locs[index]
-
-    # Testing inline functionality
-    outputs = [
-        {"name": "stdout", "output_type": "stream", "text": ["hi\n"]},
-        {"name": "stderr", "output_type": "stream", "text": ["hi\n"]},
-    ]
-    output_nodes = cell_output_to_nodes(outputs, True, output_dir, None)
-    for output, kind in zip(output_nodes, [literal_block, container]):
-        assert isinstance(output, kind)
-
-    output_nodes = cell_output_to_nodes(outputs, True, output_dir, None, inline=True)
-    for output, kind in zip(output_nodes, [literal, literal]):
-        assert isinstance(output, kind)
-
-
-@pytest.mark.parametrize(
-    "text,reftarget,caption",
-    (
-        ("nb_name", "/../jupyter_execute/path/to/nb_name.ipynb", "nb_name.ipynb"),
-        ("../nb_name", "/../jupyter_execute/path/nb_name.ipynb", "../nb_name.ipynb"),
-        ("text <nb_name>", "/../jupyter_execute/path/to/nb_name.ipynb", "text"),
-    ),
-)
-def test_download_role(text, reftarget, caption, tmp_path):
-    role = JupyterDownloadRole()
-    mock_inliner = Mock()
-    config = {
-        "document.settings.env.app.outdir": str(tmp_path),
-        "document.settings.env.docname": "path/to/docname",
-        "document.settings.env.srcdir": str(tmp_path),
-        "document.settings.env.app.srcdir": str(tmp_path),
-        "reporter.get_source_and_line": lambda line: ("source", line),
-    }
-    mock_inliner.configure_mock(**config)
-    ret, msg = role("jupyter-download-notebook", text, text, 0, mock_inliner)
-
-    if os.name == "nt":
-        # Get equivalent abs path for Windows
-        reftarget = (Path(tmp_path) / reftarget[1:]).resolve().as_posix()
-
-    assert_node(ret[0], [download_reference], reftarget=reftarget)
-    assert_node(ret[0][0], [literal, caption])
-    assert msg == []
-
-
-def test_save_script(doctree):
-    source = """
-    .. jupyter-kernel:: python3
-      :id: test
-
-    .. jupyter-execute::
-
-      a = 1
-      print(a)
-    """
-    _, app, _ = doctree(source, return_all=True)
-    outdir = Path(app.outdir)
-    saved_text = (outdir / "../jupyter_execute/test.py").read_text()
-    assert saved_text.startswith("#!/usr/bin/env python")
-    assert "print(a)" in saved_text
-
-
-def test_bash_kernel(doctree):
-    pytest.importorskip("bash_kernel")
-    if sys.platform == "win32":
-        pytest.skip("Not trying bash on windows.")
-
-    # we set enable-bracketed-paste off
-    # to avoid bash_kernel accidentally raising errors
-    # (related to https://github.com/takluyver/bash_kernel/issues/107)
-    source = """
-    .. jupyter-kernel:: bash
-      :id: test
-
-    .. jupyter-execute::
-
-      bind 'set enable-bracketed-paste off'
-      echo "foo"
-    """
-    with warnings.catch_warnings():
-        # See https://github.com/takluyver/bash_kernel/issues/105
-        warnings.simplefilter("ignore", DeprecationWarning)
-        _, app, _ = doctree(source, return_all=True)
-
-    outdir = Path(app.outdir)
-    saved_text = (outdir / "../jupyter_execute/test.sh").read_text()
-    assert 'echo "foo"' in saved_text
-
-
-def test_input_cell(doctree):
-    source = """
-    .. jupyter-input::
-
-        2 + 2
-    """
-    tree = doctree(source)
-    (cell,) = tree.findall(JupyterCellNode)
-    (cellinput, empty) = cell.children
-    assert cell.attributes["hide_output"] is True
-    assert cellinput.children[0].attributes["linenos"] is False
-    assert cellinput.children[0].astext().strip() == "2 + 2"
-    assert len(empty.children) == 0
-
-
-def test_input_cell_linenos(doctree):
-    source = """
-    .. jupyter-input::
-        :linenos:
-
-        2 + 2
-    """
-    tree = doctree(source)
-    (cell,) = tree.findall(JupyterCellNode)
-    (cellinput, empty) = cell.children
-    assert cell.attributes["hide_output"] is True
-    assert cellinput.children[0].attributes["linenos"] is True
-    assert cellinput.children[0].astext().strip() == "2 + 2"
-    assert len(empty.children) == 0
-
-
-def test_output_cell(doctree):
-    source = """
-    .. jupyter-input::
-
-        3 + 2
-
-    .. jupyter-output::
-
-        4
-    """
-    tree = doctree(source)
-    (cell,) = tree.findall(JupyterCellNode)
-    (
-        cellinput,
-        celloutput,
-    ) = cell.children
-    assert cellinput.children[0].astext().strip() == "3 + 2"
-    assert celloutput.children[0].astext().strip() == "4"
-
-
-def test_output_only_error(doctree):
-    source = """
-    .. jupyter-output::
-
-        4
-    """
-    with pytest.raises(ExtensionError):
-        doctree(source)
-
-
-def test_multiple_directives(doctree):
-    source = """
-    .. jupyter-execute::
-
-        2 + 2
-
-    .. jupyter-input::
-
-        3 + 3
-
-    .. jupyter-output::
-
-        5
-    """
-    tree = doctree(source)
-    (ex, jin) = tree.findall(JupyterCellNode)
-    (ex_in, ex_out) = ex.children
-    (jin_in, jin_out) = jin.children
-    assert ex_in.children[0].astext().strip() == "2 + 2"
-    assert ex_out.children[0].astext().strip() == "4"
-    assert jin_in.children[0].astext().strip() == "3 + 3"
-    assert jin_out.children[0].astext().strip() == "5"
-
-
-def test_builder_priority(doctree):
-    source = """
-    .. jupyter-execute::
-
-        display({"text/plain": "I am html output", "text/latex": "I am latex"})
-    """
-    config = (
-        "render_priority_html = ['text/plain', 'text/latex']\n"
-        "render_priority_latex = ['text/latex', 'text/plain']"
+def test_latex(sphinx_build_factory, directive, file_regression):
+    source = directive(
+        "execute", ["from IPython.display import Latex", r"Latex(r'$$\int$$')"]
     )
-    _, app, _ = doctree(source, config=config, return_all=True, buildername="html")
-    html = (Path(app.outdir) / "index.html").read_text()
-    assert "I am html output" in html
-    _, app, _ = doctree(source, config=config, return_all=True, buildername="latex")
-    latex = (Path(app.outdir) / "python.tex").read_text()
-    assert "I am latex" in latex
+
+    sphinx_build = sphinx_build_factory(source).build()
+    html = sphinx_build.index_html.select("div.jupyter_cell")[0]
+    file_regression.check(html.prettify(), extension=".html")
+
+
+@pytest.mark.xfail
+def test_cell_output_to_nodes(sphinx_build_factory, directive, file_regression):
+    source = directive(
+        "execute", ["import matplotlib.pyplot as plt", "plt.plot([1, 2], [1, 4])"]
+    )
+
+    sphinx_build = sphinx_build_factory(source).build()
+
+    # workaround to rename the trace ID as it's changed for each session
+    # it's currently not working even though it's the same code as in test_widgets
+    html = sphinx_build.index_html.select("div.jupyter_cell")[0]
+    text = r"[&lt;matplotlib.lines.Line2D at toto&gt;]"
+    html.find(string=re.compile(r".*matplotlib\.lines\.Line2D.*")).string = text
+    file_regression.check(html.prettify(), extension=".html")
+
+
+@pytest.mark.parametrize("type", ["script", "notebook", "nb"])
+def test_jupyter_download(sphinx_build_factory, file_regression, type):
+    source = f"This is a script: :jupyter-download-{type}:`a file <test>`"
+
+    sphinx_build = sphinx_build_factory(source).build()
+    html = sphinx_build.index_html.select("div.body")[0]
+    file_regression.check(html.prettify(), extension=".html")
+
+
+def test_save_script(sphinx_build_factory, directive, file_regression):
+    source = directive("kernel", [], [("id", "test")], "python3")
+    source += "\n" + directive("execute", ["a = 1", "print(a)", ""])
+
+    sphinx_build = sphinx_build_factory(source).build()
+    saved_text = (sphinx_build.outdir / "../jupyter_execute/test.py").read_text()
+    file_regression.check(saved_text, extension=".py")
+
+
+@pytest.mark.skipif(os.name == "nt", reason="No bash test on windows")
+def test_bash_kernel(sphinx_build_factory, directive, file_regression):
+    source = directive("kernel", [], [("id", "test")], "bash")
+    source += "\n" + directive("execute", ['echo "foo"'])
+
+    # See https://github.com/takluyver/bash_kernel/issues/105
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore", DeprecationWarning)
+        sphinx_build = sphinx_build_factory(source).build()
+
+    saved_text = (sphinx_build.outdir / "../jupyter_execute/test.sh").read_text()
+    file_regression.check(saved_text, extension=".sh")
+
+
+def test_input_cell(sphinx_build_factory, directive, file_regression):
+    source = directive("input", ("2 + 2"))
+
+    sphinx_build = sphinx_build_factory(source).build()
+    html = sphinx_build.index_html.select("div.jupyter_cell")[0]
+    file_regression.check(html.prettify(), extension=".html")
+
+
+def test_input_cell_linenos(sphinx_build_factory, directive, file_regression):
+    source = directive("input", ["2 + 2"], ["linenos"])
+
+    sphinx_build = sphinx_build_factory(source).build()
+    html = sphinx_build.index_html.select("div.jupyter_cell")[0]
+    file_regression.check(html.prettify(), extension=".html")
+
+
+def test_output_cell(sphinx_build_factory, directive, file_regression):
+    source = directive("input", ["3 + 2"])
+    source += "\n" + directive("output", ["4"])
+
+    sphinx_build = sphinx_build_factory(source).build()
+    htmls = sphinx_build.index_html.select("div.jupyter_cell")
+    file_regression.check("\n".join([e.prettify() for e in htmls]), extension=".html")
+
+
+def test_output_only_error(sphinx_build_factory, directive):
+    source = directive("output", ["4"])
+
+    with pytest.raises(ExtensionError):
+        sphinx_build_factory(source).build()
+
+
+def test_multiple_directives_types(sphinx_build_factory, directive, file_regression):
+    source = directive("execute", ["2 + 2"])
+    source += "\n" + directive("input", ["3 + 3"])
+    source += "\n" + directive("output", ["6"])
+
+    sphinx_build = sphinx_build_factory(source).build()
+    htmls = sphinx_build.index_html.select("div.jupyter_cell")
+    file_regression.check("\n".join([e.prettify() for e in htmls]), extension=".html")
+
+
+def test_builder_priority_html(sphinx_build_factory, directive, file_regression):
+    source = directive(
+        "execute",
+        ['display({"text/plain": "I am html output", "text/latex": "I am latex"})'],
+    )
+    config = "render_priority_html = ['text/plain', 'text/latex']"
+
+    sphinx_build = sphinx_build_factory(source, config=config).build()
+    html = sphinx_build.index_html.select("div.jupyter_cell")[0]
+    file_regression.check(html.prettify(), extension=".html")
+
+
+def test_builder_priority_latex(sphinx_build_factory, directive, file_regression):
+    source = directive(
+        "execute",
+        ['display({"text/plain": "I am html output", "text/latex": "I am latex"})'],
+    )
+    "render_priority_latex = ['text/latex', 'text/plain']"
+
+    sphinx_build = sphinx_build_factory(source, buildername="latex").build()
+    latex = (sphinx_build.outdir / "python.tex").read_text()
+    file_regression.check(latex, extension=".tex")

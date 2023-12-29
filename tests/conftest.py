@@ -6,7 +6,7 @@ import tempfile
 from io import StringIO
 import shutil
 import asyncio
-from typing import Callable, List
+from typing import Callable, List, Tuple, Union
 
 import pytest
 from sphinx.testing.util import SphinxTestApp
@@ -26,7 +26,7 @@ def doctree():
     def doctree(
         source,
         config=None,
-        return_all=True,
+        return_all=False,
         entrypoint="jupyter_sphinx",
         buildername="html",
     ):
@@ -132,16 +132,26 @@ def sphinx_build_factory(tmp_path: Path) -> Callable:
 def directive() -> Callable:
     """A function to build the directive string"""
 
-    def _func(type: str, code: List[str], options: [List[str]] = []) -> str:
+    def _func(
+        type: str,
+        code: List[str],
+        options: List[Union[str, Tuple]] = [],
+        parameter: str = "",
+    ) -> str:
         """Return the formatted string of the required directive
 
         Args:
-            type: the type of directive to build, one of [execute, input, output]
+            type: the type of directive to build, one of [execute, input, output, kernel]
             code: the list of code instructions to write in the cell
-            options: the list of options of the directive
+            options: the list of options of the directive if option requires a parameter, use a tuple
+            parameter: The parameter of the directive (written on the first line)
         """
-        s = f".. jupyter-{type}::"
-        s += "".join([f"\n\t:{o}:" for o in options])
+        # parse all the options as tuple
+        options = [(o, "") if isinstance(o, str) else o for o in options]
+
+        # create the output string
+        s = f".. jupyter-{type}:: {parameter}"
+        s += "".join([f"\n\t:{o[0]}: {o[1]}" for o in options])
         s += "\n"
         s += "".join([f"\n\t{c}" for c in code])
         s += "\n"

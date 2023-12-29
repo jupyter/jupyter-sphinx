@@ -46,7 +46,7 @@ repos:
         exclude: |
           (?x)^(
               doc/source/index.rst|
-              tests/test_execute.py
+              tests/test_execute/
           )$(|)
 
   - repo: https://github.com/codespell-project/codespell

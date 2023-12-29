@@ -54,6 +54,7 @@ test = [
     "bash_kernel",
     "pytest-regressions",
     "beautifulsoup4",
+    "matplotlib",
 ]
 doc = [
     "matplotlib"
