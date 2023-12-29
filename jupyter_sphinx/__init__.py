@@ -5,9 +5,10 @@ from pathlib import Path
 import docutils
 import ipywidgets
 from IPython.lib.lexers import IPython3Lexer, IPythonTracebackLexer
+from sphinx.application import Sphinx
 from sphinx.errors import ExtensionError
 from sphinx.util import logging
-from sphinx.util.fileutil import copy_asset
+from sphinx.util.fileutil import copy_asset_file
 
 from ._version import __version__
 from .ast import (
@@ -91,7 +92,7 @@ render_thebe_source = (
 
 
 # Sphinx callback functions
-def builder_inited(app):
+def builder_inited(app: Sphinx):
     """
     2 cases
     case 1: ipywidgets 7, with require
@@ -113,17 +114,17 @@ def builder_inited(app):
         app.add_js_file(embed_url)
 
 
-def copy_file(src, dst):
-    if not (dst / src.name).exists():
-        copy_asset(str(src), str(dst))
+def copy_file(src: Path, dst: Path):
+    """wrapper of copy_asset_file to handle path"""
+    copy_asset_file(str(src.resolve()), str(dst.resolve()))
 
 
-def build_finished(app, env):
+def build_finished(app: Sphinx, env):
     if app.builder.format != "html":
         return
 
     module_dir = Path(__file__).parent
-    static = Path(app.outdir) / "_static"
+    static = Path(app.builder.outdir) / "_static"
 
     # Copy stylesheet
     src = module_dir / "css" / "jupyter-sphinx.css"
@@ -141,7 +142,7 @@ def build_finished(app, env):
 
 ##############################################################################
 # Main setup
-def setup(app):
+def setup(app: Sphinx):
     """A temporary setup function so that we can use it here and in execute.
 
     This should be removed and converted into `setup` after a deprecation
