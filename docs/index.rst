@@ -41,6 +41,6 @@ Jupyter-sphinx is a Sphinx extension that executes embedded code in a Jupyter ke
 
         Discover how ``ThebeLab`` is linked to ``jupyter-sphinx``.
 
-.. seealso:: 
+.. seealso::
 
-    Other extentions exist to display output of IPyhton cells in a Sphinx documentation. If you want to execute entire notebooks you can consider using `nbsphinx <https://nbsphinx.readthedocs.io>`__ or `myst-nb <https://myst-nb.readthedocs.io/>`__. For in-page live execution consider using `sphinx-thebe <https://sphinx-thebe.readthedocs.io/>`__ or `jupyterlite-sphinx <https://jupyterlite-sphinx.readthedocs.io/>`__. For users that don't need to rely on a jupyter kernel the lightweigth `IPython sphinx directive <https://ipython.readthedocs.io/en/stable/sphinxext.html#ipython-sphinx-directive>`__ but remember it will only be able to display text outputs.
+    Other extensions exist to display output of IPyhton cells in a Sphinx documentation. If you want to execute entire notebooks you can consider using `nbsphinx <https://nbsphinx.readthedocs.io>`__ or `myst-nb <https://myst-nb.readthedocs.io/>`__. For in-page live execution consider using `sphinx-thebe <https://sphinx-thebe.readthedocs.io/>`__ or `jupyterlite-sphinx <https://jupyterlite-sphinx.readthedocs.io/>`__. For users that don't need to rely on a jupyter kernel the lightweigth `IPython sphinx directive <https://ipython.readthedocs.io/en/stable/sphinxext.html#ipython-sphinx-directive>`__ can be used but remember it will only be able to display text outputs.
