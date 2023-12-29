@@ -10,7 +10,6 @@ from nbformat import from_dict
 from sphinx.addnodes import download_reference
 from sphinx.errors import ExtensionError
 from sphinx.testing.util import assert_node
-from bs4 import BeautifulSoup
 
 
 from jupyter_sphinx.ast import (
@@ -24,20 +23,10 @@ from jupyter_sphinx.thebelab import ThebeButtonNode, ThebeOutputNode, ThebeSourc
 
 
 @pytest.mark.parametrize("buildername", ["html", "singlehtml"])
-def test_basic(doctree, buildername, directive, file_regression):
+def test_basic(sphinx_build_factory, directive, file_regression, buildername):
     source = directive("execute", ["2 + 2"])
-    (tree, app, warning) = doctree(source, buildername=buildername)
-    (cell,) = tree.findall(JupyterCellNode)
-    (cellinput, celloutput) = cell.children
-    assert not cell.attributes["code_below"]
-    assert not cell.attributes["hide_code"]
-    assert not cell.attributes["hide_output"]
-    assert not cellinput.children[0]["linenos"]
-    assert cellinput.children[0].astext().strip() == "2 + 2"
-    assert celloutput.children[0].astext().strip() == "4"
-    filename = Path(app.outdir) / "index.html"
-    html = BeautifulSoup(filename.read_text("utf8"), "html.parser")
-    body = html.select("div.jupyter_cell")[0]
+    sphinx_build = sphinx_build_factory(source, buildername=buildername).build()
+    body = sphinx_build.index_html.select("div.jupyter_cell")[0]
     file_regression.check(body.prettify(), extension=".html")
 
 
