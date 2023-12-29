@@ -9,7 +9,7 @@ import jupyter_sphinx as js
 
 
 class ThebeSourceNode(docutils.nodes.container):
-    """Container that holds the cell source when thebelab is enabled"""
+    """Container that holds the cell source when thebelab is enabled."""
 
     def __init__(self, rawsource="", *children, **attributes):
         super().__init__("", **attributes)
@@ -30,7 +30,7 @@ class ThebeSourceNode(docutils.nodes.container):
 
 
 class ThebeOutputNode(docutils.nodes.container):
-    """Container that holds all the output nodes when thebelab is enabled"""
+    """Container that holds all the output nodes when thebelab is enabled."""
 
     def visit_html(self):
         return '<div class="thebelab-output" data-output="true">'
@@ -40,7 +40,7 @@ class ThebeOutputNode(docutils.nodes.container):
 
 
 class ThebeButtonNode(docutils.nodes.Element):
-    """Appended to the doctree by the ThebeButton directive
+    """Appended to the doctree by the ThebeButton directive.
 
     Renders as a button to enable thebelab on the page.
 
@@ -61,9 +61,9 @@ class ThebeButtonNode(docutils.nodes.Element):
 
 
 class ThebeButton(Directive):
-    """Specify a button to activate thebelab on the page
+    """Specify a button to activate thebelab on the page.
 
-    Arguments
+    Arguments:
     ---------
     text : str (optional)
         If provided, the button text to display
@@ -83,7 +83,7 @@ class ThebeButton(Directive):
 
 
 def add_thebelab_library(doctree, env):
-    """Adds the thebelab configuration and library to the doctree"""
+    """Adds the thebelab configuration and library to the doctree."""
     thebe_config = env.config.jupyter_sphinx_thebelab_config
     if isinstance(thebe_config, dict):
         pass
@@ -101,14 +101,11 @@ def add_thebelab_library(doctree, env):
         try:
             thebe_config = json.loads(filename.read_text())
         except ValueError:
-            js.logger.warning(
-                "The supplied thebelab configuration file is not in JSON format."
-            )
+            js.logger.warning("The supplied thebelab configuration file is not in JSON format.")
             return
     else:
         js.logger.warning(
-            "The supplied thebelab configuration should be either"
-            " a filename or a dictionary."
+            "The supplied thebelab configuration should be either" " a filename or a dictionary."
         )
         return
 

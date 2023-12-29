@@ -1,4 +1,4 @@
-"""Manipulating the Sphinx AST with Jupyter objects"""
+"""Manipulating the Sphinx AST with Jupyter objects."""
 
 import json
 import warnings
@@ -34,9 +34,7 @@ def load_content(cell, location, logger):
         env.note_dependency(rel_filename)
         if cell.content:
             logger.warning(
-                'Ignoring inline code in Jupyter cell included from "{}"'.format(
-                    rel_filename
-                ),
+                'Ignoring inline code in Jupyter cell included from "{}"'.format(rel_filename),
                 location=location,
             )
         try:
@@ -60,9 +58,7 @@ def get_highlights(cell, content, location, logger):
         hl_lines = parselinenos(emphasize_linespec, nlines)
         if any(i >= nlines for i in hl_lines):
             logger.warning(
-                "Line number spec is out of range(1-{}): {}".format(
-                    nlines, emphasize_linespec
-                ),
+                "Line number spec is out of range(1-{}): {}".format(nlines, emphasize_linespec),
                 location=location,
             )
         hl_lines = [i + 1 for i in hl_lines if i < nlines]
@@ -78,7 +74,7 @@ class JupyterCell(Directive):
     executed when the directive is parsed, but later during a doctree
     transformation.
 
-    Arguments
+    Arguments:
     ---------
     filename : str (optional)
         If provided, a path to a file containing code.
@@ -166,7 +162,7 @@ class JupyterCell(Directive):
 class CellInput(Directive):
     """Define a code cell to be included verbatim but not executed.
 
-    Arguments
+    Arguments:
     ---------
     filename : str (optional)
         If provided, a path to a file containing code.
@@ -237,7 +233,7 @@ class CellInput(Directive):
 class CellOutput(Directive):
     """Define an output cell to be included verbatim.
 
-    Arguments
+    Arguments:
     ---------
     filename : str (optional)
         If provided, a path to a file containing output.
@@ -323,12 +319,10 @@ class MimeBundleNode(docutils.nodes.container):
         super().__init__("", *children, mimetypes=attributes["mimetypes"])
 
     def render_as(self, visitor):
-        """Determine which node to show based on the visitor"""
+        """Determine which node to show based on the visitor."""
         try:
             # Or should we go to config via the node?
-            priority = visitor.builder.env.app.config[
-                "render_priority_" + visitor.builder.format
-            ]
+            priority = visitor.builder.env.app.config["render_priority_" + visitor.builder.format]
         except (AttributeError, KeyError):
             # Not sure what do to, act as a container and show everything just in case.
             return super()
@@ -367,9 +361,7 @@ class JupyterWidgetViewNode(docutils.nodes.Element):
         super().__init__("", view_spec=attributes["view_spec"])
 
     def html(self):
-        return ipywidgets.embed.widget_view_template.format(
-            view_spec=json.dumps(self["view_spec"])
-        )
+        return ipywidgets.embed.widget_view_template.format(view_spec=json.dumps(self["view_spec"]))
 
 
 class JupyterWidgetStateNode(docutils.nodes.Element):
@@ -414,7 +406,7 @@ def cell_output_to_nodes(outputs, write_stderr, out_dir, thebe_config, inline=Fa
     inline: False
         Whether the nodes will be placed in-line with the text.
 
-    Returns
+    Returns:
     -------
     to_add : list of docutils nodes
         Each output, converted into a docutils node.
@@ -509,9 +501,7 @@ def output2sphinx(data, mime_type, metadata, out_dir, inline=False):
         math_node = math_block
 
     if mime_type == "text/html":
-        return docutils.nodes.raw(
-            text=data, format="html", classes=["output", "text_html"]
-        )
+        return docutils.nodes.raw(text=data, format="html", classes=["output", "text_html"])
     elif mime_type == "text/plain":
         return literal_node(
             text=data,

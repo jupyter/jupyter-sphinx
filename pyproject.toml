@@ -106,9 +106,13 @@ fix = true
 select = ["E", "F", "W", "I", "D", "RUF"]
 ignore = [
   "E501",  # line too long | Black take care of it
-  "W605",  # invalid escape sequence | we escape specific characters for sphinx
-  "D212", # Multi-line docstring | we use a different convention, too late
-  "D101", # Missing docstring in public class | we use a different convention, too late
+  "D212", # Multi-line docstring
+  "D100", # Missing docstring in public module
+  "D101", # Missing docstring in public class
+  "D102", # Missing docstring in public method
+  "D103", # Missing docstring in public function
+  "D105", # Missing docstring in magic method
+  "D107", # Missing docstring in `__init__`
 ]
 
 [tool.ruff.flake8-quotes]
