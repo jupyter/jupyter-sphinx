@@ -110,7 +110,7 @@ def builder_inited(app: Sphinx):
 
 
 def copy_file(src: Path, dst: Path):
-    """wrapper of copy_asset_file to handle path"""
+    """Wrapper of copy_asset_file to handle path."""
     copy_asset_file(str(src.resolve()), str(dst.resolve()))
 
 
