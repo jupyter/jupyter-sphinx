@@ -2,6 +2,7 @@ import json
 import os
 import re
 import warnings
+from datetime import date
 
 import pytest
 from sphinx.errors import ExtensionError
@@ -385,4 +386,6 @@ def test_builder_priority_latex(sphinx_build_factory, directive, file_regression
 
     sphinx_build = sphinx_build_factory(source, buildername="latex").build()
     latex = (sphinx_build.outdir / "python.tex").read_text()
+    # workaround to remove the date line from the output (It will change for every build)
+    latex = latex.replace(f"\\date{date.today().strftime('{%b %d, %Y}')}\n", "")
     file_regression.check(latex, extension=".tex")
