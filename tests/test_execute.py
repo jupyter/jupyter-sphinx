@@ -1,7 +1,7 @@
-import os
-import warnings
 import json
+import os
 import re
+import warnings
 
 import pytest
 from sphinx.errors import ExtensionError
@@ -10,7 +10,7 @@ from sphinx.errors import ExtensionError
 @pytest.mark.parametrize("buildername", ["html", "singlehtml"])
 def test_basic(sphinx_build_factory, directive, file_regression, buildername):
     source = directive("execute", ["2 + 2"])
-    
+
     sphinx_build = sphinx_build_factory(source, buildername=buildername).build()
     html = sphinx_build.index_html.select("div.jupyter_cell")[0]
     file_regression.check(html.prettify(), extension=".html")
@@ -65,9 +65,7 @@ def test_linenos_conf_option(sphinx_build_factory, directive, file_regression):
     file_regression.check(html.prettify(), extension=".html")
 
 
-def test_continue_linenos_not_automatic(
-    sphinx_build_factory, directive, file_regression
-):
+def test_continue_linenos_not_automatic(sphinx_build_factory, directive, file_regression):
     source = directive("execute", ["2 + 2"])
     config = "jupyter_sphinx_continue_linenos = True"
 
@@ -101,9 +99,7 @@ def test_continue_linenos_with_start(sphinx_build_factory, directive, file_regre
 
 
 def test_emphasize_lines(sphinx_build_factory, directive, file_regression):
-    source = directive(
-        "execute", [f"{i} + {i}" for i in range(1, 6)], [("emphasize-lines", "2,4")]
-    )
+    source = directive("execute", [f"{i} + {i}" for i in range(1, 6)], [("emphasize-lines", "2,4")])
 
     sphinx_build = sphinx_build_factory(source).build()
     html = sphinx_build.index_html.select("div.jupyter_cell")[0]
@@ -120,9 +116,7 @@ def test_emphasize_lines_with_dash(sphinx_build_factory, directive, file_regress
     file_regression.check(html.prettify(), extension=".html")
 
 
-def test_execution_environment_carries_over(
-    sphinx_build_factory, directive, file_regression
-):
+def test_execution_environment_carries_over(sphinx_build_factory, directive, file_regression):
     source = directive("execute", ["a = 1"])
     source += "\n" + directive("execute", ["a += 1", "a"])
 
@@ -200,9 +194,7 @@ def test_stdout(sphinx_build_factory, directive, file_regression):
 
 
 def test_stderr_hidden(sphinx_build_factory, directive, file_regression):
-    source = directive(
-        "execute", ["import sys", "print('Hello there!', file=sys.stderr)"]
-    )
+    source = directive("execute", ["import sys", "print('Hello there!', file=sys.stderr)"])
 
     sphinx_build = sphinx_build_factory(source).build()
     html = sphinx_build.index_html.select("div.jupyter_cell")[0]
@@ -277,9 +269,7 @@ def test_thebe_button_none(sphinx_build_factory, directive):
 
 
 def test_latex(sphinx_build_factory, directive, file_regression):
-    source = directive(
-        "execute", ["from IPython.display import Latex", r"Latex(r'$$\int$$')"]
-    )
+    source = directive("execute", ["from IPython.display import Latex", r"Latex(r'$$\int$$')"])
 
     sphinx_build = sphinx_build_factory(source).build()
     html = sphinx_build.index_html.select("div.jupyter_cell")[0]
@@ -288,9 +278,7 @@ def test_latex(sphinx_build_factory, directive, file_regression):
 
 @pytest.mark.xfail
 def test_cell_output_to_nodes(sphinx_build_factory, directive, file_regression):
-    source = directive(
-        "execute", ["import matplotlib.pyplot as plt", "plt.plot([1, 2], [1, 4])"]
-    )
+    source = directive("execute", ["import matplotlib.pyplot as plt", "plt.plot([1, 2], [1, 4])"])
 
     sphinx_build = sphinx_build_factory(source).build()
 

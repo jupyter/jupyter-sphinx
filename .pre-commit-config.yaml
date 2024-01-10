@@ -13,7 +13,7 @@ repos:
     rev: "v2.7.1"
     hooks:
       - id: prettier
-        exclude: tests\/test_.+\.
+        exclude: tests\/test_execute\/
 
   - repo: https://github.com/charliermarsh/ruff-pre-commit
     rev: "v0.0.215"

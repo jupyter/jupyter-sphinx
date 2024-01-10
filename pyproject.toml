@@ -126,6 +126,7 @@ convention = "google"
 
 [tool.black]
 line-length = 100
+force-exclude = "tests/test_execute/*"
 
 [tool.doc8]
 ignore = [

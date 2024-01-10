@@ -1,17 +1,17 @@
-"""Global configuration of the test session"""
+"""Global configuration of the test session."""
+import asyncio
 import os
+import shutil
 import sys
-from pathlib import Path
 import tempfile
 from io import StringIO
-import shutil
-import asyncio
+from pathlib import Path
 from typing import Callable, List, Tuple, Union
 
 import pytest
-from sphinx.testing.util import SphinxTestApp
-from bs4 import BeautifulSoup
 import sphinx
+from bs4 import BeautifulSoup
+from sphinx.testing.util import SphinxTestApp
 
 if os.name == "nt":
     asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
@@ -100,7 +100,7 @@ class SphinxBuild:
 
 @pytest.fixture()
 def sphinx_build_factory(tmp_path: Path) -> Callable:
-    """Return a factory builder"""
+    """Return a factory builder."""
 
     def _func(
         source,
@@ -130,7 +130,7 @@ def sphinx_build_factory(tmp_path: Path) -> Callable:
 
 @pytest.fixture(scope="session")
 def directive() -> Callable:
-    """A function to build the directive string"""
+    """A function to build the directive string."""
 
     def _func(
         type: str,
@@ -138,7 +138,7 @@ def directive() -> Callable:
         options: List[Union[str, Tuple]] = [],
         parameter: str = "",
     ) -> str:
-        """Return the formatted string of the required directive
+        """Return the formatted string of the required directive.
 
         Args:
             type: the type of directive to build, one of [execute, input, output, kernel]
