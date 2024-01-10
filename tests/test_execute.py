@@ -30,7 +30,6 @@ from jupyter_sphinx.ast import (
 )
 from jupyter_sphinx.thebelab import ThebeButtonNode, ThebeOutputNode, ThebeSourceNode
 
-
 if os.name == "nt":
     asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
 
@@ -216,12 +215,8 @@ def test_continue_linenos_conf_option(doctree):
         3 + 3
 
     """
-
-    tree = doctree(
-        source,
-        config="jupyter_sphinx_linenos = True\n"
-        "jupyter_sphinx_continue_linenos = True",
-    )
+    config = ["jupyter_sphinx_linenos = True", "jupyter_sphinx_continue_linenos = True"]
+    tree = doctree(source, config="\n".join(config))
 
     cell0, cell1 = tree.findall(JupyterCellNode)
     (cellinput0, celloutput0) = cell0.children
@@ -248,11 +243,8 @@ def test_continue_linenos_conf_option(doctree):
         3 + 3
 
     """
-    tree = doctree(
-        source,
-        config="jupyter_sphinx_linenos = True\n"
-        "jupyter_sphinx_continue_linenos = True",
-    )
+    config = ["jupyter_sphinx_linenos = True", "jupyter_sphinx_continue_linenos = True"]
+    tree = doctree(source, config="\n".join(config))
     cell0, cell1 = tree.findall(JupyterCellNode)
     (cellinput0, celloutput0) = cell0.children
     (cellinput1, celloutput1) = cell1.children

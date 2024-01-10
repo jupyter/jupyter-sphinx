@@ -29,9 +29,7 @@ from .ast import (
 from .execute import ExecuteJupyterCells, JupyterKernel
 from .thebelab import ThebeButton, ThebeButtonNode, ThebeOutputNode, ThebeSourceNode
 
-REQUIRE_URL_DEFAULT = (
-    "https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"
-)
+REQUIRE_URL_DEFAULT = "https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"
 THEBELAB_URL_DEFAULT = "https://unpkg.com/thebelab@^0.4.0"
 
 logger = logging.getLogger(__name__)
@@ -93,29 +91,26 @@ render_thebe_source = (
 
 # Sphinx callback functions
 def builder_inited(app: Sphinx):
-    """
+    """Init the build.
+
     2 cases
     case 1: ipywidgets 7, with require
-    case 2: ipywidgets 7, no require
+    case 2: ipywidgets 7, no require.
     """
     require_url = app.config.jupyter_sphinx_require_url
     if require_url:
         app.add_js_file(require_url)
         embed_url = (
-            app.config.jupyter_sphinx_embed_url
-            or ipywidgets.embed.DEFAULT_EMBED_REQUIREJS_URL
+            app.config.jupyter_sphinx_embed_url or ipywidgets.embed.DEFAULT_EMBED_REQUIREJS_URL
         )
     else:
-        embed_url = (
-            app.config.jupyter_sphinx_embed_url
-            or ipywidgets.embed.DEFAULT_EMBED_SCRIPT_URL
-        )
+        embed_url = app.config.jupyter_sphinx_embed_url or ipywidgets.embed.DEFAULT_EMBED_SCRIPT_URL
     if embed_url:
         app.add_js_file(embed_url)
 
 
 def copy_file(src: Path, dst: Path):
-    """wrapper of copy_asset_file to handle path"""
+    """Wrapper of copy_asset_file to handle path."""
     copy_asset_file(str(src.resolve()), str(dst.resolve()))
 
 
