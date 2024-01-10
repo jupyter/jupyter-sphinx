@@ -186,7 +186,7 @@ class ExecuteJupyterCells(SphinxTransform):
                     if output["output_type"] == "stream" and output["name"] == "stderr"
                 ]
                 if stderr and not node.attributes["stderr"]:
-                    js.logger.warning("Cell printed to stderr:\n{}".format(stderr[0]["text"]))
+                    js.logger.warning(f"Cell printed to stderr:\n{stderr[0]['text']}")
 
             # Insert input/output into placeholders for non-executed cells
             for node, cell in zip(nodes, notebook.cells):
