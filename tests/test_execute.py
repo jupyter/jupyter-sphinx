@@ -10,7 +10,7 @@ from sphinx.errors import ExtensionError
 @pytest.mark.parametrize("buildername", ["html", "singlehtml"])
 def test_basic(sphinx_build_factory, directive, file_regression, buildername):
     source = directive("execute", ["2 + 2"])
-
+    
     sphinx_build = sphinx_build_factory(source, buildername=buildername).build()
     html = sphinx_build.index_html.select("div.jupyter_cell")[0]
     file_regression.check(html.prettify(), extension=".html")

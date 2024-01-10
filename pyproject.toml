@@ -57,6 +57,8 @@ test = [
     "matplotlib",
 ]
 doc = [
+    "sphinx-design",
+    "sphinx-book-theme",
     "matplotlib"
 ]
 
@@ -72,15 +74,12 @@ include = [
 detached = true
 dependencies = ["pre-commit"]
 [tool.hatch.envs.lint.scripts]
-build = [
-  "pre-commit run --all-files ruff",
-  "pre-commit run --all-files ruff-format",
-]
+build = "pre-commit run --all-files"
 
 [tool.hatch.envs.doc]
 features = ["doc"]
 [tool.hatch.envs.doc.scripts]
-build = "cd doc; make html-strict"
+build = "sphinx-build -v -b html docs docs/_build/html"
 
 [tool.hatch.envs.test]
 features = ["test"]
@@ -104,5 +103,31 @@ filterwarnings = [
   "module:datetime.datetime.utc:DeprecationWarning"
 ]
 
-[tool.repo-review]
-ignore = ["GH102", "MY100", "RF001", "PY007", "GH103", "PC140"]
+[tool.ruff]
+ignore-init-module-imports = true
+fix = true
+select = ["E", "F", "W", "I", "D", "RUF"]
+ignore = [
+  "E501",  # line too long | Black take care of it
+  "D212", # Multi-line docstring
+  "D100", # Missing docstring in public module
+  "D101", # Missing docstring in public class
+  "D102", # Missing docstring in public method
+  "D103", # Missing docstring in public function
+  "D105", # Missing docstring in magic method
+  "D107", # Missing docstring in `__init__`
+]
+
+[tool.ruff.flake8-quotes]
+docstring-quotes = "double"
+
+[tool.ruff.pydocstyle]
+convention = "google"
+
+[tool.black]
+line-length = 100
+
+[tool.doc8]
+ignore = [
+  "D001" # we follow a 1 line = 1 paragraph style
+]

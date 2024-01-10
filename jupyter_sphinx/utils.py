@@ -26,7 +26,6 @@ def blank_nb(kernel_name):
 
 def split_on(pred, it):
     """Split an iterator wherever a predicate is True."""
-
     counter = 0
 
     def count(x):
@@ -58,7 +57,7 @@ def strip_latex_delimiters(source):
 
 
 def default_notebook_names(basename):
-    """Return an iterator yielding notebook names based off 'basename'"""
+    """Return an iterator yielding notebook names based off 'basename'."""
     yield basename
     for i in count(1):
         yield "_".join((basename, str(i)))
@@ -76,9 +75,7 @@ def sphinx_abs_dir(env, *paths):
     # output_directory / jupyter_execute / path relative to source directory
     # Sphinx expects download links relative to source file or relative to
     # source dir and prepended with '/'. We use the latter option.
-    out_path = (
-        output_directory(env) / Path(env.docname).parent / Path(*paths)
-    ).resolve()
+    out_path = (output_directory(env) / Path(env.docname).parent / Path(*paths)).resolve()
 
     if os.name == "nt":
         # Can't get relative path between drives on Windows
