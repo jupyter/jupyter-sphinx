@@ -164,7 +164,8 @@ class ExecuteJupyterCells(SphinxTransform):
                     source = node.children[0]
                     source.attributes["classes"].append("code_cell")
                     node.attributes["cm_language"] = cm_language
-                    node += CellOutputNode(classes=["cell_output"])
+                    if len(node.children) < 2:
+                        node += CellOutputNode(classes=["cell_output"])
                     apply_styling(node, thebe_config)
                 continue
 
