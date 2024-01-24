@@ -65,7 +65,7 @@ from .utils import (
 class JupyterKernel(Directive):
     """Specify a new Jupyter Kernel.
 
-    Arguments
+    Arguments:
     ---------
     kernel_name : str (optional)
         The name of the kernel in which to execute future Jupyter cells, as
@@ -123,12 +123,12 @@ class ExecuteJupyterCells(SphinxTransform):
         linenos_config = self.config.jupyter_sphinx_linenos
         continue_linenos = self.config.jupyter_sphinx_continue_linenos
         # Check if we have anything to execute.
-        if not doctree.traverse(JupyterCellNode):
+        if not next(doctree.findall(JupyterCellNode), False):
             return
 
         if thebe_config:
             # Add the button at the bottom if it is not present
-            if not doctree.traverse(ThebeButtonNode):
+            if not next(doctree.findall(ThebeButtonNode), False):
                 doctree.append(ThebeButtonNode())
 
             add_thebelab_library(doctree, self.env)
@@ -140,7 +140,7 @@ class ExecuteJupyterCells(SphinxTransform):
         jupyter_nodes = (JupyterCellNode, JupyterKernelNode)
         nodes_by_notebook = split_on(
             lambda n: isinstance(n, JupyterKernelNode),
-            doctree.traverse(lambda n: isinstance(n, jupyter_nodes)),
+            list(doctree.findall(lambda n: isinstance(n, jupyter_nodes))),
         )
 
         for first, *nodes in nodes_by_notebook:
@@ -166,16 +166,10 @@ class ExecuteJupyterCells(SphinxTransform):
 
             # Raise error if cells raised exceptions and were not marked as doing so
             for node, cell in zip(nodes, notebook.cells):
-                errors = [
-                    output
-                    for output in cell.outputs
-                    if output["output_type"] == "error"
-                ]
+                errors = [output for output in cell.outputs if output["output_type"] == "error"]
                 allowed_errors = node.attributes.get("raises") or []
                 raises_provided = node.attributes["raises"] is not None
-                if (
-                    raises_provided and not allowed_errors
-                ):  # empty 'raises': suppress all errors
+                if raises_provided and not allowed_errors:  # empty 'raises': suppress all errors
                     pass
                 elif errors and not any(e["ename"] in allowed_errors for e in errors):
                     raise ExtensionError(
@@ -192,9 +186,7 @@ class ExecuteJupyterCells(SphinxTransform):
                     if output["output_type"] == "stream" and output["name"] == "stderr"
                 ]
                 if stderr and not node.attributes["stderr"]:
-                    js.logger.warning(
-                        "Cell printed to stderr:\n{}".format(stderr[0]["text"])
-                    )
+                    js.logger.warning(f"Cell printed to stderr:\n{stderr[0]['text']}")
 
             # Insert input/output into placeholders for non-executed cells
             for node, cell in zip(nodes, notebook.cells):
@@ -224,9 +216,7 @@ class ExecuteJupyterCells(SphinxTransform):
                 # The literal_block node with the source
                 source = node.children[0].children[0]
                 nlines = source.rawsource.count("\n") + 1
-                show_numbering = (
-                    linenos_config or source["linenos"] or source["linenostart"]
-                )
+                show_numbering = linenos_config or source["linenos"] or source["linenostart"]
 
                 if show_numbering:
                     source["linenos"] = True
@@ -251,9 +241,7 @@ class ExecuteJupyterCells(SphinxTransform):
             # Write certain cell outputs (e.g. images) to separate files, and
             # modify the metadata of the associated cells in 'notebook' to
             # include the path to the output file.
-            write_notebook_output(
-                notebook, str(output_dir), file_name, self.env.docname
-            )
+            write_notebook_output(notebook, str(output_dir), file_name, self.env.docname)
 
             try:
                 cm_language = notebook.metadata.language_info.codemirror_mode.name

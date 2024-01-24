@@ -1,0 +1,130 @@
+[build-system]
+requires = ["hatchling>=1.5"]
+build-backend = "hatchling.build"
+
+[project]
+name = "jupyter-sphinx"
+dynamic = ["version"]
+description = "Jupyter Sphinx Extensions"
+requires-python = ">=3.8"
+classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: BSD License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3 :: Only",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Scientific/Engineering"
+]
+dependencies = [
+    "ipykernel>=4.5.1",
+    "IPython",
+    "ipywidgets>=7.0.0",
+    "nbconvert>=5.5",
+    "nbformat",
+    "Sphinx>=7",
+]
+
+[[project.authors]]
+name = "Jupyter Development Team"
+email = "jupyter@googlegroups.com"
+
+[project.license]
+file = "LICENSE"
+
+[project.readme]
+file = "README.md"
+content-type = "text/markdown"
+
+[project.urls]
+"Bug Tracker" = "https://github.com/jupyter/jupyter-sphinx/issues/"
+Documentation = "https://jupyter-sphinx.readthedocs.io"
+Homepage = "https://jupyter.org"
+"Source Code" = "https://github.com/jupyter/jupyter-sphinx/"
+
+[project.optional-dependencies]
+test = [
+    "pytest",
+    "bash_kernel"
+]
+doc = [
+    "sphinx-design",
+    "sphinx-book-theme",
+    "matplotlib"
+]
+
+[tool.hatch.version]
+path = "jupyter_sphinx/_version.py"
+
+[tool.hatch.build.targets.sdist]
+include = [
+    "/jupyter_sphinx",
+]
+
+[tool.hatch.envs.lint]
+detached = true
+dependencies = ["pre-commit"]
+[tool.hatch.envs.lint.scripts]
+build = "pre-commit run --all-files"
+
+[tool.hatch.envs.doc]
+features = ["doc"]
+[tool.hatch.envs.doc.scripts]
+build = "sphinx-build -v -b html docs docs/_build/html"
+
+[tool.hatch.envs.test]
+features = ["test"]
+[tool.hatch.envs.test.env-vars]
+JUPYTER_PLATFORM_DIRS = "1"
+[tool.hatch.envs.test.scripts]
+test = ["python -m bash_kernel.install", "python -m pytest -vv {args}"]
+nowarn = "test -W default {args}"
+
+[tool.pytest.ini_options]
+minversion = "7.0"
+xfail_strict = true
+log_cli_level = "info"
+addopts = [
+  "-ra", "--durations=10", "--color=yes", "--strict-config", "--strict-markers"
+]
+testpaths = ["tests/"]
+filterwarnings = [
+  "error",
+  # https://github.com/dateutil/dateutil/issues/1314
+  "module:datetime.datetime.utc:DeprecationWarning"
+]
+
+[tool.ruff]
+ignore-init-module-imports = true
+fix = true
+select = ["E", "F", "W", "I", "D", "RUF"]
+ignore = [
+  "E501",  # line too long | Black take care of it
+  "D212", # Multi-line docstring
+  "D100", # Missing docstring in public module
+  "D101", # Missing docstring in public class
+  "D102", # Missing docstring in public method
+  "D103", # Missing docstring in public function
+  "D105", # Missing docstring in magic method
+  "D107", # Missing docstring in `__init__`
+]
+
+[tool.ruff.flake8-quotes]
+docstring-quotes = "double"
+
+[tool.ruff.pydocstyle]
+convention = "google"
+
+[tool.black]
+line-length = 100
+
+[tool.doc8]
+ignore = [
+  "D001" # we follow a 1 line = 1 paragraph style
+]

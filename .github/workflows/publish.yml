@@ -1,0 +1,32 @@
+# This will run every time a tag is created and pushed to the repository.
+# It calls our tests workflow via a `workflow_call`, and if tests pass
+# then it triggers our upload to PyPI for a new release.
+name: Publish to PyPI
+on:
+  release:
+    types: ["published"]
+
+jobs:
+  tests:
+    uses: ./.github/workflows/tests.yml
+
+  publish:
+    needs: [tests]
+    name: Publish to PyPi
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout source
+        uses: actions/checkout@v4
+      - name: Set up Python "3.10"
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.10"
+      - name: install dependencies
+        run: pip install build
+      - name: Build package
+        run: python -m build
+      - name: Publish
+        uses: pypa/gh-action-pypi-publish@v1.8.11
+        with:
+          user: __token__
+          password: ${{ secrets.PYPI_KEY }}
