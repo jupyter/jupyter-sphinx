@@ -51,7 +51,10 @@ Homepage = "https://jupyter.org"
 [project.optional-dependencies]
 test = [
     "pytest",
-    "bash_kernel"
+    "bash_kernel",
+    "pytest-regressions",
+    "beautifulsoup4",
+    "matplotlib",
 ]
 doc = [
     "sphinx-design",
@@ -123,6 +126,7 @@ convention = "google"
 
 [tool.black]
 line-length = 100
+force-exclude = "tests/test_execute/*"
 
 [tool.doc8]
 ignore = [
