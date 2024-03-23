@@ -5,7 +5,7 @@ PyPI when a GitHub release is added.
 
 To cut a new Jupyter Sphinx release, follow these steps:
 
-- Ensure that all tests are passing on master.
+- Ensure that all tests are passing on main.
 
 - Create a pull request to bump the version:
 
@@ -20,7 +20,7 @@ To cut a new Jupyter Sphinx release, follow these steps:
 
 - [Create a new Github Release](https://github.com/jupyter/jupyter-sphinx/releases/new).
   The target should be **main**, the tag and the title should be the version number,
-  e.g. `v0.2.3`.
+  e.g. `v0.2.3`. Note that this requires admin permissions on the repository.
 
 - Creating the release in GitHub will push a tag commit to the repository, which will
   trigger [a GitHub action](https://github.com/jupyter/jupyter-sphinx/blob/main/.github/workflows/artifacts.yml)
