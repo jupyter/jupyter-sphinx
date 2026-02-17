@@ -173,7 +173,7 @@ class ExecuteJupyterCells(SphinxTransform):
                     pass
                 elif errors and not any(e["ename"] in allowed_errors for e in errors):
                     raise ExtensionError(
-                        "Cell raised uncaught exception:\n{}".format(
+                        "Cell in '{}' raised uncaught exception:\n{}".format(docname_path,
                             "\n".join(errors[0]["traceback"])
                         )
                     )
@@ -186,7 +186,7 @@ class ExecuteJupyterCells(SphinxTransform):
                     if output["output_type"] == "stream" and output["name"] == "stderr"
                 ]
                 if stderr and not node.attributes["stderr"]:
-                    js.logger.warning(f"Cell printed to stderr:\n{stderr[0]['text']}")
+                    js.logger.warning(f"Cell in '{docname_path}' printed to stderr:\n{stderr[0]['text']}")
 
             # Insert input/output into placeholders for non-executed cells
             for node, cell in zip(nodes, notebook.cells):
