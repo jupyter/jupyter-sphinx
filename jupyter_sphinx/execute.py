@@ -173,7 +173,8 @@ class ExecuteJupyterCells(SphinxTransform):
                     pass
                 elif errors and not any(e["ename"] in allowed_errors for e in errors):
                     raise ExtensionError(
-                        "Cell in '{}' raised uncaught exception:\n{}".format(docname_path,
+                        "Cell \n ############# \n '{}' \n ############# \n in '{}' raised "
+                        "uncaught exception:\n{}".format(cell['source'], docname_path,
                             "\n".join(errors[0]["traceback"])
                         )
                     )
