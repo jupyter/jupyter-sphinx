@@ -55,8 +55,9 @@ test = [
 ]
 doc = [
     "sphinx-design",
-    "sphinx-book-theme",
-    "matplotlib"
+    "pydata-sphinx-theme",
+    "matplotlib",
+    "sphinx-autobuild",
 ]
 
 [tool.hatch.version]
