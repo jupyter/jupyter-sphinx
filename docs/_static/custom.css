@@ -1,0 +1,8 @@
+/* custom colors for titles */
+html[data-theme="light"] {
+  --pst-color-primary: #e58b22;
+}
+
+html[data-theme="dark"] {
+  --pst-color-primary: #e58b22;
+}
