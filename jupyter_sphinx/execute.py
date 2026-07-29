@@ -152,6 +152,23 @@ class ExecuteJupyterCells(SphinxTransform):
                 kernel_name = default_kernel
                 file_name = next(default_names)
 
+            # Save time when jupyter notebook execution is not necessary
+            if all("execute" in node and not node["execute"] for node in nodes):
+                notebook = blank_nb(kernel_name)
+                try:
+                    cm_language = notebook.metadata.language_info.codemirror_mode.name
+                except AttributeError:
+                    cm_language = notebook.metadata.kernelspec.language
+                # Mimic empty cell output for each node
+                for node in nodes:
+                    source = node.children[0]
+                    source.attributes["classes"].append("code_cell")
+                    node.attributes["cm_language"] = cm_language
+                    if len(node.children) < 2:
+                        node += CellOutputNode(classes=["cell_output"])
+                    apply_styling(node, thebe_config)
+                continue
+
             # Add empty placeholder cells for non-executed nodes so nodes
             # and cells can be zipped and the provided input/output
             # can be inserted later
