@@ -3,6 +3,7 @@
 import json
 import warnings
 from pathlib import Path
+from typing import Any
 
 import docutils
 import ipywidgets.embed
@@ -34,7 +35,7 @@ def load_content(cell, location, logger):
         env.note_dependency(rel_filename)
         if cell.content:
             logger.warning(
-                'Ignoring inline code in Jupyter cell included from "{}"'.format(rel_filename),
+                f'Ignoring inline code in Jupyter cell included from "{rel_filename}"',
                 location=location,
             )
         try:
@@ -58,7 +59,7 @@ def get_highlights(cell, content, location, logger):
         hl_lines = parselinenos(emphasize_linespec, nlines)
         if any(i >= nlines for i in hl_lines):
             logger.warning(
-                "Line number spec is out of range(1-{}): {}".format(nlines, emphasize_linespec),
+                f"Line number spec is out of range(1-{nlines}): {emphasize_linespec}",
                 location=location,
             )
         hl_lines = [i + 1 for i in hl_lines if i < nlines]
@@ -249,7 +250,7 @@ class CellOutput(Directive):
     final_argument_whitespace = True
     has_content = True
 
-    option_spec = {}
+    option_spec: dict[str, Any] = {}
 
     def run(self):
         # This only works lazily because the logger is inited by Sphinx
@@ -322,7 +323,7 @@ class MimeBundleNode(docutils.nodes.container):
         """Determine which node to show based on the visitor."""
         try:
             # Or should we go to config via the node?
-            priority = visitor.builder.env.app.config["render_priority_" + visitor.builder.format]
+            priority = visitor.builder.env.app.config[f"render_priority_{visitor.builder.format}"]
         except (AttributeError, KeyError):
             # Not sure what do to, act as a container and show everything just in case.
             return super()
@@ -518,9 +519,7 @@ def output2sphinx(data, mime_type, metadata, out_dir, inline=False):
         )
     elif mime_type == "application/javascript":
         return docutils.nodes.raw(
-            text='<script type="{mime_type}">{data}</script>'.format(
-                mime_type=mime_type, data=data
-            ),
+            text=f'<script type="{mime_type}">{data}</script>',
             format="html",
         )
     elif mime_type == WIDGET_VIEW_MIMETYPE:
@@ -588,7 +587,7 @@ class JupyterDownloadRole(ReferenceRole):
 
         assert filetype in ("notebook", "nb", "script")
         ext = ".ipynb" if filetype in ("notebook", "nb") else ".py"
-        download_file = self.target + ext
+        download_file = f"{self.target}{ext}"
         reftarget = sphinx_abs_dir(self.env, download_file)
         node = download_reference(self.rawtext, reftarget=reftarget)
         self.set_source_info(node)
