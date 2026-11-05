@@ -26,7 +26,7 @@ repos:
       - id: doc8
 
   - repo: https://github.com/codespell-project/codespell
-    rev: v2.2.4
+    rev: v2.4.3
     hooks:
       - id: codespell
         stages: [pre-commit]
