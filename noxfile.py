@@ -60,15 +60,14 @@ def docs(session):
     """Build the documentation."""
     build = session.posargs.pop() if session.posargs else "html"
     session.install(".[doc]")
-    dst, warn = f"docs/_build/{build}", "warnings.txt"
-    session.run("sphinx-build", "-v", "-b", build, "docs", dst, "-w", warn)
+    session.run("sphinx-build", "-v", "-b", build, "docs", f"docs/_build/{build}")
 
 
 @nox.session(name="mypy", reuse_venv=True)
 def mypy(session):
     """Run a mypy check of the lib."""
     session.install("mypy")
-    test_files = session.posargs or ["geetools"]
+    test_files = session.posargs or ["jupyter_sphinx"]
     session.run("mypy", *test_files)
 
 
@@ -76,5 +75,5 @@ def mypy(session):
 def stubgen(session):
     """Generate stub files for the lib but requires human attention before merge."""
     session.install("mypy")
-    package = session.posargs or ["geetools"]
+    package = session.posargs or ["jupyter_sphinx"]
     session.run("stubgen", "-p", package[0], "-o", "stubs", "--include-private")

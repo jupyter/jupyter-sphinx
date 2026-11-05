@@ -3,6 +3,7 @@
 import json
 import warnings
 from pathlib import Path
+from typing import Any
 
 import docutils
 import ipywidgets.embed
@@ -249,7 +250,7 @@ class CellOutput(Directive):
     final_argument_whitespace = True
     has_content = True
 
-    option_spec = {}
+    option_spec: dict[str, Any] = {}
 
     def run(self):
         # This only works lazily because the logger is inited by Sphinx

@@ -116,6 +116,7 @@ ignore = [
   "D103", # Missing docstring in public function
   "D105", # Missing docstring in magic method
   "D107", # Missing docstring in `__init__`
+  "E402", # module level import not at top of file
 ]
 
 [tool.ruff.flake8-quotes]
