@@ -29,7 +29,7 @@ repos:
     rev: v2.2.4
     hooks:
       - id: codespell
-        stages: [commit]
+        stages: [pre-commit]
         additional_dependencies:
           - tomli
 

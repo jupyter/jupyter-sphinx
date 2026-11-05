@@ -9,25 +9,42 @@ on:
   workflow_call:
 
 jobs:
-  pre-commit:
+  lint:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-python@v7
         with:
-          python-version: "3.10"
-      - uses: pre-commit/action@v3.0.1
+          python-version: "3.11"
+      - name: Install nox
+        run: pip install nox
+      - name: Run lint
+        run: nox -s lint
+
+  mypy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.11"
+      - name: Install nox
+        run: pip install nox
+      - name: Run mypy
+        run: nox -s mypy
 
   tests:
+    needs: [lint, mypy]
     strategy:
+      fail-fast: false
       matrix:
-        python-version: ["3.8", "3.9", "3.10", "3.11", " 3.12"]
+        python-version: ["3.10", "3.11", "3.12", "3.13", "3.14", "3.15"]
         os: [ubuntu-latest]
         include:
           - os: windows-latest
-            python-version: "3.12"
+            python-version: "3.15"
           - os: macos-latest
-            python-version: "3.12"
+            python-version: "3.15"
 
     runs-on: ${{ matrix.os }}
 
@@ -37,19 +54,43 @@ jobs:
         uses: actions/setup-python@v7
         with:
           python-version: ${{ matrix.python-version }}
-      - name: Install hatch
-        run: pip install hatch
+      - name: Install nox
+        run: pip install nox
       - name: Run tests
-        run: hatch run test:test -x
+        run: nox -s ci-test
+      - name: Upload reference coverage
+        if: matrix.python-version == '3.11'
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage
+          path: coverage.xml
+          if-no-files-found: error
+
+  coverage:
+    needs: tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - name: Download reference coverage
+        uses: actions/download-artifact@v4
+        with:
+          name: coverage
+      - name: Upload to Codecov
+        uses: codecov/codecov-action@v5
+        with:
+          files: coverage.xml
+          fail_ci_if_error: true
+          token: ${{ secrets.CODECOV_TOKEN }}
 
   docs:
+    needs: [lint, mypy]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
       - uses: actions/setup-python@v7
         with:
-          python-version: "3.10"
-      - name: Install hatch
-        run: pip install hatch
+          python-version: "3.11"
+      - name: Install nox
+        run: pip install nox
       - name: Build docs
-        run: hatch run doc:build
+        run: nox -s docs

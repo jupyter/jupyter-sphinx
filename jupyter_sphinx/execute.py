@@ -19,24 +19,18 @@ else:
 
 import traitlets
 
+
 # Workaround of https://github.com/ipython/traitlets/issues/606
-if traitlets.version_info < (5, 1):
+class LoggerAdapterWrapper(Logger):
+    """Wrap a logger adapter, while pretending to be a logger."""
 
-    class LoggerAdapterWrapper(Logger):
-        """Wrap a logger adapter, while pretending to be a logger."""
+    def __init__(self, wrapped):
+        self._wrapped = wrapped
 
-        def __init__(self, wrapped):
-            self._wrapped = wrapped
-
-        def __getattribute__(self, attr):
-            if attr == "_wrapped":
-                return object.__getattribute__(self, attr)
-            return self._wrapped.__getattribute__(attr)
-
-else:
-
-    def LoggerAdapterWrapper(logger_adapter):
-        return logger_adapter
+    def __getattribute__(self, attr):
+        if attr == "_wrapped":
+            return object.__getattribute__(self, attr)
+        return self._wrapped.__getattribute__(attr)
 
 
 import nbformat
@@ -299,7 +293,8 @@ def write_notebook_output(notebook, output_dir, notebook_name, location=None):
         os.path.join(output_dir, f"{notebook_name}.ipynb"),
     )
 
-    exporter = nbconvert.exporters.ScriptExporter(log=LoggerAdapterWrapper(js.logger))
+    logger = LoggerAdapterWrapper(js.logger) if traitlets.version_info < (5, 1) else js.logger
+    exporter = nbconvert.exporters.ScriptExporter(log=logger)
     with warnings.catch_warnings():
         # See https://github.com/jupyter/nbconvert/issues/1388
         warnings.simplefilter("ignore", DeprecationWarning)
