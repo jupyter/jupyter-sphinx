@@ -47,7 +47,7 @@ def skip(self, node):
 def halt(self, node):
     raise ExtensionError(
         "Rendering encountered a node type that should "
-        "have been removed before rendering: %s" % type(node)
+        f"have been removed before rendering: {type(node)}"
     )
 
 

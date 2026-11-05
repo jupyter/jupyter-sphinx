@@ -33,9 +33,9 @@ def doctree():
         src_dir = Path(tempfile.mkdtemp())
         source_trees.append(src_dir)
 
-        conf_contents = "extensions = ['%s']" % entrypoint
+        conf_contents = f"extensions = ['{entrypoint}']"
         if config is not None:
-            conf_contents += "\n" + config
+            conf_contents += f"\n{config}"
         (src_dir / "conf.py").write_text(conf_contents, encoding="utf8")
         (src_dir / "index.rst").write_text(source, encoding="utf8")
 
@@ -111,7 +111,7 @@ def sphinx_build_factory(tmp_path: Path) -> Callable:
         """Create the Sphinxbuild from the source folder."""
         src_dir = tmp_path
         conf_contents = f"extensions = ['{entrypoint}']"
-        conf_contents += "\n" + config
+        conf_contents += f"\n{config}"
         (src_dir / "conf.py").write_text(conf_contents, encoding="utf8")
         (src_dir / "index.rst").write_text(source, encoding="utf8")
 

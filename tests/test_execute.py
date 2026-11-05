@@ -77,7 +77,7 @@ def test_continue_linenos_not_automatic(sphinx_build_factory, directive, file_re
 
 def test_continue_lineos_conf_option(sphinx_build_factory, directive, file_regression):
     source = directive("execute", ["2 + 2"])
-    source += "\n" + directive("execute", ["3 + 3"])
+    source += f'\n{directive("execute", ["3 + 3"])}'
 
     config = "jupyter_sphinx_linenos = True"
     config += "\n" + "jupyter_sphinx_continue_linenos = True"
@@ -89,7 +89,7 @@ def test_continue_lineos_conf_option(sphinx_build_factory, directive, file_regre
 
 def test_continue_linenos_with_start(sphinx_build_factory, directive, file_regression):
     source = directive("execute", ["2 + 2"], [("lineno-start", "7")])
-    source += "\n" + directive("execute", ["3 + 3"])
+    source += f'\n{directive("execute", ["3 + 3"])}'
 
     config = "jupyter_sphinx_linenos = True"
     config += "\n" + "jupyter_sphinx_continue_linenos = True"
@@ -119,7 +119,7 @@ def test_emphasize_lines_with_dash(sphinx_build_factory, directive, file_regress
 
 def test_execution_environment_carries_over(sphinx_build_factory, directive, file_regression):
     source = directive("execute", ["a = 1"])
-    source += "\n" + directive("execute", ["a += 1", "a"])
+    source += f'\n{directive("execute", ["a += 1", "a"])}'
 
     sphinx_build = sphinx_build_factory(source).build()
     htmls = sphinx_build.index_html.select("div.jupyter_cell")
@@ -128,8 +128,8 @@ def test_execution_environment_carries_over(sphinx_build_factory, directive, fil
 
 def test_kernel_restart(sphinx_build_factory, directive, file_regression):
     source = directive("execute", ["a = 1"])
-    source += "\n" + directive("kernel", [], [("id", "new-kernel")])
-    source += "\n" + directive("execute", ["a += 1", "a"], ["raises"])
+    source += f'\n{directive("kernel", [], [("id", "new-kernel")])}'
+    source += f'\n{directive("execute", ["a += 1", "a"], ["raises"])}'
 
     sphinx_build = sphinx_build_factory(source).build()
     htmls = sphinx_build.index_html.select("div.jupyter_cell")
@@ -251,7 +251,7 @@ def test_thebe_button_auto(sphinx_build_factory, directive, file_regression):
 
 def test_thebe_button_manual(sphinx_build_factory, directive, file_regression):
     source = ".. thebe-button::"
-    source += "\n" + directive("execute", ["1 + 1"])
+    source += f'\n{directive("execute", ["1 + 1"])}'
     config = 'jupyter_sphinx_thebelab_config = {"dummy": True}'
 
     sphinx_build = sphinx_build_factory(source, config=config).build()
@@ -302,7 +302,7 @@ def test_jupyter_download(sphinx_build_factory, file_regression, type):
 
 def test_save_script(sphinx_build_factory, directive, file_regression):
     source = directive("kernel", [], [("id", "test")], "python3")
-    source += "\n" + directive("execute", ["a = 1", "print(a)", ""])
+    source += f'\n{directive("execute", ["a = 1", "print(a)", ""])}'
 
     sphinx_build = sphinx_build_factory(source).build()
     saved_text = (sphinx_build.outdir / "../jupyter_execute/test.py").read_text()
@@ -341,7 +341,7 @@ def test_input_cell_linenos(sphinx_build_factory, directive, file_regression):
 
 def test_output_cell(sphinx_build_factory, directive, file_regression):
     source = directive("input", ["3 + 2"])
-    source += "\n" + directive("output", ["4"])
+    source += f'\n{directive("output", ["4"])}'
 
     sphinx_build = sphinx_build_factory(source).build()
     htmls = sphinx_build.index_html.select("div.jupyter_cell")
@@ -357,8 +357,8 @@ def test_output_only_error(sphinx_build_factory, directive):
 
 def test_multiple_directives_types(sphinx_build_factory, directive, file_regression):
     source = directive("execute", ["2 + 2"])
-    source += "\n" + directive("input", ["3 + 3"])
-    source += "\n" + directive("output", ["6"])
+    source += f'\n{directive("input", ["3 + 3"])}'
+    source += f'\n{directive("output", ["6"])}'
 
     sphinx_build = sphinx_build_factory(source).build()
     htmls = sphinx_build.index_html.select("div.jupyter_cell")
