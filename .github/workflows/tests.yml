@@ -70,6 +70,7 @@ jobs:
     needs: tests
     runs-on: ubuntu-latest
     steps:
+      - uses: actions/checkout@v7
       - name: Download reference coverage
         uses: actions/download-artifact@v4
         with:
