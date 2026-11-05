@@ -547,7 +547,7 @@ def apply_styling(node, thebe_config):
         classes = node.attributes.get("classes", [])
         classes += ["jupyter_container"]
 
-    (input_node, output_node) = node.children
+    input_node, output_node = node.children
     if thebe_config:
         # Move the source from the input node into the thebe_source node
         source = input_node.children.pop(0)
