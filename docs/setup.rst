@@ -57,7 +57,7 @@ Because all code cells in a document are run in the same kernel, cells later in 
 .. jupyter-execute::
 
     a += 1
-    print("second cell: a = {a}")
+    print(f"second cell: a = {a}")
 
 Because ``jupyter-sphinx`` uses the machinery of ``nbconvert``, it is capable of rendering any rich output, for example plots:
 

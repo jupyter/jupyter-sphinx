@@ -6,7 +6,7 @@ build-backend = "hatchling.build"
 name = "jupyter-sphinx"
 dynamic = ["version"]
 description = "Jupyter Sphinx Extensions"
-requires-python = ">=3.8"
+requires-python = ">=3.10"
 classifiers = [
     "Development Status :: 5 - Production/Stable",
     "Intended Audience :: Science/Research",
@@ -15,11 +15,12 @@ classifiers = [
     "Programming Language :: Python",
     "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3 :: Only",
-    "Programming Language :: Python :: 3.8",
-    "Programming Language :: Python :: 3.9",
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
+    "Programming Language :: Python :: 3.15",
     "Topic :: Scientific/Engineering"
 ]
 dependencies = [
@@ -51,7 +52,11 @@ Homepage = "https://jupyter.org"
 [project.optional-dependencies]
 test = [
     "pytest",
-    "bash_kernel"
+    "pytest-cov",
+    "bash_kernel",
+    "pytest-regressions",
+    "beautifulsoup4",
+    "matplotlib",
 ]
 doc = [
     "sphinx-design",
@@ -92,28 +97,24 @@ minversion = "7.0"
 xfail_strict = true
 log_cli_level = "info"
 addopts = [
-  "-ra", "--durations=10", "--color=yes", "--strict-config", "--strict-markers"
+    "-ra", "--durations=10", "--color=yes", "--strict-config", "--strict-markers"
 ]
 testpaths = ["tests/"]
-filterwarnings = [
-  "error",
-  # https://github.com/dateutil/dateutil/issues/1314
-  "module:datetime.datetime.utc:DeprecationWarning"
-]
 
 [tool.ruff]
 ignore-init-module-imports = true
 fix = true
 select = ["E", "F", "W", "I", "D", "RUF"]
 ignore = [
-  "E501",  # line too long | Black take care of it
-  "D212", # Multi-line docstring
-  "D100", # Missing docstring in public module
-  "D101", # Missing docstring in public class
-  "D102", # Missing docstring in public method
-  "D103", # Missing docstring in public function
-  "D105", # Missing docstring in magic method
-  "D107", # Missing docstring in `__init__`
+    "E501",  # line too long | Black take care of it
+    "D212", # Multi-line docstring
+    "D100", # Missing docstring in public module
+    "D101", # Missing docstring in public class
+    "D102", # Missing docstring in public method
+    "D103", # Missing docstring in public function
+    "D105", # Missing docstring in magic method
+    "D107", # Missing docstring in `__init__`
+    "E402", # module level import not at top of file
 ]
 
 [tool.ruff.flake8-quotes]
@@ -124,8 +125,16 @@ convention = "google"
 
 [tool.black]
 line-length = 100
+force-exclude = "tests/test_execute/*"
 
 [tool.doc8]
 ignore = [
-  "D001" # we follow a 1 line = 1 paragraph style
+    "D001" # we follow a 1 line = 1 paragraph style
 ]
+
+[tool.mypy]
+scripts_are_modules = true
+ignore_missing_imports = true
+install_types = true
+non_interactive = true
+warn_redundant_casts = true

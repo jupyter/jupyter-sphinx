@@ -14,19 +14,19 @@ jobs:
     needs: [tests]
     name: Publish to PyPi
     runs-on: ubuntu-latest
+    environment: release
+    permissions:
+      id-token: write
     steps:
       - name: Checkout source
-        uses: actions/checkout@v4
-      - name: Set up Python "3.10"
-        uses: actions/setup-python@v5
+        uses: actions/checkout@v7
+      - name: Set up Python "3.11"
+        uses: actions/setup-python@v7
         with:
-          python-version: "3.10"
+          python-version: "3.11"
       - name: install dependencies
         run: pip install build
       - name: Build package
         run: python -m build
       - name: Publish
-        uses: pypa/gh-action-pypi-publish@v1.8.11
-        with:
-          user: __token__
-          password: ${{ secrets.PYPI_KEY }}
+        uses: pypa/gh-action-pypi-publish@v1.14.3

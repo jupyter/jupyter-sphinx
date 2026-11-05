@@ -21,9 +21,7 @@ class ThebeSourceNode(docutils.nodes.container):
         if self["code_below"]:
             code_class += " thebelab-below"
         language = self["language"]
-        return '<div class="{}" data-executable="true" data-language="{}">'.format(
-            code_class, language
-        )
+        return f'<div class="{code_class}" data-executable="true" data-language="{language}">'
 
     def depart_html(self):
         return "</div>"
@@ -54,9 +52,9 @@ class ThebeButtonNode(docutils.nodes.Element):
     def html(self):
         text = self["text"]
         return (
-            '<button title="{text}" class="thebelab-button" '
+            f'<button title="{text}" class="thebelab-button" '
             'id="thebelab-activate-button" '
-            'onclick="initThebelab()">{text}</button>'.format(text=text)
+            f'onclick="initThebelab()">{text}</button>'
         )
 
 
@@ -116,9 +114,7 @@ def add_thebelab_library(doctree, env):
     # Specify the thebelab config inline, a separate file is not supported
     doctree.append(
         docutils.nodes.raw(
-            text='\n<script type="text/x-thebe-config">\n{}\n</script>'.format(
-                json.dumps(thebe_config)
-            ),
+            text=f'\n<script type="text/x-thebe-config">\n{json.dumps(thebe_config)}\n</script>',
             format="html",
         )
     )
@@ -126,8 +122,9 @@ def add_thebelab_library(doctree, env):
     # Add thebelab library after the config is specified
     doctree.append(
         docutils.nodes.raw(
-            text='\n<script type="text/javascript" src="{}"></script>'.format(
-                env.config.jupyter_sphinx_thebelab_url
+            text=(
+                f'\n<script type="text/javascript" src="{env.config.jupyter_sphinx_thebelab_url}">'
+                "</script>"
             ),
             format="html",
         )

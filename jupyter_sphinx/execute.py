@@ -19,24 +19,18 @@ else:
 
 import traitlets
 
+
 # Workaround of https://github.com/ipython/traitlets/issues/606
-if traitlets.version_info < (5, 1):
+class LoggerAdapterWrapper(Logger):
+    """Wrap a logger adapter, while pretending to be a logger."""
 
-    class LoggerAdapterWrapper(Logger):
-        """Wrap a logger adapter, while pretending to be a logger."""
+    def __init__(self, wrapped):
+        self._wrapped = wrapped
 
-        def __init__(self, wrapped):
-            self._wrapped = wrapped
-
-        def __getattribute__(self, attr):
-            if attr == "_wrapped":
-                return object.__getattribute__(self, attr)
-            return self._wrapped.__getattribute__(attr)
-
-else:
-
-    def LoggerAdapterWrapper(logger_adapter):
-        return logger_adapter
+    def __getattribute__(self, attr):
+        if attr == "_wrapped":
+            return object.__getattribute__(self, attr)
+        return self._wrapped.__getattribute__(attr)
 
 
 import nbformat
@@ -172,11 +166,8 @@ class ExecuteJupyterCells(SphinxTransform):
                 if raises_provided and not allowed_errors:  # empty 'raises': suppress all errors
                     pass
                 elif errors and not any(e["ename"] in allowed_errors for e in errors):
-                    raise ExtensionError(
-                        "Cell raised uncaught exception:\n{}".format(
-                            "\n".join(errors[0]["traceback"])
-                        )
-                    )
+                    traceback = "\n".join(errors[0]["traceback"])
+                    raise ExtensionError(f"Cell raised uncaught exception:\n{traceback}")
 
             # Raise error if cells print to stderr
             for node, cell in zip(nodes, notebook.cells):
@@ -299,16 +290,17 @@ def write_notebook_output(notebook, output_dir, notebook_name, location=None):
     FilesWriter(build_directory=output_dir).write(
         nbformat.writes(notebook),
         resources,
-        os.path.join(output_dir, notebook_name + ".ipynb"),
+        os.path.join(output_dir, f"{notebook_name}.ipynb"),
     )
 
-    exporter = nbconvert.exporters.ScriptExporter(log=LoggerAdapterWrapper(js.logger))
+    logger = LoggerAdapterWrapper(js.logger) if traitlets.version_info < (5, 1) else js.logger
+    exporter = nbconvert.exporters.ScriptExporter(log=logger)
     with warnings.catch_warnings():
         # See https://github.com/jupyter/nbconvert/issues/1388
         warnings.simplefilter("ignore", DeprecationWarning)
         contents, resources = exporter.from_notebook_node(notebook)
 
-    notebook_file = notebook_name + resources["output_extension"]
+    notebook_file = f'{notebook_name}{resources["output_extension"]}'
     output_dir = Path(output_dir)
     # utf-8 is the de-facto standard encoding for notebooks.
     (output_dir / notebook_file).write_text(contents, encoding="utf8")
