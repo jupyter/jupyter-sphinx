@@ -1,4 +1,5 @@
 """store the current version info of the project."""
+
 import re
 from typing import List
 

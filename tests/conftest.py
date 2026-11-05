@@ -1,4 +1,5 @@
 """Global configuration of the test session."""
+
 import asyncio
 import os
 import shutil

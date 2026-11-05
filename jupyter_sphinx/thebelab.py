@@ -1,4 +1,5 @@
 """Inserting interactive links with Thebelab."""
+
 import json
 from pathlib import Path
 
