@@ -16,7 +16,7 @@ repos:
         exclude: tests\/test_execute\/
 
   - repo: https://github.com/charliermarsh/ruff-pre-commit
-    rev: "v0.0.215"
+    rev: "v0.17.3"
     hooks:
       - id: ruff
 
