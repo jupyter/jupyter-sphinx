@@ -323,7 +323,7 @@ class MimeBundleNode(docutils.nodes.container):
         """Determine which node to show based on the visitor."""
         try:
             # Or should we go to config via the node?
-            priority = visitor.builder.env.app.config[f"render_priority_{visitor.builder.format}"]
+            priority = visitor.builder.config[f"render_priority_{visitor.builder.format}"]
         except (AttributeError, KeyError):
             # Not sure what do to, act as a container and show everything just in case.
             return super()
