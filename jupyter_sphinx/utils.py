@@ -92,6 +92,6 @@ def output_directory(env):
     # temporary directory, as sphinx may cache the doctree with
     # references to the images that we write
 
-    # Note: we are using an implicit fact that sphinx output directories are
-    # direct subfolders of the build directory.
-    return (Path(env.app.outdir) / os.path.pardir / "jupyter_execute").resolve()
+    # The doctree cache is shared by builders, without assuming that their
+    # output directories have a common parent dedicated to this project.
+    return (Path(env.doctreedir) / "jupyter_execute").resolve()

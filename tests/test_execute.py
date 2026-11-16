@@ -3,6 +3,7 @@ import os
 import re
 import warnings
 from datetime import date
+from pathlib import Path
 
 import pytest
 from sphinx.errors import ExtensionError
@@ -305,7 +306,7 @@ def test_save_script(sphinx_build_factory, directive, file_regression):
     source += f'\n{directive("execute", ["a = 1", "print(a)", ""])}'
 
     sphinx_build = sphinx_build_factory(source).build()
-    saved_text = (sphinx_build.outdir / "../jupyter_execute/test.py").read_text()
+    saved_text = (Path(sphinx_build.app.doctreedir) / "jupyter_execute/test.py").read_text()
     file_regression.check(saved_text, extension=".py")
 
 
@@ -322,7 +323,7 @@ def test_bash_kernel(sphinx_build_factory, directive, file_regression):
         warnings.simplefilter("ignore", DeprecationWarning)
         sphinx_build = sphinx_build_factory(source).build()
 
-    saved_text = (sphinx_build.outdir / "../jupyter_execute/test.sh").read_text()
+    saved_text = (Path(sphinx_build.app.doctreedir) / "jupyter_execute/test.sh").read_text()
     file_regression.check(saved_text, extension=".sh")
 
 
