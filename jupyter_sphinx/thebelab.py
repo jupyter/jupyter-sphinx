@@ -91,7 +91,7 @@ def add_thebelab_library(doctree, env):
         if thebe_config.is_absolute():
             filename = thebe_config
         else:
-            filename = Path(env.app.srcdir).resolve() / thebe_config
+            filename = Path(env.srcdir).resolve() / thebe_config
 
         if not filename.exists():
             js.logger.warning("The supplied thebelab configuration file does not exist")

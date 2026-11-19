@@ -97,6 +97,10 @@ def builder_inited(app: Sphinx):
     case 1: ipywidgets 7, with require
     case 2: ipywidgets 7, no require.
     """
+    # The environment has no public reference to the output directory, and
+    # ``env.app`` is deprecated since Sphinx 9, so store it for later use.
+    app.env.jupyter_sphinx_outdir = app.outdir
+
     require_url = app.config.jupyter_sphinx_require_url
     if require_url:
         app.add_js_file(require_url)

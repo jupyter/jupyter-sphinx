@@ -395,3 +395,22 @@ def test_builder_priority_latex(sphinx_build_factory, directive, file_regression
     # workaround to remove the date line from the output (It will change for every build)
     latex = latex.replace(f"\\date{date.today().strftime('{%b %d, %Y}')}\n", "")
     file_regression.check(latex, extension=".tex")
+
+
+def test_no_deprecated_env_app(sphinx_build_factory, directive, tmp_path):
+    # BuildEnvironment.app is deprecated since Sphinx 9
+    (tmp_path / "thebe.json").write_text("{}", encoding="utf8")
+    source = directive("execute", ['display({"text/plain": "I am html output"})'])
+    source += "\n\nThis is a script: :jupyter-download-script:`a file <index>`"
+    config = "render_priority_html = ['text/plain']\n"
+    config += "jupyter_sphinx_thebelab_config = 'thebe.json'"
+
+    with warnings.catch_warnings(record=True) as caught:
+        warnings.simplefilter("always")
+        sphinx_build = sphinx_build_factory(source, config=config).build()
+
+    assert not [w for w in caught if "BuildEnvironment.app" in str(w.message)]
+    assert (sphinx_build.outdir / "../jupyter_execute/index.ipynb").exists()
+    html = sphinx_build.index_html
+    assert "I am html output" in html.select("div.jupyter_cell")[0].text
+    assert html.select("a.download")[0]["href"].endswith("index.py")
