@@ -227,6 +227,22 @@ produces:
 
     hello, world!
 
+The content of ``jupyter-output`` is displayed as literal text. Use ordinary
+reStructuredText after the input cell if the expected output is a screenshot,
+a list, or other formatted content. For example, the following shows an image
+after a code sample without running the code:
+
+.. code-block:: rst
+
+   .. jupyter-input::
+
+      show_results()
+
+   Expected output:
+
+   .. image:: results.png
+      :alt: Screenshot of the results table
+
 Controlling the execution environment
 -------------------------------------
 The execution environment can be controlled by using the ``jupyter-kernel`` directive. This directive takes the name of the Jupyter kernel in which all future cells (until the next ``jupyter-kernel`` directive) should be run:
