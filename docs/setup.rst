@@ -100,3 +100,22 @@ It is also possible to include code from a regular file by passing the filename 
 
 ``jupyter-execute`` may also be used in docstrings within your Python code, and will be executed
 when they are included with Sphinx autodoc.
+
+Checking an unrecognized directive
+----------------------------------
+
+Sphinx registers ``jupyter-execute`` when it loads the extension from
+``conf.py``. A standalone reStructuredText checker that uses Docutils without
+loading Sphinx extensions may report the directive as unrecognized even
+when the Sphinx build works.
+
+From your project directory, run a Sphinx build to check whether it can load
+and execute the directive (adjust the source path if needed):
+
+.. code-block:: bash
+
+   python -m sphinx -W -b html docs docs/_build/html
+
+If Sphinx itself reports an unknown directive, check that it is using
+the intended ``conf.py`` and that ``jupyter_sphinx`` is installed in the
+Python environment running the build.
