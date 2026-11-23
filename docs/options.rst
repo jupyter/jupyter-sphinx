@@ -168,6 +168,16 @@ produces:
   a = {"hello": "world!"}
   a["jello"]
 
+When previewing documentation with ``sphinx-autobuild``, add ``:raises:``
+to the cell you are editing if you want its traceback to appear in the
+preview. Remove the option when an exception should fail the build again, or
+list the exception types that are expected in the published example.
+
+If you override ``jupyter_execute_kwargs`` in ``conf.py``, keep
+``allow_errors=True`` to use ``:raises:``. With ``allow_errors=False``
+the notebook executor stops before Jupyter Sphinx can check the cell's
+exception against that option.
+
 Additionally, any output sent to the ``stderr`` stream of a cell will result in ``jupyter-sphinx`` producing a warning. This behaviour can be suppressed (and the ``stderr`` stream printed as regular output) by providing the ``stderr`` option:
 
 .. code-block:: rst
@@ -305,6 +315,6 @@ Here is a list of all the configuration options available to the Jupyter Sphinx 
     ``jupyter_execute_default_kernel``,"The default kernel to launch when executing code in ``jupyter-execute`` directives. Default to ``python3``."
     ``render_priority_html``,"The priority of different output mimetypes for displaying in HTML output. Mimetypes earlier in the data priority list are preferred over later ones. This is relevant if a code cell produces an output that has several possible representations (e.g. description text or an image). Please open an issue if you find a mimetype that isn't supported, but should be. Default to ``['application/vnd.jupyter.widget-view+json', 'text/html', 'image/svg+xml', 'image/png', 'image/jpeg', 'text/latex', 'text/plain']``."
     ``render_priority_latex``,"Same as ``render_priority_html``, but for latex. The default is ``['image/svg+xml', 'image/png', 'image/jpeg', 'text/latex', 'text/plain']``."
-    ``jupyter_execute_kwargs``,"Keyword arguments to pass to ``nbconvert.preprocessors.execute.executenb``, which controls how code cells are executed. The default is ``{'timeout':-1, 'allow_errors': True)``."
+    ``jupyter_execute_kwargs``,"Keyword arguments to pass to ``nbconvert.preprocessors.execute.executenb``, which controls how code cells are executed. The default is ``{'timeout': -1, 'allow_errors': True, 'store_widget_state': True}``."
     ``jupyter_sphinx_linenos``,"Whether to show line numbering in all ``jupyter-execute`` sources."
     ``jupyter_sphinx_continue_linenos``,"Whether to continue line numbering from previous cell in all ``jupyter-execute`` sources."
