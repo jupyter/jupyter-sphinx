@@ -85,7 +85,7 @@ def add_thebelab_library(doctree, env):
     """Adds the thebelab configuration and library to the doctree."""
     thebe_config = env.config.jupyter_sphinx_thebelab_config
     if isinstance(thebe_config, dict):
-        pass
+        thebe_config = thebe_config.copy()
     elif isinstance(thebe_config, str):
         thebe_config = Path(thebe_config)
         if thebe_config.is_absolute():

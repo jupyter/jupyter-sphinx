@@ -182,7 +182,7 @@ def setup(app: Sphinx):
     app.add_config_value("jupyter_sphinx_embed_url", None, "html")
 
     # thebelab config, can be either a filename or a dict
-    app.add_config_value("jupyter_sphinx_thebelab_config", None, "html")
+    app.add_config_value("jupyter_sphinx_thebelab_config", None, "env")
     app.add_config_value("jupyter_sphinx_thebelab_url", THEBELAB_URL_DEFAULT, "html")
 
     # linenos config
