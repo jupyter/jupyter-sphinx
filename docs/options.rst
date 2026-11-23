@@ -46,6 +46,24 @@ produces:
 
     print("this output is invisible")
 
+To keep a Matplotlib plot while hiding the text representation returned by a
+plotting call, assign the return value to a variable and display the figure
+explicitly. With the IPython kernel:
+
+.. code-block:: rst
+
+    .. jupyter-execute::
+
+        import matplotlib.pyplot as plt
+
+        figure, axes = plt.subplots()
+        lines = axes.plot([0, 1], [0, 1])
+        plt.show()
+
+An assignment prevents IPython from displaying the return value as a separate
+result. For a final expression, an IPython trailing semicolon also suppresses
+its result. Output explicitly written with ``print()`` is still displayed.
+
 You may also display the code *below* the output with ``:code-below:``:
 
 .. code-block:: rst
