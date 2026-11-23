@@ -1,6 +1,7 @@
 import json
 import os
 import re
+import sys
 import warnings
 from datetime import date
 
@@ -300,8 +301,22 @@ def test_jupyter_download(sphinx_build_factory, file_regression, type):
     file_regression.check(html.prettify(), extension=".html")
 
 
-def test_save_script(sphinx_build_factory, directive, file_regression):
-    source = directive("kernel", [], [("id", "test")], "python3")
+def test_save_script(
+    sphinx_build_factory, directive, file_regression, tmp_path, monkeypatch
+):
+    kernel_name = "jupyter-sphinx-test-python"
+    data_dir = tmp_path / "jupyter"
+    kernel_dir = data_dir / "kernels" / kernel_name
+    kernel_dir.mkdir(parents=True)
+    spec = {
+        "argv": [sys.executable, "-m", "ipykernel_launcher", "-f", "{connection_file}"],
+        "display_name": "Jupyter Sphinx test Python",
+        "language": "python",
+    }
+    (kernel_dir / "kernel.json").write_text(json.dumps(spec), encoding="utf8")
+    monkeypatch.setenv("JUPYTER_PATH", str(data_dir), prepend=os.pathsep)
+
+    source = directive("kernel", [], [("id", "test")], kernel_name)
     source += f'\n{directive("execute", ["a = 1", "print(a)", ""])}'
 
     sphinx_build = sphinx_build_factory(source).build()
