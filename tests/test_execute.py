@@ -249,6 +249,30 @@ def test_thebe_button_auto(sphinx_build_factory, directive, file_regression):
     file_regression.check(html.prettify(), extension=".html")
 
 
+def test_thebe_config_change_rebuilds_cached_doctree(sphinx_build_factory, directive):
+    source = directive("execute", ["1 + 1"])
+    old_config = 'jupyter_sphinx_thebelab_config = {"marker": "before"}'
+    new_config = 'jupyter_sphinx_thebelab_config = {"marker": "after"}'
+    selector = 'script[type="text/x-thebe-config"]'
+
+    first = sphinx_build_factory(source, config=old_config).build()
+    assert '"marker": "before"' in first.index_html.select_one(selector).get_text()
+    assert first.app.config.jupyter_sphinx_thebelab_config == {"marker": "before"}
+
+    # Reuse the same source, output directory, and cached doctree.
+    conf_path = first.src / "conf.py"
+    conf_path.write_text(
+        conf_path.read_text(encoding="utf8").replace(old_config, new_config), encoding="utf8"
+    )
+    app = type(first.app)(srcdir=first.app.srcdir, freshenv=False)
+    try:
+        app.build()
+        assert app.env.config.jupyter_sphinx_thebelab_config["marker"] == "after"
+        assert '"marker": "after"' in first.index_html.select_one(selector).get_text()
+    finally:
+        app.cleanup()
+
+
 def test_thebe_button_manual(sphinx_build_factory, directive, file_regression):
     source = ".. thebe-button::"
     source += f'\n{directive("execute", ["1 + 1"])}'
