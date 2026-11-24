@@ -2,7 +2,6 @@ import json
 import os
 import re
 import warnings
-from datetime import date
 
 import pytest
 from sphinx.errors import ExtensionError
@@ -380,18 +379,19 @@ def test_builder_priority_html(sphinx_build_factory, directive, file_regression)
     file_regression.check(html.prettify(), extension=".html")
 
 
-@pytest.mark.xfail(
-    reason="LaTeX build does not produce python.tex in CI", raises=FileNotFoundError, strict=False
-)
-def test_builder_priority_latex(sphinx_build_factory, directive, file_regression):
+def test_builder_priority_latex(sphinx_build_factory, directive):
     source = directive(
         "execute",
-        ['display({"text/plain": "I am html output", "text/latex": "I am latex"})'],
+        ['display({"text/plain": "I am html output", "text/latex": "I am latex"}, raw=True)'],
+        ["hide-code"],
     )
-    "render_priority_latex = ['text/latex', 'text/plain']"
+    config = (
+        "render_priority_latex = ['text/latex', 'text/plain']\n"
+        "latex_documents = [('index', 'execution-output.tex', 'Execution output', "
+        "'Jupyter', 'manual')]"
+    )
 
-    sphinx_build = sphinx_build_factory(source, buildername="latex").build()
-    latex = (sphinx_build.outdir / "python.tex").read_text()
-    # workaround to remove the date line from the output (It will change for every build)
-    latex = latex.replace(f"\\date{date.today().strftime('{%b %d, %Y}')}\n", "")
-    file_regression.check(latex, extension=".tex")
+    sphinx_build = sphinx_build_factory(source, config=config, buildername="latex").build()
+    latex = (sphinx_build.outdir / "execution-output.tex").read_text(encoding="utf-8")
+    assert "I am latex" in latex
+    assert "I am html output" not in latex
