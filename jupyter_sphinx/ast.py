@@ -3,7 +3,7 @@
 import json
 import warnings
 from pathlib import Path
-from typing import Any
+from typing import Any, ClassVar
 
 import docutils
 import ipywidgets.embed
@@ -113,7 +113,7 @@ class JupyterCell(Directive):
     final_argument_whitespace = True
     has_content = True
 
-    option_spec = {
+    option_spec: ClassVar[dict[str, Any]] = {
         "hide-code": directives.flag,
         "hide-output": directives.flag,
         "code-below": directives.flag,
@@ -189,7 +189,7 @@ class CellInput(Directive):
     final_argument_whitespace = True
     has_content = True
 
-    option_spec = {
+    option_spec: ClassVar[dict[str, Any]] = {
         "linenos": directives.flag,
         "lineno-start": directives.nonnegative_int,
         "emphasize-lines": directives.unchanged_required,
@@ -250,7 +250,7 @@ class CellOutput(Directive):
     final_argument_whitespace = True
     has_content = True
 
-    option_spec: dict[str, Any] = {}
+    option_spec: ClassVar[dict[str, Any]] = {"id": directives.unchanged}
 
     def run(self):
         # This only works lazily because the logger is inited by Sphinx
