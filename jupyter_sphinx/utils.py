@@ -83,7 +83,7 @@ def sphinx_abs_dir(env, *paths):
         return out_path.as_posix()
 
     # Path().relative_to() doesn't work when not a direct subpath
-    return f"/{os.path.relpath(out_path, env.app.srcdir)}"
+    return f"/{os.path.relpath(out_path, env.srcdir)}"
 
 
 def output_directory(env):
@@ -94,4 +94,4 @@ def output_directory(env):
 
     # Note: we are using an implicit fact that sphinx output directories are
     # direct subfolders of the build directory.
-    return (Path(env.app.outdir) / os.path.pardir / "jupyter_execute").resolve()
+    return (Path(env.jupyter_sphinx_outdir) / os.path.pardir / "jupyter_execute").resolve()
