@@ -4,6 +4,7 @@ import os
 import warnings
 from logging import Logger
 from pathlib import Path
+from typing import Any, ClassVar
 
 import nbconvert
 from docutils.parsers.rst import Directive, directives
@@ -81,7 +82,7 @@ class JupyterKernel(Directive):
     final_argument_whitespace = False
     has_content = False
 
-    option_spec = {"id": directives.unchanged}
+    option_spec: ClassVar[dict[str, Any]] = {"id": directives.unchanged}
 
     def run(self):
         return [

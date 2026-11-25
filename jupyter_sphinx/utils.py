@@ -83,7 +83,7 @@ def sphinx_abs_dir(env, *paths):
         return out_path.as_posix()
 
     # Path().relative_to() doesn't work when not a direct subpath
-    return f"/{os.path.relpath(out_path, env.app.srcdir)}"
+    return f"/{os.path.relpath(out_path, env.srcdir)}"
 
 
 def output_directory(env):
