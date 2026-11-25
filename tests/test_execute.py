@@ -3,6 +3,7 @@ import os
 import re
 import warnings
 from datetime import date
+from pathlib import Path
 
 import pytest
 from sphinx.errors import ExtensionError
@@ -305,7 +306,7 @@ def test_save_script(sphinx_build_factory, directive, file_regression):
     source += f'\n{directive("execute", ["a = 1", "print(a)", ""])}'
 
     sphinx_build = sphinx_build_factory(source).build()
-    saved_text = (sphinx_build.outdir / "../jupyter_execute/test.py").read_text()
+    saved_text = (Path(sphinx_build.app.doctreedir) / "jupyter_execute/test.py").read_text()
     file_regression.check(saved_text, extension=".py")
 
 
@@ -322,7 +323,7 @@ def test_bash_kernel(sphinx_build_factory, directive, file_regression):
         warnings.simplefilter("ignore", DeprecationWarning)
         sphinx_build = sphinx_build_factory(source).build()
 
-    saved_text = (sphinx_build.outdir / "../jupyter_execute/test.sh").read_text()
+    saved_text = (Path(sphinx_build.app.doctreedir) / "jupyter_execute/test.sh").read_text()
     file_regression.check(saved_text, extension=".sh")
 
 
@@ -410,7 +411,7 @@ def test_no_deprecated_env_app(sphinx_build_factory, directive, tmp_path):
         sphinx_build = sphinx_build_factory(source, config=config).build()
 
     assert not [w for w in caught if "BuildEnvironment.app" in str(w.message)]
-    assert (sphinx_build.outdir / "../jupyter_execute/index.ipynb").exists()
+    assert (Path(sphinx_build.app.doctreedir) / "jupyter_execute/index.ipynb").exists()
     html = sphinx_build.index_html
     assert "I am html output" in html.select("div.jupyter_cell")[0].text
     assert html.select("a.download")[0]["href"].endswith("index.py")
