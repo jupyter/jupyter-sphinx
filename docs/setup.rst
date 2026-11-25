@@ -26,6 +26,24 @@ To enable the extension, add ``jupyter_sphinx`` to your enabled extensions in ``
       "jupyter_sphinx",
    ]
 
+Reusing an incremental build
+-----------------------------
+
+A fresh Sphinx build executes the ``jupyter-execute`` cells in the source
+documents. Repeat a build with the same source, doctree, and output
+directories to let Sphinx reuse unchanged pages:
+
+.. code-block:: bash
+
+   python -m sphinx -b html -d _build/doctrees docs _build/html
+
+A clean checkout that has no previous build files will execute the cells
+again. If you restore a build in continuous integration, preserve the
+whole build directory, including the doctrees and generated execution
+artifacts. Let Sphinx decide which pages need updating. Use a fresh build
+if an example reads external data that changed without a corresponding
+change to the documentation source.
+
 Basic Usage
 -----------
 
